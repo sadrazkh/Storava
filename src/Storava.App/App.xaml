@@ -1,0 +1,27 @@
+<Application x:Class="Storava.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:Storava.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Material Design base theme (base + accent are overridden at runtime) -->
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="Teal" SecondaryColor="Cyan" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
+
+                <!-- Storava design system (order matters: tokens before consumers) -->
+                <ResourceDictionary Source="Resources/Theme/Palette.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Spacing.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Typography.xaml" />
+                <ResourceDictionary Source="Resources/Theme/Controls.xaml" />
+
+                <!-- Active localization dictionary (swapped live by LocalizationService) -->
+                <ResourceDictionary Source="Resources/Localization/Strings.fa.xaml" />
+
+                <!-- Converters and ViewModel→View templates -->
+                <ResourceDictionary Source="Resources/ViewMappings.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

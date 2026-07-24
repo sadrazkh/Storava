@@ -1,0 +1,30 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:conv="clr-namespace:Storava.App.Converters"
+                    xmlns:vmPages="clr-namespace:Storava.App.ViewModels.Pages"
+                    xmlns:views="clr-namespace:Storava.App.Views.Pages">
+
+    <!-- Shared converters -->
+    <conv:LocKeyConverter x:Key="Conv.LocKey" />
+    <conv:HexToBrushConverter x:Key="Conv.Hex" />
+    <conv:LanguageNameConverter x:Key="Conv.LangName" />
+    <conv:ThemeNameConverter x:Key="Conv.ThemeName" />
+    <conv:InverseBooleanToVisibilityConverter x:Key="Conv.InvBoolVis" />
+    <BooleanToVisibilityConverter x:Key="Conv.BoolVis" />
+
+    <!-- ViewModel → View mapping. The shell renders CurrentPage in a ContentControl;
+         these templates pick the matching view automatically. -->
+    <DataTemplate DataType="{x:Type vmPages:WelcomeViewModel}">
+        <views:WelcomeView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:DashboardViewModel}">
+        <views:DashboardView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:SettingsViewModel}">
+        <views:SettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:ComingSoonViewModel}">
+        <views:ComingSoonView />
+    </DataTemplate>
+
+</ResourceDictionary>

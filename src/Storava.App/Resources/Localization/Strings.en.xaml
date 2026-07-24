@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <FontFamily x:Key="App.FontFamily">Inter, Segoe UI, Arial</FontFamily>
+
+    <!-- App -->
+    <sys:String x:Key="Str.App.Name">Storava</sys:String>
+    <sys:String x:Key="Str.App.Tagline">Storage Intelligence &amp; Advisor</sys:String>
+
+    <!-- Navigation groups -->
+    <sys:String x:Key="Str.Shell.Group.Main">OVERVIEW</sys:String>
+    <sys:String x:Key="Str.Shell.Group.Analyze">ANALYZE</sys:String>
+    <sys:String x:Key="Str.Shell.Group.Act">TAKE ACTION</sys:String>
+    <sys:String x:Key="Str.Shell.Group.System">SYSTEM</sys:String>
+
+    <!-- Navigation items -->
+    <sys:String x:Key="Str.Nav.Dashboard">Dashboard</sys:String>
+    <sys:String x:Key="Str.Nav.NewScan">New Scan</sys:String>
+    <sys:String x:Key="Str.Nav.ScanExplorer">Scan Explorer</sys:String>
+    <sys:String x:Key="Str.Nav.Recommendations">Recommendations</sys:String>
+    <sys:String x:Key="Str.Nav.StoragePlan">Storage Plan</sys:String>
+    <sys:String x:Key="Str.Nav.MigrationCenter">Migration Center</sys:String>
+    <sys:String x:Key="Str.Nav.Reports">Reports</sys:String>
+    <sys:String x:Key="Str.Nav.History">History</sys:String>
+    <sys:String x:Key="Str.Nav.Settings">Settings</sys:String>
+
+    <!-- Shell chrome -->
+    <sys:String x:Key="Str.Shell.ToggleTheme">Toggle theme</sys:String>
+    <sys:String x:Key="Str.Shell.ToggleLanguage">فارسی</sys:String>
+
+    <!-- Welcome -->
+    <sys:String x:Key="Str.Welcome.Title">Welcome to Storava</sys:String>
+    <sys:String x:Key="Str.Welcome.Subtitle">Understand what fills your disk — and free space safely, on your terms.</sys:String>
+    <sys:String x:Key="Str.Welcome.Safety.Title">Nothing is touched without you</sys:String>
+    <sys:String x:Key="Str.Welcome.Safety.Body">Storava only analyzes, explains and plans. No file or folder is ever deleted, moved or renamed unless you select it and explicitly confirm. The AI can advise — it can never act.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature1.Title">Analyze</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature1.Body">Scan drives, find heavy folders and understand the real cause of disk usage.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature2.Title">Advise</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature2.Body">Get clear, ranked suggestions with reasons, risks and reclaimable space.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature3.Title">Act safely</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature3.Body">Move or clean only what you approve, with verification and rollback.</sys:String>
+    <sys:String x:Key="Str.Welcome.Language">Language</sys:String>
+    <sys:String x:Key="Str.Welcome.Theme">Theme</sys:String>
+    <sys:String x:Key="Str.Welcome.Start">Get started</sys:String>
+
+    <!-- Dashboard -->
+    <sys:String x:Key="Str.Dashboard.Title">Dashboard</sys:String>
+    <sys:String x:Key="Str.Dashboard.Subtitle">A quick overview of your storage.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Total">Total capacity</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Free">Free space</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Used">Used space</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Drives">Drives</sys:String>
+    <sys:String x:Key="Str.Dashboard.Drives.Title">Drives</sys:String>
+    <sys:String x:Key="Str.Dashboard.LastScan.Title">Last scan</sys:String>
+    <sys:String x:Key="Str.Dashboard.LastScan.Empty">No scan yet. Start your first scan to see findings here.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Findings.Title">Top findings</sys:String>
+    <sys:String x:Key="Str.Dashboard.Findings.Empty">Findings appear after a scan and local analysis.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Title">AI advisor</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Disabled">Disabled — enable it in Settings to get smart reports.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Enabled">Enabled</sys:String>
+    <sys:String x:Key="Str.Dashboard.StartScan">Start a scan</sys:String>
+
+    <!-- Settings -->
+    <sys:String x:Key="Str.Settings.Title">Settings</sys:String>
+    <sys:String x:Key="Str.Settings.Subtitle">Personalize appearance, language and AI.</sys:String>
+    <sys:String x:Key="Str.Settings.Appearance">Appearance</sys:String>
+    <sys:String x:Key="Str.Settings.Language">Language</sys:String>
+    <sys:String x:Key="Str.Settings.Theme">Theme</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.Light">Light</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.Dark">Dark</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.System">System</sys:String>
+    <sys:String x:Key="Str.Settings.Accent">Accent color</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Section">AI (OpenRouter)</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Enable">Enable AI advisor</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Model">Model</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.BaseUrl">Base URL</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Note">The API key is set later and stored encrypted. It is never written to logs, reports or exports.</sys:String>
+    <sys:String x:Key="Str.Settings.Save">Save changes</sys:String>
+    <sys:String x:Key="Str.Settings.Saved">Settings saved.</sys:String>
+
+    <!-- Coming soon (placeholder pages) -->
+    <sys:String x:Key="Str.ComingSoon.Title">Coming soon</sys:String>
+    <sys:String x:Key="Str.ComingSoon.Body">This area is part of a later development phase and is not implemented yet.</sys:String>
+
+</ResourceDictionary>

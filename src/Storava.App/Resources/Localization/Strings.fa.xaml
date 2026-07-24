@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <FontFamily x:Key="App.FontFamily">Vazirmatn, Segoe UI, Tahoma</FontFamily>
+
+    <!-- App -->
+    <sys:String x:Key="Str.App.Name">استوراوا</sys:String>
+    <sys:String x:Key="Str.App.Tagline">هوش و مشاور فضای ذخیره‌سازی</sys:String>
+
+    <!-- گروه‌های ناوبری -->
+    <sys:String x:Key="Str.Shell.Group.Main">نمای کلی</sys:String>
+    <sys:String x:Key="Str.Shell.Group.Analyze">تحلیل</sys:String>
+    <sys:String x:Key="Str.Shell.Group.Act">اقدام</sys:String>
+    <sys:String x:Key="Str.Shell.Group.System">سیستم</sys:String>
+
+    <!-- آیتم‌های ناوبری -->
+    <sys:String x:Key="Str.Nav.Dashboard">داشبورد</sys:String>
+    <sys:String x:Key="Str.Nav.NewScan">اسکن جدید</sys:String>
+    <sys:String x:Key="Str.Nav.ScanExplorer">کاوشگر اسکن</sys:String>
+    <sys:String x:Key="Str.Nav.Recommendations">پیشنهادها</sys:String>
+    <sys:String x:Key="Str.Nav.StoragePlan">پلن فضا</sys:String>
+    <sys:String x:Key="Str.Nav.MigrationCenter">مرکز انتقال</sys:String>
+    <sys:String x:Key="Str.Nav.Reports">گزارش‌ها</sys:String>
+    <sys:String x:Key="Str.Nav.History">تاریخچه</sys:String>
+    <sys:String x:Key="Str.Nav.Settings">تنظیمات</sys:String>
+
+    <!-- نوار برنامه -->
+    <sys:String x:Key="Str.Shell.ToggleTheme">تغییر تم</sys:String>
+    <sys:String x:Key="Str.Shell.ToggleLanguage">English</sys:String>
+
+    <!-- خوش‌آمد -->
+    <sys:String x:Key="Str.Welcome.Title">به استوراوا خوش آمدید</sys:String>
+    <sys:String x:Key="Str.Welcome.Subtitle">بفهمید چه چیزی دیسک شما را پر کرده و فضا را با اختیار خودتان، امن آزاد کنید.</sys:String>
+    <sys:String x:Key="Str.Welcome.Safety.Title">بدون شما چیزی دست‌کاری نمی‌شود</sys:String>
+    <sys:String x:Key="Str.Welcome.Safety.Body">استوراوا فقط تحلیل می‌کند، توضیح می‌دهد و برنامه‌ریزی می‌کند. هیچ فایل یا پوشه‌ای حذف، منتقل یا تغییرنام داده نمی‌شود مگر اینکه خودتان آن را انتخاب و به‌صراحت تأیید کنید. هوش مصنوعی فقط مشاوره می‌دهد و هرگز اجرا نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature1.Title">تحلیل</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature1.Body">درایوها را اسکن کنید، پوشه‌های حجیم را بیابید و علت واقعی مصرف دیسک را بفهمید.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature2.Title">مشاوره</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature2.Body">پیشنهادهای روشن و اولویت‌بندی‌شده همراه با دلیل، ریسک و فضای قابل آزادسازی بگیرید.</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature3.Title">اقدام امن</sys:String>
+    <sys:String x:Key="Str.Welcome.Feature3.Body">فقط چیزی را که تأیید می‌کنید منتقل یا پاک کنید، همراه با بررسی صحت و بازگردانی.</sys:String>
+    <sys:String x:Key="Str.Welcome.Language">زبان</sys:String>
+    <sys:String x:Key="Str.Welcome.Theme">پوسته</sys:String>
+    <sys:String x:Key="Str.Welcome.Start">شروع کنید</sys:String>
+
+    <!-- داشبورد -->
+    <sys:String x:Key="Str.Dashboard.Title">داشبورد</sys:String>
+    <sys:String x:Key="Str.Dashboard.Subtitle">نمای سریع وضعیت فضای ذخیره‌سازی شما.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Total">ظرفیت کل</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Free">فضای آزاد</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Used">فضای مصرف‌شده</sys:String>
+    <sys:String x:Key="Str.Dashboard.Metric.Drives">درایوها</sys:String>
+    <sys:String x:Key="Str.Dashboard.Drives.Title">درایوها</sys:String>
+    <sys:String x:Key="Str.Dashboard.LastScan.Title">آخرین اسکن</sys:String>
+    <sys:String x:Key="Str.Dashboard.LastScan.Empty">هنوز اسکنی انجام نشده است. اولین اسکن را شروع کنید تا یافته‌ها اینجا نمایش داده شوند.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Findings.Title">مهم‌ترین یافته‌ها</sys:String>
+    <sys:String x:Key="Str.Dashboard.Findings.Empty">یافته‌ها پس از اسکن و تحلیل محلی نمایش داده می‌شوند.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Title">مشاور هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Disabled">غیرفعال — برای دریافت گزارش هوشمند آن را در تنظیمات فعال کنید.</sys:String>
+    <sys:String x:Key="Str.Dashboard.Ai.Enabled">فعال</sys:String>
+    <sys:String x:Key="Str.Dashboard.StartScan">شروع اسکن</sys:String>
+
+    <!-- تنظیمات -->
+    <sys:String x:Key="Str.Settings.Title">تنظیمات</sys:String>
+    <sys:String x:Key="Str.Settings.Subtitle">شخصی‌سازی ظاهر، زبان و هوش مصنوعی.</sys:String>
+    <sys:String x:Key="Str.Settings.Appearance">ظاهر</sys:String>
+    <sys:String x:Key="Str.Settings.Language">زبان</sys:String>
+    <sys:String x:Key="Str.Settings.Theme">پوسته</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.Light">روشن</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.Dark">تیره</sys:String>
+    <sys:String x:Key="Str.Settings.Theme.System">سیستم</sys:String>
+    <sys:String x:Key="Str.Settings.Accent">رنگ تأکید</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Section">هوش مصنوعی (OpenRouter)</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Enable">فعال‌سازی مشاور هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Model">مدل</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.BaseUrl">آدرس پایه</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Note">کلید API بعداً تنظیم و به‌صورت رمزنگاری‌شده ذخیره می‌شود. این کلید هرگز در لاگ، گزارش یا خروجی نوشته نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Settings.Save">ذخیره تغییرات</sys:String>
+    <sys:String x:Key="Str.Settings.Saved">تنظیمات ذخیره شد.</sys:String>
+
+    <!-- به‌زودی (صفحات آینده) -->
+    <sys:String x:Key="Str.ComingSoon.Title">به‌زودی</sys:String>
+    <sys:String x:Key="Str.ComingSoon.Body">این بخش مربوط به فاز بعدی توسعه است و هنوز پیاده‌سازی نشده است.</sys:String>
+
+</ResourceDictionary>

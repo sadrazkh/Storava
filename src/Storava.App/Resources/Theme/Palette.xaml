@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Storava semantic palette.
+         Accent (primary/secondary) is driven at runtime by MaterialDesign
+         via PaletteHelper. These brushes are the fixed, meaning-carrying
+         colors that must read the same in both light and dark themes.
+         ============================================================ -->
+
+    <!-- Risk levels -->
+    <Color x:Key="Storava.Color.Risk.Low">#22C55E</Color>
+    <Color x:Key="Storava.Color.Risk.Medium">#F59E0B</Color>
+    <Color x:Key="Storava.Color.Risk.High">#EF4444</Color>
+    <Color x:Key="Storava.Color.Risk.Protected">#64748B</Color>
+    <Color x:Key="Storava.Color.Risk.Unknown">#94A3B8</Color>
+
+    <SolidColorBrush x:Key="Storava.Brush.Risk.Low" Color="{StaticResource Storava.Color.Risk.Low}" />
+    <SolidColorBrush x:Key="Storava.Brush.Risk.Medium" Color="{StaticResource Storava.Color.Risk.Medium}" />
+    <SolidColorBrush x:Key="Storava.Brush.Risk.High" Color="{StaticResource Storava.Color.Risk.High}" />
+    <SolidColorBrush x:Key="Storava.Brush.Risk.Protected" Color="{StaticResource Storava.Color.Risk.Protected}" />
+    <SolidColorBrush x:Key="Storava.Brush.Risk.Unknown" Color="{StaticResource Storava.Color.Risk.Unknown}" />
+
+    <!-- Category accent chips (kept subtle, theme-neutral) -->
+    <SolidColorBrush x:Key="Storava.Brush.Info" Color="#3B82F6" />
+    <SolidColorBrush x:Key="Storava.Brush.Success" Color="#22C55E" />
+    <SolidColorBrush x:Key="Storava.Brush.Warning" Color="#F59E0B" />
+    <SolidColorBrush x:Key="Storava.Brush.Danger" Color="#EF4444" />
+
+    <!-- Hero gradient used on the dashboard/welcome headers -->
+    <LinearGradientBrush x:Key="Storava.Brush.Hero" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0FB5AE" Offset="0" />
+        <GradientStop Color="#0E7490" Offset="0.55" />
+        <GradientStop Color="#1E293B" Offset="1" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>

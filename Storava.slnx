@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Storava.App/Storava.App.csproj" />
+    <Project Path="src/Storava.Application/Storava.Application.csproj" />
+    <Project Path="src/Storava.Contracts/Storava.Contracts.csproj" />
+    <Project Path="src/Storava.Domain/Storava.Domain.csproj" />
+    <Project Path="src/Storava.Infrastructure/Storava.Infrastructure.csproj" />
+    <Project Path="src/Storava.Platform/Storava.Platform.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Storava.Domain.Tests/Storava.Domain.Tests.csproj" />
+    <Project Path="tests/Storava.Infrastructure.Tests/Storava.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- App.FontFamily is supplied by the active localization dictionary so the
+         typeface follows the selected language (Persian vs Latin). Type styles
+         below reference it dynamically so a language switch re-flows text live. -->
+
+    <Style x:Key="Storava.Text.Display" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Storava.Text.H1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Storava.Text.H2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Storava.Text.Body" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="LineHeight" Value="21" />
+    </Style>
+
+    <Style x:Key="Storava.Text.Caption" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="Storava.Text.Metric" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+    </Style>
+
+</ResourceDictionary>

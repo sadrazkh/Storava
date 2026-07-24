@@ -1,0 +1,35 @@
+<UserControl x:Class="Storava.App.Views.Pages.ComingSoonView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+    <Grid Margin="{StaticResource Pad.Page}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440">
+            <Border Width="96" Height="96" CornerRadius="48"
+                    HorizontalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignSelection}">
+                <materialDesign:PackIcon Kind="ToolboxOutline" Width="44" Height="44"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Foreground="{DynamicResource PrimaryHueMidBrush}" />
+            </Border>
+
+            <TextBlock Text="{Binding Header}" Style="{StaticResource Storava.Text.H1}"
+                       HorizontalAlignment="Center" TextAlignment="Center" Margin="0,22,0,6" />
+
+            <Border Style="{StaticResource Storava.Badge}" HorizontalAlignment="Center"
+                    Background="{DynamicResource MaterialDesignSelection}" Margin="0,0,0,14">
+                <TextBlock Text="{DynamicResource Str.ComingSoon.Title}"
+                           Style="{StaticResource Storava.Text.Caption}"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
+            </Border>
+
+            <TextBlock Text="{DynamicResource Str.ComingSoon.Body}"
+                       Style="{StaticResource Storava.Text.Body}"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       HorizontalAlignment="Center" TextAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

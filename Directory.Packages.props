@@ -1,0 +1,50 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft.Extensions / Hosting / DI / Logging / Configuration -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.*" />
+
+    <!-- Persistence -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.*" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.*" />
+
+    <!-- MVVM / UI -->
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.*" />
+    <PackageVersion Include="MaterialDesignThemes" Version="5.*" />
+    <PackageVersion Include="MaterialDesignColors" Version="5.*" />
+
+    <!-- Logging -->
+    <PackageVersion Include="Serilog" Version="4.*" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.*" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="9.*" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="6.*" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.*" />
+
+    <!-- JSON -->
+    <PackageVersion Include="System.Text.Json" Version="10.0.*" />
+
+    <!-- Pin native SQLite to a patched build (CVE GHSA-2m69-gcr7-jv3q in 2.1.11) -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.12" />
+
+    <!-- Testing -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageVersion Include="xunit" Version="2.*" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.*" />
+    <PackageVersion Include="coverlet.collector" Version="6.*" />
+  </ItemGroup>
+
+</Project>
