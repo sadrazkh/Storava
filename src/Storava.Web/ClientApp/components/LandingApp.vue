@@ -32,9 +32,9 @@ function openOnboarding(): void {
         </nav>
         <div class="site-header__actions">
           <PreferenceControls />
-          <button class="button button--small button--ink" type="button" @click="openOnboarding">
+          <a class="button button--small button--ink" href="/scan">
             {{ t('startScan') }}
-          </button>
+          </a>
         </div>
       </div>
     </header>
@@ -50,12 +50,12 @@ function openOnboarding(): void {
           </h1>
           <p class="hero__lead">{{ t('heroBody') }}</p>
           <div class="hero__actions">
-            <button class="button button--primary button--large" type="button" @click="openOnboarding">
+            <a class="button button--primary button--large" href="/scan">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 7h7l2 2h9v10H3z" />
               </svg>
               {{ t('startScan') }}
-            </button>
+            </a>
             <a class="button button--quiet button--large" href="#how">
               {{ t('seeHow') }}
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
@@ -304,10 +304,10 @@ function openOnboarding(): void {
         <p class="kicker">{{ t('ctaKicker') }}</p>
         <h2>{{ t('ctaTitle') }}</h2>
         <p>{{ t('ctaBody') }}</p>
-        <button class="button button--lime button--large" type="button" @click="openOnboarding">
+        <a class="button button--lime button--large" href="/scan">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z" /></svg>
           {{ t('startScan') }}
-        </button>
+        </a>
       </div>
     </section>
 

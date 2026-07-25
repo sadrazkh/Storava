@@ -8,8 +8,17 @@ export interface BrowserCapabilities {
   mode: 'native' | 'fallback' | 'unsupported';
 }
 
-export interface FolderSelection {
+export interface NativeFolderSelection {
   name: string;
-  method: 'native' | 'fallback';
-  itemCount?: number;
+  method: 'native';
+  handle: FileSystemDirectoryHandle;
 }
+
+export interface FallbackFolderSelection {
+  name: string;
+  method: 'fallback';
+  files: File[];
+  itemCount: number;
+}
+
+export type FolderSelection = NativeFolderSelection | FallbackFolderSelection;

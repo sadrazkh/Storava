@@ -1,13 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  page.on('pageerror', (error) => {
-    console.error(`Browser page error: ${error.message}`);
-  });
+  page.on('pageerror', (error) => console.error(`Browser page error: ${error.message}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') {
-      console.error(`Browser console error: ${message.text()}`);
-    }
+    if (message.type() === 'error') console.error(`Browser console error: ${message.text()}`);
   });
   await page.addInitScript(() => {
     Object.defineProperty(window, 'showDirectoryPicker', {
@@ -32,16 +28,11 @@ test('changes language direction and theme without navigating', async ({ page })
   await expect(page).toHaveURL('/');
 });
 
-test('uses the browser permission surface and stops before scanning', async ({ page }) => {
-  await page.getByRole('button', { name: 'Choose a folder' }).first().click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByText('Your browser is ready')).toBeVisible();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByText('I understand that Storava works on this device.').click();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Open folder picker' }).click();
-  await expect(page.getByText('Folder “Local Work” is ready. The scanner itself arrives in Phase 2.')).toBeVisible();
-  await expect(page.getByText('No scan starts in Phase 1')).toBeVisible();
+test('routes the primary scan action to the real local workspace', async ({ page }) => {
+  await page.getByRole('link', { name: 'Choose a folder' }).first().click();
+  await expect(page).toHaveURL('/scan');
+  await expect(page.getByRole('heading', { name: 'Choose a folder to scan' })).toBeVisible();
+  await expect(page.getByText('Your files never leave your device.').first()).toBeVisible();
 });
 
 test('renders privacy and compatibility evidence without mock scan metrics', async ({ page }) => {

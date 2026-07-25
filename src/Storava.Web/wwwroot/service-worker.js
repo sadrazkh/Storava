@@ -1,13 +1,15 @@
-const cacheName = 'storava-shell-v1';
+const cacheName = 'storava-shell-v2';
 const shellAssets = [
   '/',
   '/privacy',
+  '/scan',
   '/site.webmanifest',
   '/icons/favicon.svg',
   '/icons/app-icon.svg',
   '/dist/assets/app.css',
   '/dist/pages/landing.js',
   '/dist/pages/privacy.js',
+  '/dist/pages/scan.js',
   '/dist/chunks/pwaService.js',
 ];
 

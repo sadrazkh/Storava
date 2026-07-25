@@ -28,4 +28,17 @@ public sealed class LocalizationAndHealthTests(WebApplicationFactoryFixture fact
 
         response.EnsureSuccessStatusCode();
     }
+
+    [Fact]
+    public async Task Scan_workspace_is_a_dedicated_vue_island()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/scan");
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.EnsureSuccessStatusCode();
+        Assert.Contains("data-vue-island=\"scan\"", html, StringComparison.Ordinal);
+        Assert.Contains("/dist/pages/scan.js", html, StringComparison.Ordinal);
+    }
 }

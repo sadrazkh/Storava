@@ -12,6 +12,9 @@ public sealed class HomeController : Controller
     [HttpGet("/privacy")]
     public IActionResult Privacy() => View();
 
+    [HttpGet("/scan")]
+    public IActionResult Scan() => View();
+
     [HttpGet("/Home/Error")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(int? statusCode = null)
