@@ -10,7 +10,9 @@ using Storava.App.ViewModels.Pages;
 using Storava.App.Views;
 using Storava.Application.Abstractions;
 using Storava.Infrastructure;
+using Storava.Infrastructure.Persistence;
 using Storava.Platform;
+using Storava.Rules;
 
 namespace Storava.App;
 
@@ -76,6 +78,8 @@ public partial class App : System.Windows.Application
         {
             services.AddStoravaInfrastructure(Path.Combine(AppDataDirectory, "storava.db"));
             services.AddStoravaPlatform();
+            // Rules decorate the persistence sink so items are classified as the scan streams them.
+            services.AddStoravaRules<SqliteScanItemSinkFactory>();
 
             // UI services
             services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -95,6 +99,8 @@ public partial class App : System.Windows.Application
             services.AddTransient<NewScanViewModel>();
             services.AddTransient<ScanProgressViewModel>();
             services.AddTransient<ScanExplorerViewModel>();
+            services.AddTransient<AnalysisViewModel>();
+            services.AddTransient<RecommendationsViewModel>();
 
             // Windows
             services.AddSingleton<ShellWindow>();

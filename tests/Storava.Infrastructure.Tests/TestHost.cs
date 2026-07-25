@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Storava.Infrastructure;
+using Storava.Infrastructure.Persistence;
 using Storava.Platform;
+using Storava.Rules;
 
 namespace Storava.Infrastructure.Tests;
 
@@ -12,7 +14,11 @@ internal sealed class TestHost : IDisposable
 {
     private readonly ServiceProvider _provider;
 
-    public TestHost()
+    /// <param name="withRules">
+    /// When true, the rules layer is added so items are classified as they are persisted —
+    /// matching how the application composes these services.
+    /// </param>
+    public TestHost(bool withRules = false)
     {
         DatabasePath = Path.Combine(Path.GetTempPath(), $"storava-test-{Guid.NewGuid():N}.db");
 
@@ -20,6 +26,9 @@ internal sealed class TestHost : IDisposable
         services.AddLogging();
         services.AddStoravaInfrastructure(DatabasePath);
         services.AddStoravaPlatform();
+        if (withRules)
+            services.AddStoravaRules<SqliteScanItemSinkFactory>();
+
         _provider = services.BuildServiceProvider();
     }
 

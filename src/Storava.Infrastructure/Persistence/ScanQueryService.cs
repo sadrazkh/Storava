@@ -88,7 +88,15 @@ public sealed class ScanQueryService : IScanQueryService
             },
             cancellationToken);
 
-    /// <summary>Total size per category across the session, largest first.</summary>
+    /// <summary>
+    /// Total size per category across the session, largest first.
+    /// <para>
+    /// Rules match folders (a file inside node_modules is not itself recognisable), so bytes are
+    /// attributed to the outermost classified item that contains them: the whole node_modules
+    /// subtree counts as package cache. Nested classified folders are skipped so nothing is
+    /// counted twice, and whatever is left over is reported as <see cref="StorageCategory.Unknown"/>.
+    /// </para>
+    /// </summary>
     public async Task<IReadOnlyList<CategoryUsage>> GetCategoryUsageAsync(
         string sessionId, CancellationToken cancellationToken = default)
     {
@@ -97,28 +105,83 @@ public sealed class ScanQueryService : IScanQueryService
         await using var connection = new SqliteConnection(_options.ConnectionString);
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        // Only files carry non-overlapping bytes: summing folders as well would count twice.
+        long scannedTotal = await GetScannedTotalAsync(connection, sessionId, cancellationToken).ConfigureAwait(false);
+
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
-            SELECT Category, SUM(Size) AS Total, COUNT(*) AS Items
+            SELECT Path, Size, Category, ItemType
             FROM ScanItems
-            WHERE SessionId = $s AND ItemType = {(int)ItemType.File}
-            GROUP BY Category
-            ORDER BY Total DESC;
+            WHERE SessionId = $s AND Category <> {(int)StorageCategory.Unknown} AND Size > 0
+            ORDER BY Depth ASC, Size DESC;
             """;
         command.Parameters.AddWithValue("$s", sessionId);
 
-        var result = new List<CategoryUsage>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        var totals = new Dictionary<StorageCategory, (long Size, int Count)>();
+        var claimedFolders = new List<string>();
+        long classified = 0;
+
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
-            result.Add(new CategoryUsage(
-                (StorageCategory)reader.GetInt32(0),
-                reader.IsDBNull(1) ? 0 : reader.GetInt64(1),
-                reader.GetInt32(2)));
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                string path = reader.GetString(0);
+                long size = reader.GetInt64(1);
+                var category = (StorageCategory)reader.GetInt32(2);
+                bool isFolder = (ItemType)reader.GetInt32(3) == ItemType.Folder;
+
+                // Rows are ordered shallowest first, so an ancestor is always claimed before
+                // its descendants are considered.
+                if (IsInsideClaimedFolder(path, claimedFolders))
+                    continue;
+
+                var current = totals.TryGetValue(category, out var existing) ? existing : default;
+                totals[category] = (current.Size + size, current.Count + 1);
+                classified += size;
+
+                if (isFolder)
+                    claimedFolders.Add(path);
+            }
         }
 
+        var result = totals
+            .Select(kv => new CategoryUsage(kv.Key, kv.Value.Size, kv.Value.Count))
+            .OrderByDescending(u => u.TotalSize)
+            .ToList();
+
+        long remainder = scannedTotal - classified;
+        if (remainder > 0)
+            result.Add(new CategoryUsage(StorageCategory.Unknown, remainder, 0));
+
         return result;
+    }
+
+    private static bool IsInsideClaimedFolder(string path, List<string> claimedFolders)
+    {
+        foreach (var folder in claimedFolders)
+        {
+            if (path.Length > folder.Length &&
+                path.StartsWith(folder, StringComparison.OrdinalIgnoreCase) &&
+                (path[folder.Length] == '\\' || path[folder.Length] == '/'))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static async Task<long> GetScannedTotalAsync(
+        SqliteConnection connection, string sessionId, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            SELECT COALESCE(SUM(Size), 0) FROM ScanItems
+            WHERE SessionId = $s AND ItemType = {(int)ItemType.File};
+            """;
+        command.Parameters.AddWithValue("$s", sessionId);
+
+        var value = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        return value is long total ? total : 0;
     }
 
     /// <summary>Direct children of a folder for treemap rendering, largest first.</summary>

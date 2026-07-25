@@ -14,6 +14,7 @@
     <conv:ItemTypeToIconConverter x:Key="Conv.ItemIcon" />
     <conv:NullToVisibilityConverter x:Key="Conv.NullVis" />
     <conv:InverseBooleanConverter x:Key="Conv.InvBool" />
+    <conv:ColorToBrushConverter x:Key="Conv.ColorBrush" />
     <BooleanToVisibilityConverter x:Key="Conv.BoolVis" />
 
     <!-- ViewModel → View mapping. The shell renders CurrentPage in a ContentControl;
@@ -38,6 +39,12 @@
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmPages:ScanExplorerViewModel}">
         <views:ScanExplorerView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:AnalysisViewModel}">
+        <views:AnalysisView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:RecommendationsViewModel}">
+        <views:RecommendationsView />
     </DataTemplate>
 
 </ResourceDictionary>

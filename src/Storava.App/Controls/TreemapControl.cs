@@ -146,20 +146,23 @@ public sealed class TreemapControl : FrameworkElement
         // Show the size underneath when there is enough room.
         if (item.Detail is { Length: > 0 } detail && bounds.Height >= 40)
         {
+            var detailBrush = brush.Clone();
+            detailBrush.Opacity = 0.85;
+            detailBrush.Freeze();
+
             var detailText = new FormattedText(
                 detail,
                 CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 LabelTypeface,
                 11,
-                brush,
+                detailBrush,
                 VisualTreeHelper.GetDpi(new DrawingVisual()).PixelsPerDip)
             {
                 MaxTextWidth = Math.Max(1, bounds.Width - 10),
                 Trimming = TextTrimming.CharacterEllipsis,
                 MaxLineCount = 1
             };
-            detailText.SetOpacity(0.85);
             context.DrawText(detailText, new Point(bounds.X + 5, bounds.Y + 20));
         }
     }

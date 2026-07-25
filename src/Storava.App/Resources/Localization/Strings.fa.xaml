@@ -18,6 +18,7 @@
     <sys:String x:Key="Str.Nav.Dashboard">داشبورد</sys:String>
     <sys:String x:Key="Str.Nav.NewScan">اسکن جدید</sys:String>
     <sys:String x:Key="Str.Nav.ScanExplorer">کاوشگر اسکن</sys:String>
+    <sys:String x:Key="Str.Nav.Analysis">تحلیل</sys:String>
     <sys:String x:Key="Str.Nav.Recommendations">پیشنهادها</sys:String>
     <sys:String x:Key="Str.Nav.StoragePlan">پلن فضا</sys:String>
     <sys:String x:Key="Str.Nav.MigrationCenter">مرکز انتقال</sys:String>

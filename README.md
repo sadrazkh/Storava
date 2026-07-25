@@ -5,7 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Phase 2 — Scanner, Data Model & Persistence** (complete).
+> Status: **Phase 3 — Rule Engine, Classification & Visual Analysis** (complete).
 
 ## Tech stack
 
@@ -70,3 +70,24 @@ dotnet test Storava.slnx
 
 Measured on a real run: 21,765 files / 1,941 folders / 13 GB of `C:\Windows\System32` scanned
 with 19 unreadable paths skipped and no interruption.
+
+**Phase 3 — rule engine, classification & visual analysis**
+
+- Local rule catalog (~35 rules, no AI) covering NuGet, npm/pnpm/Yarn, Gradle, Maven, Docker,
+  WSL, Hugging Face, Ollama, PyTorch, pip/Conda, Android SDK & emulators, Unity, Unreal, Steam,
+  browser caches, temp files, crash dumps, VM disks and more — each with bilingual text, risk
+  level, permitted actions and the *official* relocation method where one exists.
+- Items are classified as the scan streams them to storage, via a sink decorator, so no second
+  pass over millions of rows is needed.
+- Transparent scoring (size, regeneratable, known-cache, inactivity, move benefit, minus system
+  risk, active usage and migration risk) used **only** for ranking and explanation.
+- Recommendations are generated locally, bound to a real scan item id, and always default to
+  `NoAction`. Protected paths can never produce a recommendation.
+- **Analysis page**: custom squarified treemap (drill-down, hover, tooltips, colour by category
+  or risk), donut category breakdown and top consumers.
+- **Recommendations page**: ranked cards with risk badge, reason, reclaimable space, confidence,
+  official method and warnings.
+
+Category bytes are attributed to the outermost classified folder, so a `node_modules` subtree
+counts as package cache rather than thousands of unrecognised files. On a real developer tree
+this moved identification from 4% to 99% of scanned bytes.

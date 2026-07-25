@@ -95,7 +95,8 @@ public sealed partial class RecommendationsViewModel : ViewModelBase, IDisposabl
         IsAnalyzing = true;
         try
         {
-            string language = _localization.CurrentLanguage.ToCultureName().Split('-')[0];
+            // Rule text is keyed by the two-letter language code ("en"/"fa").
+            string language = _localization.CurrentCulture.TwoLetterISOLanguageName;
             var results = await _analysis.AnalyzeAsync(_sessionId, language).ConfigureAwait(true);
             Populate(results);
         }

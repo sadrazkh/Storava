@@ -9,6 +9,7 @@
     <Project Path="src/Storava.Rules/Storava.Rules.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Storava.App.Tests/Storava.App.Tests.csproj" />
     <Project Path="tests/Storava.Domain.Tests/Storava.Domain.Tests.csproj" />
     <Project Path="tests/Storava.Infrastructure.Tests/Storava.Infrastructure.Tests.csproj" />
     <Project Path="tests/Storava.Rules.Tests/Storava.Rules.Tests.csproj" />

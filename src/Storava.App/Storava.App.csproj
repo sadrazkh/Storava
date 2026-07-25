@@ -10,6 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The treemap layout algorithm is internal but worth testing directly. -->
+    <InternalsVisibleTo Include="Storava.App.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="MaterialDesignThemes" />
     <PackageReference Include="MaterialDesignColors" />
@@ -27,6 +32,7 @@
     <ProjectReference Include="..\Storava.Application\Storava.Application.csproj" />
     <ProjectReference Include="..\Storava.Infrastructure\Storava.Infrastructure.csproj" />
     <ProjectReference Include="..\Storava.Platform\Storava.Platform.csproj" />
+    <ProjectReference Include="..\Storava.Rules\Storava.Rules.csproj" />
   </ItemGroup>
 
 </Project>

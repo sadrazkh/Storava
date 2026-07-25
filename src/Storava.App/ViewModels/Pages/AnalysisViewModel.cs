@@ -7,6 +7,7 @@ using Storava.App.Models;
 using Storava.App.Services;
 using Storava.Application.Abstractions;
 using Storava.Application.Scanning;
+using Storava.Domain.Enums;
 using Storava.Domain.ValueObjects;
 
 namespace Storava.App.ViewModels.Pages;
@@ -113,9 +114,9 @@ public sealed partial class AnalysisViewModel : ViewModelBase, IDisposable
             });
         }
 
-        // How much of the scanned data the rule engine could actually name.
+        // Share of scanned bytes the rule engine could actually put a name to.
         long identified = usage
-            .Where(u => u.Category != Domain.Enums.StorageCategory.Unknown)
+            .Where(u => u.Category != StorageCategory.Unknown)
             .Sum(u => u.TotalSize);
         IdentifiedText = total == 0
             ? string.Empty

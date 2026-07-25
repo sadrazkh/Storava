@@ -1,0 +1,170 @@
+<UserControl x:Class="Storava.App.Views.Pages.AnalysisView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:Storava.App.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="780" d:DesignWidth="1180">
+    <Grid Margin="{StaticResource Pad.Page}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Str.Analysis.Title}" Style="{StaticResource Storava.Text.Display}" />
+                <TextBlock Text="{DynamicResource Str.Analysis.Subtitle}" Style="{StaticResource Storava.Text.Caption}" Margin="0,4,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Empty state -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420"
+                    Visibility="{Binding HasData, Converter={StaticResource Conv.InvBoolVis}}">
+            <materialDesign:PackIcon Kind="ChartBoxOutline" Width="52" Height="52" HorizontalAlignment="Center"
+                                     Foreground="{DynamicResource MaterialDesignBodyLight}" Opacity="0.6" />
+            <TextBlock Text="{DynamicResource Str.Analysis.Empty}" Style="{StaticResource Storava.Text.Body}"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}" TextAlignment="Center" Margin="0,12,0,0" />
+        </StackPanel>
+
+        <!-- Content -->
+        <Grid Grid.Row="1" Visibility="{Binding HasData, Converter={StaticResource Conv.BoolVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="380" MinWidth="320" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Treemap -->
+            <materialDesign:Card Grid.Column="0" UniformCornerRadius="14" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Command="{Binding NavigateUpCommand}"
+                                Style="{StaticResource MaterialDesignIconButton}" Height="34" Width="34"
+                                ToolTip="{DynamicResource Str.Analysis.Back}">
+                            <materialDesign:PackIcon Kind="ArrowLeft" />
+                        </Button>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock Text="{DynamicResource Str.Analysis.Treemap}" Style="{StaticResource Storava.Text.H2}" />
+                            <TextBlock Text="{Binding CurrentLabel}" Style="{StaticResource Storava.Text.Caption}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{DynamicResource Str.Analysis.ColorBy}" Style="{StaticResource Storava.Text.Caption}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBlock Text="{DynamicResource Str.Analysis.ColorBy.Category}" VerticalAlignment="Center"
+                                       Style="{StaticResource Storava.Text.Caption}" />
+                            <ToggleButton IsChecked="{Binding ColorByRisk}" Margin="6,0"
+                                          Style="{StaticResource MaterialDesignSwitchToggleButton}" />
+                            <TextBlock Text="{DynamicResource Str.Analysis.ColorBy.Risk}" VerticalAlignment="Center"
+                                       Style="{StaticResource Storava.Text.Caption}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Grid.Row="1" CornerRadius="10" ClipToBounds="True"
+                            Background="{DynamicResource MaterialDesignChipBackground}">
+                        <controls:TreemapControl x:Name="Treemap" ItemsSource="{Binding Tiles}"
+                                                 ItemActivated="Treemap_OnItemActivated" />
+                    </Border>
+
+                    <TextBlock Grid.Row="2" Text="{DynamicResource Str.Analysis.DrillHint}"
+                               Style="{StaticResource Storava.Text.Caption}" Margin="0,10,0,0" Opacity="0.7" />
+                </Grid>
+            </materialDesign:Card>
+
+            <!-- Right column -->
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <!-- Category breakdown -->
+                    <materialDesign:Card UniformCornerRadius="14" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <TextBlock Text="{DynamicResource Str.Analysis.Categories}" Style="{StaticResource Storava.Text.H2}" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource Str.Analysis.Identified}" Style="{StaticResource Storava.Text.Caption}" />
+                                    <TextBlock Text="{Binding IdentifiedText}" Margin="6,0,0,0" FontWeight="SemiBold"
+                                               Style="{StaticResource Storava.Text.Caption}"
+                                               Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <controls:DonutChart ItemsSource="{Binding CategorySlices}" Height="180" Margin="0,0,0,14" />
+
+                            <ItemsControl ItemsSource="{Binding Categories}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,9">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="10" Height="10" CornerRadius="3" VerticalAlignment="Center"
+                                                    Margin="0,0,10,0" Background="{Binding Color, Converter={StaticResource Conv.ColorBrush}}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center"
+                                                       Style="{StaticResource Storava.Text.Body}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Text="{Binding SharePercentText}" VerticalAlignment="Center"
+                                                       Opacity="0.6" FontSize="12" Margin="8,0" />
+                                            <TextBlock Grid.Column="3" Text="{Binding SizeText}" VerticalAlignment="Center"
+                                                       FontWeight="SemiBold" Style="{StaticResource Storava.Text.Body}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </materialDesign:Card>
+
+                    <!-- Top consumers -->
+                    <materialDesign:Card UniformCornerRadius="14" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Analysis.TopConsumers}" Style="{StaticResource Storava.Text.H2}" Margin="0,0,0,12" />
+                            <ItemsControl ItemsSource="{Binding TopConsumers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10" ToolTip="{Binding Path}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <materialDesign:PackIcon Grid.Column="0" Kind="FolderOutline" VerticalAlignment="Center"
+                                                                     Margin="0,0,8,0" Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Storava.Text.Body}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding DetectedTechnology}" Style="{StaticResource Storava.Text.Caption}"
+                                                           Visibility="{Binding DetectedTechnology, Converter={StaticResource Conv.NullVis}}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding Size, Converter={StaticResource Conv.Bytes}}"
+                                                       VerticalAlignment="Center" FontWeight="SemiBold"
+                                                       Style="{StaticResource Storava.Text.Body}" Margin="8,0,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </materialDesign:Card>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

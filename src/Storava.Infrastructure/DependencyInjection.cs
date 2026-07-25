@@ -42,8 +42,10 @@ public static class DependencyInjection
         services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         services.AddSingleton<ISettingsService, SettingsService>();
 
-        // Scan storage
+        // Scan storage. The interface defaults to plain persistence; the rules layer replaces
+        // it with a classifying decorator when that layer is added.
         services.AddSingleton<SqliteScanItemSinkFactory>();
+        services.AddSingleton<IScanItemSinkFactory>(sp => sp.GetRequiredService<SqliteScanItemSinkFactory>());
         services.AddSingleton<IScanSessionRepository, ScanSessionRepository>();
         services.AddSingleton<IScanQueryService, ScanQueryService>();
         services.AddSingleton<IRecommendationRepository, RecommendationRepository>();

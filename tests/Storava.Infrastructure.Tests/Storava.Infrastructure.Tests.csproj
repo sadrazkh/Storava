@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\src\Storava.Application\Storava.Application.csproj" />
     <ProjectReference Include="..\..\src\Storava.Infrastructure\Storava.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Storava.Platform\Storava.Platform.csproj" />
+    <ProjectReference Include="..\..\src\Storava.Rules\Storava.Rules.csproj" />
   </ItemGroup>
 
 </Project>

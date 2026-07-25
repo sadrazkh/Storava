@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Storava.Application.Abstractions;
 using Storava.Rules.Catalog;
 using Storava.Rules.Scoring;
@@ -24,9 +25,12 @@ public static class DependencyInjection
         services.AddSingleton<RecommendationBuilder>();
         services.AddSingleton<AnalysisService>();
 
-        services.AddSingleton<IScanItemSinkFactory>(sp => new ClassifyingScanItemSinkFactory(
-            sp.GetRequiredService<TInnerSinkFactory>(),
-            sp.GetRequiredService<ClassificationService>()));
+        // Replace (not append) so there is exactly one sink factory registration and it is
+        // unambiguous that items get classified on their way to storage.
+        services.Replace(ServiceDescriptor.Singleton<IScanItemSinkFactory>(sp =>
+            new ClassifyingScanItemSinkFactory(
+                sp.GetRequiredService<TInnerSinkFactory>(),
+                sp.GetRequiredService<ClassificationService>())));
 
         return services;
     }
