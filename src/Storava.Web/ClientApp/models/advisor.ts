@@ -64,6 +64,16 @@ export interface SanitizedScanSummary {
 }
 
 export type AdvisorRisk = 'low' | 'medium' | 'high';
+export const advisorSignalIds = [
+  'generated-folder',
+  'large-file',
+  'huge-file',
+  'archive',
+  'backup-copy',
+  'stale-large-file',
+] as const;
+export type AdvisorSignalId = typeof advisorSignalIds[number];
+export type AdvisorDisposition = 'cleanup-candidate' | 'archive-candidate' | 'investigate';
 
 export interface AdvisorFinding {
   title: string;
@@ -78,11 +88,19 @@ export interface AdvisorPriority {
   confidence: number;
 }
 
+export interface AdvisorReviewTarget {
+  signal: AdvisorSignalId;
+  disposition: AdvisorDisposition;
+  rationale: string;
+  confidence: number;
+}
+
 export interface AdvisorResponse {
   title: string;
   executiveSummary: string;
   findings: AdvisorFinding[];
   priorities: AdvisorPriority[];
+  reviewTargets: AdvisorReviewTarget[];
   cautions: string[];
   disclaimer: string;
   privacyNote: string;
@@ -91,4 +109,9 @@ export interface AdvisorResponse {
 export interface AdvisorResult extends AdvisorResponse {
   model: string;
   generatedAt: string;
+}
+
+export interface StoredAdvisorResult {
+  sessionId: string;
+  result: AdvisorResult;
 }

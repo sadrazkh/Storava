@@ -1,14 +1,24 @@
+import type { AdvisorResult } from '@/models/advisor';
 import type { ScanItem, ScanSession } from '@/models/scan';
-import { forEachSessionItem, getSession, putItemsBatch, putSession } from '@/services/scanDatabase';
+import {
+  forEachSessionItem,
+  getAdvisorResult,
+  getSession,
+  putAdvisorResult,
+  putItemsBatch,
+  putSession,
+} from '@/services/scanDatabase';
+import { parseAdvisorResponse } from '@/services/openRouterProvider';
 
 const exportFormat = 'storava-web';
-const exportVersion = 1;
+const exportVersion = 2;
+const supportedExportVersions = new Set([1, exportVersion]);
 const importBatchSize = 500;
 
 interface ExportManifest {
   type: 'manifest';
   format: typeof exportFormat;
-  version: typeof exportVersion;
+  version: 1 | typeof exportVersion;
   appVersion: string;
   createdAt: string;
   privacy: 'relative-paths-only';
@@ -24,6 +34,11 @@ interface ExportItemRecord {
   item: ScanItem;
 }
 
+interface ExportAdvisorRecord {
+  type: 'advisor';
+  result: AdvisorResult;
+}
+
 interface ExportIntegrityRecord {
   type: 'integrity';
   itemCount: number;
@@ -31,7 +46,12 @@ interface ExportIntegrityRecord {
   checksum: string;
 }
 
-type ExportRecord = ExportManifest | ExportSessionRecord | ExportItemRecord | ExportIntegrityRecord;
+type ExportRecord =
+  | ExportManifest
+  | ExportSessionRecord
+  | ExportItemRecord
+  | ExportAdvisorRecord
+  | ExportIntegrityRecord;
 
 function updateChecksum(current: number, value: string): number {
   let hash = current;
@@ -57,11 +77,13 @@ export async function exportSession(sessionId: string): Promise<{ blob: Blob; fi
     type: 'manifest',
     format: exportFormat,
     version: exportVersion,
-    appVersion: '0.4.0',
+    appVersion: '1.0.0',
     createdAt: new Date().toISOString(),
     privacy: 'relative-paths-only',
   });
   append({ type: 'session', session: { ...session, source: 'import' } });
+  const advisorResult = await getAdvisorResult(sessionId);
+  if (advisorResult) append({ type: 'advisor', result: advisorResult });
 
   let itemCount = 0;
   let totalBytes = 0;
@@ -99,10 +121,32 @@ function validateManifest(record: unknown): asserts record is ExportManifest {
     || !('format' in record)
     || record.format !== exportFormat
     || !('version' in record)
-    || record.version !== exportVersion
+    || typeof record.version !== 'number'
+    || !supportedExportVersions.has(record.version)
   ) {
     throw new Error('Unsupported or corrupt Storava export.');
   }
+}
+
+function validateAdvisorResult(value: unknown): AdvisorResult {
+  if (typeof value !== 'object' || value === null) throw new Error('The advisor result is invalid.');
+  const candidate = value as Partial<AdvisorResult>;
+  const {
+    model,
+    generatedAt,
+    ...response
+  } = candidate;
+  if (typeof model !== 'string' || model.length === 0 || model.length > 180) {
+    throw new Error('The advisor result model is invalid.');
+  }
+  if (
+    typeof generatedAt !== 'string'
+    || !Number.isFinite(Date.parse(generatedAt))
+    || generatedAt.length > 40
+  ) {
+    throw new Error('The advisor result timestamp is invalid.');
+  }
+  return { ...parseAdvisorResponse(response), model, generatedAt };
 }
 
 function validateItem(item: unknown): asserts item is ScanItem {
@@ -136,6 +180,7 @@ export async function importSession(
   let lineNumber = 0;
   let manifestSeen = false;
   let sourceSession: ScanSession | null = null;
+  let advisorResult: AdvisorResult | null = null;
   let integrity: ExportIntegrityRecord | null = null;
   const importedId = crypto.randomUUID();
   let batch: ScanItem[] = [];
@@ -176,6 +221,10 @@ export async function importSession(
         await putItemsBatch(batch);
         batch = [];
       }
+      return;
+    }
+    if (record.type === 'advisor') {
+      advisorResult = validateAdvisorResult(record.result);
       return;
     }
     if (record.type === 'integrity') integrity = record;
@@ -227,5 +276,6 @@ export async function importSession(
     schemaVersion: 1,
   };
   await putSession(session);
+  if (advisorResult) await putAdvisorResult(importedId, advisorResult);
   return session;
 }

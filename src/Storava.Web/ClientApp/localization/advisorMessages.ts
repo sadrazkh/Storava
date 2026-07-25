@@ -66,7 +66,7 @@ const en = {
   requestFailed: 'AI analysis failed',
   previewFailed: 'Could not prepare the local summary',
   reportDisabled: 'Report downloads are disabled in privacy settings.',
-  phaseLabel: 'Phase 5 · AI advisor & reports',
+  phaseLabel: 'Release · AI advisor & local review',
 } as const;
 
 type AdvisorMessageKey = keyof typeof en;
@@ -137,7 +137,7 @@ const fa: Record<AdvisorMessageKey, string> = {
   requestFailed: 'تحلیل هوش مصنوعی ناموفق بود',
   previewFailed: 'ساخت خلاصهٔ محلی ممکن نشد',
   reportDisabled: 'دریافت گزارش در تنظیمات حریم خصوصی غیرفعال است.',
-  phaseLabel: 'فاز ۵ · مشاور هوش مصنوعی و گزارش‌ها',
+  phaseLabel: 'نسخهٔ انتشار · مشاور AI و بررسی محلی',
 };
 
 export function getAdvisorMessages(locale: Locale): typeof en | Record<AdvisorMessageKey, string> {

@@ -18,11 +18,14 @@ public sealed class SecurityTests(WebApplicationFactoryFixture factory)
         response.EnsureSuccessStatusCode();
         var contentSecurityPolicy = Header(response, "Content-Security-Policy");
         Assert.Contains("default-src 'self'", contentSecurityPolicy);
+        Assert.Contains("connect-src 'self' https://openrouter.ai https://eu.openrouter.ai", contentSecurityPolicy);
+        Assert.DoesNotContain("connect-src *", contentSecurityPolicy);
         Assert.DoesNotContain("upgrade-insecure-requests", contentSecurityPolicy);
         Assert.Equal("DENY", Header(response, "X-Frame-Options"));
         Assert.Equal("nosniff", Header(response, "X-Content-Type-Options"));
         Assert.Equal("no-referrer", Header(response, "Referrer-Policy"));
         Assert.Contains("camera=()", Header(response, "Permissions-Policy"));
+        Assert.Contains("display-capture=()", Header(response, "Permissions-Policy"));
     }
 
     [Fact]
@@ -38,6 +41,8 @@ public sealed class SecurityTests(WebApplicationFactoryFixture factory)
 
         Assert.DoesNotContain(routeEndpoints, endpoint =>
             endpoint.RoutePattern.RawText?.Contains("upload", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.DoesNotContain(routeEndpoints, endpoint =>
+            endpoint.RoutePattern.RawText?.Contains("proxy", StringComparison.OrdinalIgnoreCase) == true);
 
         var actionParameters = routeEndpoints
             .Select(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>())
@@ -48,6 +53,16 @@ public sealed class SecurityTests(WebApplicationFactoryFixture factory)
 
         Assert.DoesNotContain(typeof(IFormFile), actionParameters);
         Assert.DoesNotContain(typeof(IFormFileCollection), actionParameters);
+    }
+
+    [Fact]
+    public async Task Production_client_bundles_do_not_publish_source_maps()
+    {
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/dist/pages/scan.js.map");
+
+        Assert.Equal(StatusCodes.Status404NotFound, (int)response.StatusCode);
     }
 
     [Fact]

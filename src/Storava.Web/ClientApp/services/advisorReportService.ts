@@ -8,6 +8,9 @@ export interface AdvisorReportCopy {
   summary: string;
   findings: string;
   priorities: string;
+  reviewTargets: string;
+  signal: string;
+  disposition: string;
   cautions: string;
   confidence: string;
   evidence: string;
@@ -48,6 +51,7 @@ export function createAdvisorJsonReport(
       executiveSummary: result.executiveSummary,
       findings: result.findings,
       priorities: result.priorities,
+      reviewTargets: result.reviewTargets,
       cautions: result.cautions,
       disclaimer: result.disclaimer,
       privacyNote: result.privacyNote,
@@ -71,6 +75,8 @@ export function createAdvisorHtmlReport(
 <header><span>${escapeHtml(finding.risk)}</span><strong>${escapeHtml(finding.title)}</strong><small>${escapeHtml(copy.confidence)} ${number.format(finding.confidence * 100)}%</small></header>
 <p><b>${escapeHtml(copy.evidence)}:</b> ${escapeHtml(finding.evidence)}</p></article>`).join('');
   const priorities = result.priorities.map((priority, index) => `<li><span>${number.format(index + 1)}</span><div><strong>${escapeHtml(priority.title)}</strong><p>${escapeHtml(priority.reason)}</p><small>${escapeHtml(copy.confidence)} ${number.format(priority.confidence * 100)}%</small></div></li>`).join('');
+  const reviewTargets = result.reviewTargets.map((target) =>
+    `<tr><td>${escapeHtml(target.signal)}</td><td>${escapeHtml(target.disposition)}</td><td>${escapeHtml(target.rationale)}</td><td>${number.format(target.confidence * 100)}%</td></tr>`).join('');
   const cautions = result.cautions.map((caution) => `<li>${escapeHtml(caution)}</li>`).join('');
   const categoryRows = summary.categories.map((category) => `<tr><td>${escapeHtml(category.category)}</td><td>${number.format(category.count)}</td><td>${number.format(category.bytes / 1024 ** 3)} GB</td></tr>`).join('');
   const html = `<!doctype html>
@@ -81,6 +87,7 @@ export function createAdvisorHtmlReport(
 <p class="notice">${escapeHtml(copy.privacy)} ${escapeHtml(result.privacyNote)}</p>
 <h2>${escapeHtml(copy.findings)}</h2>${findings || '<p>—</p>'}
 <h2>${escapeHtml(copy.priorities)}</h2><ol class="priorities">${priorities || '<li>—</li>'}</ol>
+<h2>${escapeHtml(copy.reviewTargets)}</h2><table><thead><tr><th>${escapeHtml(copy.signal)}</th><th>${escapeHtml(copy.disposition)}</th><th>${escapeHtml(copy.evidence)}</th><th>${escapeHtml(copy.confidence)}</th></tr></thead><tbody>${reviewTargets}</tbody></table>
 <h2>${escapeHtml(copy.cautions)}</h2><ul>${cautions || '<li>—</li>'}</ul>
 <h2>${escapeHtml(copy.summary)}</h2><table><thead><tr><th>${escapeHtml(copy.category)}</th><th>${escapeHtml(copy.count)}</th><th>${escapeHtml(copy.size)}</th></tr></thead><tbody>${categoryRows}</tbody></table>
 <p class="notice"><strong>${escapeHtml(copy.disclaimer)}:</strong> ${escapeHtml(result.disclaimer)}</p>

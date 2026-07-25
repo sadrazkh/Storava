@@ -1,11 +1,13 @@
 import type {
   AdvisorFinding,
   AdvisorPriority,
+  AdvisorReviewTarget,
   AdvisorResponse,
   AdvisorResult,
   AdvisorSettings,
   SanitizedScanSummary,
 } from '@/models/advisor';
+import { advisorSignalIds } from '@/models/advisor';
 import { normalizeAdvisorSettings, normalizeOpenRouterBaseUrl } from '@/services/advisorSettings';
 
 type JsonRecord = Record<string, unknown>;
@@ -45,6 +47,21 @@ const advisorResponseSchema = {
         required: ['title', 'reason', 'confidence'],
       },
     },
+    reviewTargets: {
+      type: 'array',
+      maxItems: 6,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          signal: { type: 'string', enum: advisorSignalIds },
+          disposition: { type: 'string', enum: ['cleanup-candidate', 'archive-candidate', 'investigate'] },
+          rationale: { type: 'string', minLength: 1, maxLength: 500 },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+        },
+        required: ['signal', 'disposition', 'rationale', 'confidence'],
+      },
+    },
     cautions: {
       type: 'array',
       maxItems: 6,
@@ -53,7 +70,7 @@ const advisorResponseSchema = {
     disclaimer: { type: 'string', minLength: 1, maxLength: 600 },
     privacyNote: { type: 'string', minLength: 1, maxLength: 400 },
   },
-  required: ['title', 'executiveSummary', 'findings', 'priorities', 'cautions', 'disclaimer', 'privacyNote'],
+  required: ['title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'cautions', 'disclaimer', 'privacyNote'],
 } as const;
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -105,6 +122,27 @@ function parsePriority(value: unknown): AdvisorPriority {
   };
 }
 
+function parseReviewTarget(value: unknown): AdvisorReviewTarget {
+  if (!isRecord(value)) throw new Error('Advisor review target is invalid.');
+  assertExactKeys(value, ['signal', 'disposition', 'rationale', 'confidence'], 'Advisor review target');
+  if (typeof value.signal !== 'string' || !advisorSignalIds.some((signal) => signal === value.signal)) {
+    throw new Error('Advisor review target signal is invalid.');
+  }
+  if (
+    value.disposition !== 'cleanup-candidate'
+    && value.disposition !== 'archive-candidate'
+    && value.disposition !== 'investigate'
+  ) {
+    throw new Error('Advisor review target disposition is invalid.');
+  }
+  return {
+    signal: value.signal as AdvisorReviewTarget['signal'],
+    disposition: value.disposition,
+    rationale: requiredString(value.rationale, 'Advisor review target rationale', 500),
+    confidence: confidence(value.confidence, 'Advisor review target confidence'),
+  };
+}
+
 function parseStringArray(value: unknown, label: string, maximumItems: number, maximumLength: number): string[] {
   if (!Array.isArray(value) || value.length > maximumItems) throw new Error(`${label} is invalid.`);
   return value.map((item) => requiredString(item, label, maximumLength));
@@ -114,16 +152,20 @@ export function parseAdvisorResponse(value: unknown): AdvisorResponse {
   if (!isRecord(value)) throw new Error('Advisor response is not an object.');
   assertExactKeys(
     value,
-    ['title', 'executiveSummary', 'findings', 'priorities', 'cautions', 'disclaimer', 'privacyNote'],
+    ['title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'cautions', 'disclaimer', 'privacyNote'],
     'Advisor response',
   );
   if (!Array.isArray(value.findings) || value.findings.length > 8) throw new Error('Advisor findings are invalid.');
   if (!Array.isArray(value.priorities) || value.priorities.length > 5) throw new Error('Advisor priorities are invalid.');
+  if (!Array.isArray(value.reviewTargets) || value.reviewTargets.length > 6) {
+    throw new Error('Advisor review targets are invalid.');
+  }
   return {
     title: requiredString(value.title, 'Advisor title', 120),
     executiveSummary: requiredString(value.executiveSummary, 'Advisor summary', 1_500),
     findings: value.findings.map(parseFinding),
     priorities: value.priorities.map(parsePriority),
+    reviewTargets: value.reviewTargets.map(parseReviewTarget),
     cautions: parseStringArray(value.cautions, 'Advisor caution', 6, 400),
     disclaimer: requiredString(value.disclaimer, 'Advisor disclaimer', 600),
     privacyNote: requiredString(value.privacyNote, 'Advisor privacy note', 400),
@@ -156,7 +198,7 @@ export function buildOpenRouterRequest(
     messages: [
       {
         role: 'system',
-        content: `You are Storava's read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata. Never infer file contents, identities, personal paths, or secrets. Never claim to have inspected files. Do not issue delete, move, rename, execute, or cleanup commands. Priorities are review priorities for a human, not file-operation instructions. State uncertainty and use the required JSON schema.`,
+        content: `You are Storava's read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata. Never infer file contents, identities, personal paths, or secrets. Never claim to have inspected files. Do not issue delete, move, rename, execute, or cleanup commands. Priorities are review priorities for a human, not file-operation instructions. reviewTargets may reference only rule signals that are present in ruleMatches; they identify aggregate classes for local human review and never individual files. Use cleanup-candidate only when the aggregate evidence suggests likely regeneratable or redundant data. State uncertainty and use the required JSON schema.`,
       },
       {
         role: 'user',

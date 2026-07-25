@@ -1,0 +1,28 @@
+services:
+  storava-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: storava-web:1.0.0
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      WebSecurity__UseHttpsRedirection: "false"
+      DOTNET_EnableDiagnostics: "0"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/app/.aspnet/DataProtection-Keys
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

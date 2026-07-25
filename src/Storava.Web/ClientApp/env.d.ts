@@ -20,6 +20,10 @@ interface FileSystemDirectoryHandle extends FileSystemHandle {
   readonly kind: 'directory';
   readonly name: string;
   values(): AsyncIterableIterator<FileSystemFileHandle | FileSystemDirectoryHandle>;
+  getDirectoryHandle(name: string): Promise<FileSystemDirectoryHandle>;
+  getFileHandle(name: string): Promise<FileSystemFileHandle>;
+  removeEntry(name: string, options?: { recursive?: boolean }): Promise<void>;
+  queryPermission(options?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
   requestPermission(options?: { mode?: 'read' | 'readwrite' }): Promise<PermissionState>;
 }
 

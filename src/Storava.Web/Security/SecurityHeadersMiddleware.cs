@@ -21,7 +21,10 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvi
             (environment.IsDevelopment() || !context.Request.IsHttps ? string.Empty : " upgrade-insecure-requests;");
         headers["Cross-Origin-Opener-Policy"] = "same-origin";
         headers["Cross-Origin-Resource-Policy"] = "same-origin";
-        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+        headers["Permissions-Policy"] =
+            "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), " +
+            "gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), " +
+            "publickey-credentials-get=(), screen-wake-lock=(), usb=()";
         headers["Referrer-Policy"] = "no-referrer";
         headers["X-Content-Type-Options"] = "nosniff";
         headers["X-Frame-Options"] = "DENY";

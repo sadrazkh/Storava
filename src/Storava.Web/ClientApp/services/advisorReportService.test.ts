@@ -7,6 +7,7 @@ const result: AdvisorResult = {
   executiveSummary: 'Summary',
   findings: [{ title: 'Finding', evidence: '<img src=x>', risk: 'low', confidence: 0.8 }],
   priorities: [{ title: 'Review', reason: 'Human review only', confidence: 0.7 }],
+  reviewTargets: [{ signal: 'archive', disposition: 'archive-candidate', rationale: 'Review archives', confidence: 0.75 }],
   cautions: ['Do not infer contents.'],
   disclaimer: 'No automatic actions.',
   privacyNote: 'Aggregates only.',
@@ -37,6 +38,7 @@ describe('advisor reports', () => {
     const htmlReport = createAdvisorHtmlReport(result, summary, 'fa-IR', {
       reportLabel: 'گزارش', generatedWith: 'مدل', privacy: 'خصوصی', summary: 'خلاصه',
       findings: 'یافته‌ها', priorities: 'اولویت‌ها', cautions: 'احتیاط‌ها',
+      reviewTargets: 'هدف‌های بررسی', signal: 'نشانه', disposition: 'نوع پیشنهاد',
       confidence: 'اطمینان', evidence: 'شواهد', disclaimer: 'سلب مسئولیت',
       category: 'دسته', count: 'تعداد', size: 'حجم',
     });
@@ -48,6 +50,7 @@ describe('advisor reports', () => {
     const jsonReport = createAdvisorJsonReport(result, summary, 'fa-IR');
     const json = await jsonReport.blob.text();
     expect(json).toContain('"privacy": "aggregate-metadata-only"');
+    expect(json).toContain('"signal": "archive"');
     expect(json).not.toContain('sk-or-v1');
   });
 });

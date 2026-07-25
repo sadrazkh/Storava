@@ -2,9 +2,9 @@
 
 ## Isolation decision
 
-- The original checkout remains on `master` and was clean before work began.
-- Web development runs in the adjacent `Storava-Web` worktree on
-  `feature/storava-web`.
+- The Web work was isolated in a dedicated worktree through Phase 5 and was then merged.
+- By explicit project-owner decision, continued Web development now runs directly on
+  `master`; the Web executable remains isolated by project and dependency boundaries.
 - `src/Storava.Web` is an independent executable. It does not reference the WPF,
   Windows platform, or desktop persistence projects.
 - The desktop projects remain buildable from the same solution and no existing C# or XAML
@@ -118,3 +118,26 @@ The earlier migration seams are now implemented without changing Desktop project
 
 The ASP.NET server surface remains page delivery, static assets, health, localization, and
 security middleware. No scanned metadata or file upload endpoint was introduced.
+
+## Phases 5-6 implementation
+
+- OpenRouter is direct browser BYOK. The key remains in component memory and only official
+  OpenRouter API hosts are accepted.
+- The exact aggregate payload is shown before consent. Names, paths, extensions, contents,
+  keys, and tokens are excluded and covered by unit and browser tests.
+- Structured AI output can reference only a closed list of local rule signal identifiers.
+  It cannot identify a file. After validation, the browser maps those signals to local
+  records, persists the result in IndexedDB, and exposes AI-target filtering in Explorer.
+- Native directory handles are stored as browser-local structured-clone objects. A handle
+  is never exported, logged, serialized to JSON, or transmitted.
+- Opening a real file requests read permission. Deletion requests `readwrite` permission,
+  displays the root-relative address, requires exact-name confirmation, performs the local
+  File System Access operation, and only then updates IndexedDB aggregates.
+- Fallback and imported scans are read-only because they have no reusable write-capability
+  handle. Operating-system absolute paths and universal reveal-in-file-manager actions are
+  intentionally not claimed.
+- Production assets are built during ordinary .NET builds and publication. Source maps are
+  excluded from production bundles.
+- The release has a multi-stage, non-root Docker image, health check, read-only Compose
+  profile, master-branch CI, browser tests, performance harness, security tests, and
+  deployment/rollback documentation.

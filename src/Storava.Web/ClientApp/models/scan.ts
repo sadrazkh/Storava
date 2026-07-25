@@ -61,6 +61,8 @@ export interface ScanFilters {
   category: string;
   kind: ScanItemKind | 'all';
   risk: RiskLevel | 'all';
+  recommendation: 'all' | 'local-signals' | 'ai-targeted';
+  aiRuleIds: string[];
   sort: 'size-desc' | 'size-asc' | 'name' | 'modified';
   parentPath: string | null;
 }
@@ -68,6 +70,13 @@ export interface ScanFilters {
 export interface ItemPage {
   items: ScanItem[];
   hasMore: boolean;
+}
+
+export interface ItemRemovalResult {
+  session: ScanSession;
+  deletedFiles: number;
+  deletedFolders: number;
+  freedBytes: number;
 }
 
 export type WorkerCommand =

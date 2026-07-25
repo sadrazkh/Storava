@@ -1,6 +1,6 @@
 import type { FolderSelection } from '@/models/capabilities';
 import type { CategoryAggregate, ScanItem, ScanMetrics, ScanSession, ScanStatus, WorkerEvent } from '@/models/scan';
-import { putItemsBatch, putSession } from '@/services/scanDatabase';
+import { putDirectoryHandle, putItemsBatch, putSession } from '@/services/scanDatabase';
 
 export interface ScanCallbacks {
   onSession(session: ScanSession): void;
@@ -32,6 +32,13 @@ export class ScannerService {
       schemaVersion: 1,
     };
     await putSession(this.session);
+    if (selection.method === 'native') {
+      try {
+        await putDirectoryHandle(this.session.id, selection.handle);
+      } catch {
+        this.callbacks.onError('The browser could not persist this folder permission; scan results remain available.');
+      }
+    }
     this.callbacks.onSession({ ...this.session });
     this.worker = new Worker(new URL('../workers/scan.worker.ts', import.meta.url), { type: 'module' });
     this.worker.addEventListener('message', (event: MessageEvent<WorkerEvent>) => this.handleEvent(event.data));

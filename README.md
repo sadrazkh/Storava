@@ -5,7 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Phase 3 — Rule Engine, Classification & Visual Analysis** (complete).
+> Status: **Desktop Phase 3 complete · Storava Web 1.0 / Phase 6 complete**.
 
 ## Tech stack
 
@@ -31,17 +31,25 @@ Projects for AI, Migrations, Reporting and Plugins are added in their respective
 
 ## Storava Web
 
-The browser edition is developed independently in `src/Storava.Web` on
-`feature/storava-web`. Phases 1-4 provide ASP.NET Core MVC and Razor, Vue 3 page-level
-islands, bilingual light/dark UI, a real browser-local Web Worker scanner, versioned
-IndexedDB persistence, a virtualized explorer, local rules, Canvas treemap, history,
-comparison, and validated `.storava-web` export/import.
+The browser edition lives independently in `src/Storava.Web` and is maintained on
+`master`. Phases 1-6 provide ASP.NET Core MVC and Razor, Vue 3 page-level islands,
+bilingual light/dark UI, a real browser-local Web Worker scanner, versioned IndexedDB
+persistence, a virtualized explorer, local rules, Canvas treemap, history, comparison,
+validated `.storava-web` export/import, a consent-gated OpenRouter advisor, and a hardened
+production container.
 
 Choose a folder at `/scan`. Chromium uses the File System Access API; other supported
 browsers use a `webkitdirectory` fallback. Only file metadata and root-relative paths enter
 the worker and IndexedDB. File bytes, contents, absolute personal paths, and scan trees are
 never uploaded. Pause, resume, cancellation, inaccessible-entry recovery, and indeterminate
 real metrics are implemented without a fabricated percentage.
+
+AI receives only aggregate categories, risk counts, rule counts, size/age buckets, and
+optional depth buckets. Its selected rule signals are mapped back to real items locally, so
+the Explorer can tag and filter cleanup/archive review candidates without disclosing file
+names or paths. Native Chromium scans can open or permanently delete a selected local item
+only after separate browser permission and exact-name confirmation. Fallback and imported
+scans remain read-only.
 
 ```bash
 cd src/Storava.Web
@@ -53,7 +61,14 @@ dotnet run --project src/Storava.Web/Storava.Web.csproj
 
 Open `http://localhost:5120`. Detailed architecture and visual-system decisions are in
 `docs/WEB_ARCHITECTURE.md`, `docs/WEB_DESIGN_LANGUAGE.md`, and
-`docs/WEB_LOCAL_DATA.md`.
+`docs/WEB_LOCAL_DATA.md`. Production Docker, TLS, health-check, verification, and rollback
+instructions are in `docs/WEB_DEPLOYMENT.md`.
+
+```bash
+docker compose up --build
+```
+
+The production container is then available at `http://localhost:8080`.
 
 ## Run
 

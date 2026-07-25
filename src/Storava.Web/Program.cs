@@ -91,7 +91,10 @@ try
     {
         app.UseExceptionHandler("/Home/Error");
         app.UseHsts();
-        app.UseHttpsRedirection();
+        if (builder.Configuration.GetValue("WebSecurity:UseHttpsRedirection", true))
+        {
+            app.UseHttpsRedirection();
+        }
     }
 
     app.UseResponseCompression();

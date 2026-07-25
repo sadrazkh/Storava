@@ -37,6 +37,7 @@ const validAdvice = {
   executiveSummary: 'The aggregate is small and low risk.',
   findings: [{ title: 'Document share', evidence: 'One aggregate document entry.', risk: 'low', confidence: 0.9 }],
   priorities: [{ title: 'Review growth later', reason: 'Current pressure is low.', confidence: 0.8 }],
+  reviewTargets: [],
   cautions: ['Metadata cannot determine whether a file is useful.'],
   disclaimer: 'Review evidence yourself before any file action.',
   privacyNote: 'Only aggregate metadata was analyzed.',
@@ -86,6 +87,15 @@ describe('OpenRouter advisor provider', () => {
       ...validAdvice,
       findings: [{ ...validAdvice.findings[0], confidence: 2 }],
     })).toThrow(/confidence/i);
+    expect(() => parseAdvisorResponse({
+      ...validAdvice,
+      reviewTargets: [{
+        signal: 'unsupported-rule',
+        disposition: 'cleanup-candidate',
+        rationale: 'Invalid signal',
+        confidence: 0.8,
+      }],
+    })).toThrow(/signal/i);
   });
 
   it('does not place the API key in the serializable request object', () => {

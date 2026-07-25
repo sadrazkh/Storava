@@ -1,4 +1,4 @@
-const cacheName = 'storava-shell-v3';
+const cacheName = 'storava-shell-v4';
 const shellAssets = [
   '/',
   '/privacy',
@@ -38,6 +38,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        if (!response.ok) return response;
         const copy = response.clone();
         void caches.open(cacheName).then((cache) => cache.put(event.request, copy));
         return response;

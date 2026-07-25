@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: '/dist/',
   plugins: [vue()],
   resolve: {
@@ -13,7 +13,7 @@ export default defineConfig({
   build: {
     outDir: 'wwwroot/dist',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: mode !== 'production',
     target: 'es2022',
     assetsInlineLimit: 0,
     rollupOptions: {
@@ -41,4 +41,4 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
   },
-});
+}));

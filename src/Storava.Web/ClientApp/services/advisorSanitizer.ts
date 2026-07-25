@@ -3,7 +3,7 @@ import type { RiskLevel, ScanItem, ScanSession } from '@/models/scan';
 import { forEachSessionItem } from '@/services/scanDatabase';
 
 const permittedCategories = new Set(['documents', 'media', 'archives', 'code', 'applications', 'folders', 'other']);
-const permittedRules = new Set(['generated-folder', 'large-file', 'huge-file', 'archive', 'stale-large-file', 'backup']);
+const permittedRules = new Set(['generated-folder', 'large-file', 'huge-file', 'archive', 'stale-large-file', 'backup-copy']);
 
 interface BucketState {
   bucket: string;

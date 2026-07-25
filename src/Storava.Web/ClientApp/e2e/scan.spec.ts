@@ -91,6 +91,7 @@ test('shows the exact sanitized AI payload and sends only after explicit consent
   const directory = testInfo.outputPath('private-client-folder');
   await mkdir(directory, { recursive: true });
   await writeFile(join(directory, 'secret-report.pdf'), Buffer.alloc(96, 1));
+  await writeFile(join(directory, 'secret-archive.zip'), Buffer.alloc(128, 2));
   await selectDirectory(page, directory);
   await expect(page.getByText(/Scan complete|اسکن کامل شد/)).toBeVisible();
 
@@ -121,6 +122,12 @@ test('shows the exact sanitized AI payload and sends only after explicit consent
                 title: 'Review future growth',
                 reason: 'Current aggregate size is small.',
                 confidence: 0.8,
+              }],
+              reviewTargets: [{
+                signal: 'archive',
+                disposition: 'archive-candidate',
+                rationale: 'Review archive-class items locally before deciding whether to retain them.',
+                confidence: 0.86,
               }],
               cautions: ['Metadata cannot determine whether a file is useful.'],
               disclaimer: 'A person must review evidence before any file action.',
@@ -154,4 +161,12 @@ test('shows the exact sanitized AI payload and sends only after explicit consent
   expect(requestBody).not.toContain('private-client-folder');
   expect(requestBody).toContain('"data_collection":"deny"');
   expect(requestBody).toContain('"type":"json_schema"');
+
+  await page.getByRole('button', { name: /Show matching items|نمایش موارد منطبق/ }).click();
+  await expect(page.getByTestId('recommendation-filter')).toHaveValue('ai-targeted');
+  await expect(page.getByTestId('ai-recommendation-tag')).toBeVisible();
+  await expect(page.locator('.virtual-row').filter({ hasText: 'secret-archive.zip' })).toBeVisible();
+  await page.locator('.virtual-row').filter({ hasText: 'secret-archive.zip' }).click();
+  await expect(page.getByRole('button', { name: /Delete from device|حذف از دستگاه/ })).toBeDisabled();
+  await expect(page.getByText(/Fallback and imported scans remain read-only|اسکن fallback و فایل واردشده فقط خواندنی هستند/)).toBeVisible();
 });

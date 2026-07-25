@@ -1,0 +1,16 @@
+.git
+.github
+.vs
+**/bin
+**/obj
+**/node_modules
+**/wwwroot/dist
+**/playwright-report
+**/test-results
+artifacts
+docs/screenshot-*.png
+*.user
+*.suo
+*.log
+.env
+.env.*
