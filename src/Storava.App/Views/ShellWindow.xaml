@@ -48,6 +48,7 @@
                          ItemContainerStyle="{StaticResource Storava.NavItem}"
                          Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingPanel.IsVirtualizing="False"
                          Margin="0,4,0,12">
                     <ListBox.ItemTemplate>
                         <DataTemplate>

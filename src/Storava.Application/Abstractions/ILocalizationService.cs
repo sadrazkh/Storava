@@ -1,3 +1,4 @@
+using System.Globalization;
 using Storava.Application.Common;
 
 namespace Storava.Application.Abstractions;
@@ -9,6 +10,12 @@ namespace Storava.Application.Abstractions;
 public interface ILocalizationService
 {
     AppLanguage CurrentLanguage { get; }
+
+    /// <summary>
+    /// The culture matching <see cref="CurrentLanguage"/>. Formatting code should use this
+    /// explicitly rather than the ambient thread culture, which can differ across async hops.
+    /// </summary>
+    CultureInfo CurrentCulture { get; }
 
     bool IsRightToLeft { get; }
 

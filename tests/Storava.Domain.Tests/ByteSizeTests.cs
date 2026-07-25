@@ -36,4 +36,37 @@ public class ByteSizeTests
         var size = ByteSize.FromGigabytes(2);
         Assert.Equal(2 * 1024L * 1024 * 1024, size.Bytes);
     }
+
+    [Fact]
+    public void Humanize_UsesPersianDecimalSeparator()
+    {
+        var persian = CultureInfo.GetCultureInfo("fa-IR");
+        string text = new ByteSize(1536).Humanize(persian);
+
+        Assert.Contains(persian.NumberFormat.NumberDecimalSeparator, text);
+        Assert.Contains("KB", text);
+    }
+
+    [Fact]
+    public void Humanize_IsolatesUnitForRightToLeftCultures()
+    {
+        var persian = CultureInfo.GetCultureInfo("fa-IR");
+        string text = new ByteSize(1536).Humanize(persian);
+
+        // LRM marks keep the number before the unit when rendered inside RTL text.
+        const char Lrm = '‎';
+        Assert.StartsWith(Lrm.ToString(), text);
+        Assert.EndsWith(Lrm.ToString(), text);
+
+        string visible = text.Trim(Lrm);
+        Assert.EndsWith("KB", visible);
+        Assert.StartsWith("1", visible);
+    }
+
+    [Fact]
+    public void Humanize_LeavesLeftToRightTextUnmarked()
+    {
+        string text = new ByteSize(1536).Humanize(CultureInfo.GetCultureInfo("en-US"));
+        Assert.Equal("1.5 KB", text);
+    }
 }

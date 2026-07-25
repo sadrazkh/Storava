@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Storava.Domain\Storava.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Storava.Application\Storava.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,13 +1,19 @@
 using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Storava.Application.Common;
 
 namespace Storava.App.Models;
 
-/// <summary>Display model for a drive tile on the dashboard.</summary>
-public sealed class DriveCardModel
+/// <summary>Display model for a drive tile. Observable so selection state can be reflected live.</summary>
+public sealed partial class DriveCardModel : ObservableObject
 {
+    /// <summary>True when this drive is the current scan target.</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
     public DriveCardModel(DriveSnapshot snapshot, CultureInfo culture)
     {
+        Root = snapshot.Name;
         Name = snapshot.VolumeLabel is { Length: > 0 } label
             ? $"{snapshot.Name.TrimEnd('\\')} · {label}"
             : snapshot.Name.TrimEnd('\\');
@@ -26,6 +32,9 @@ public sealed class DriveCardModel
             _ => "#0FB5AE"
         };
     }
+
+    /// <summary>The drive's root path, e.g. "C:\".</summary>
+    public string Root { get; }
 
     public string Name { get; }
     public string Format { get; }

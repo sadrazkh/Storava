@@ -8,6 +8,7 @@ public static class NavigationKeys
     public const string NewScan = "new-scan";
     public const string ScanProgress = "scan-progress";
     public const string ScanExplorer = "scan-explorer";
+    public const string Analysis = "analysis";
     public const string Recommendations = "recommendations";
     public const string StoragePlan = "storage-plan";
     public const string MigrationCenter = "migration-center";

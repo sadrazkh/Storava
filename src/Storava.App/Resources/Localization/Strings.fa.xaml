@@ -79,6 +79,126 @@
     <sys:String x:Key="Str.Settings.Save">ذخیره تغییرات</sys:String>
     <sys:String x:Key="Str.Settings.Saved">تنظیمات ذخیره شد.</sys:String>
 
+    <!-- اسکن جدید -->
+    <sys:String x:Key="Str.NewScan.Title">اسکن جدید</sys:String>
+    <sys:String x:Key="Str.NewScan.Subtitle">انتخاب کنید چه چیزی تحلیل شود. استوراوا فقط می‌خواند و هرگز فایل‌ها را تغییر نمی‌دهد.</sys:String>
+    <sys:String x:Key="Str.NewScan.ChooseDrive">یک درایو انتخاب کنید</sys:String>
+    <sys:String x:Key="Str.NewScan.OrFolder">یا یک پوشه‌ی مشخص</sys:String>
+    <sys:String x:Key="Str.NewScan.Browse">انتخاب…</sys:String>
+    <sys:String x:Key="Str.NewScan.Target">مقصد اسکن</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode">حالت اسکن</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Quick">سریع</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Deep">عمیق</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Hint">حالت عمیق حجم اشغال‌شده روی دیسک را هم اندازه می‌گیرد. حالت سریع سریع‌تر است.</sys:String>
+    <sys:String x:Key="Str.NewScan.Exclusions">پسوندهای مستثنا (اختیاری)</sys:String>
+    <sys:String x:Key="Str.NewScan.Exclusions.Hint">مثلاً ‎.iso، ‎.vhdx — با کاما جدا کنید</sys:String>
+    <sys:String x:Key="Str.NewScan.Start">شروع اسکن</sys:String>
+    <sys:String x:Key="Str.NewScan.InvalidPath">لطفاً یک درایو یا پوشه‌ی موجود انتخاب کنید.</sys:String>
+
+    <!-- پیشرفت اسکن -->
+    <sys:String x:Key="Str.Progress.Title">در حال اسکن</sys:String>
+    <sys:String x:Key="Str.Progress.CurrentPath">مسیر فعلی</sys:String>
+    <sys:String x:Key="Str.Progress.Files">فایل‌ها</sys:String>
+    <sys:String x:Key="Str.Progress.Folders">پوشه‌ها</sys:String>
+    <sys:String x:Key="Str.Progress.Size">حجم پردازش‌شده</sys:String>
+    <sys:String x:Key="Str.Progress.Errors">ردشده (خطا)</sys:String>
+    <sys:String x:Key="Str.Progress.Elapsed">زمان سپری‌شده</sys:String>
+    <sys:String x:Key="Str.Progress.Pause">توقف موقت</sys:String>
+    <sys:String x:Key="Str.Progress.Resume">ادامه</sys:String>
+    <sys:String x:Key="Str.Progress.Cancel">لغو</sys:String>
+    <sys:String x:Key="Str.Progress.Paused">متوقف شده</sys:String>
+    <sys:String x:Key="Str.Progress.Complete">اسکن کامل شد</sys:String>
+    <sys:String x:Key="Str.Progress.CompleteDesc">نتایج شما آماده‌ی بررسی است.</sys:String>
+    <sys:String x:Key="Str.Progress.ViewResults">مشاهده‌ی نتایج</sys:String>
+
+    <!-- کاوشگر اسکن -->
+    <sys:String x:Key="Str.Explorer.Title">کاوشگر اسکن</sys:String>
+    <sys:String x:Key="Str.Explorer.Search">جست‌وجو بر اساس نام…</sys:String>
+    <sys:String x:Key="Str.Explorer.Clear">پاک کردن</sys:String>
+    <sys:String x:Key="Str.Explorer.Tree">درخت</sys:String>
+    <sys:String x:Key="Str.Explorer.Largest">بزرگ‌ترین موارد</sys:String>
+    <sys:String x:Key="Str.Explorer.Results">نتایج جست‌وجو</sys:String>
+    <sys:String x:Key="Str.Explorer.Empty">هنوز نتیجه‌ای وجود ندارد. برای بررسی فضای ذخیره‌سازی یک اسکن اجرا کنید.</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Name">نام</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Size">حجم</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Items">فایل · پوشه</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Modified">تغییر</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Title">جزئیات</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Path">مسیر</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Size">حجم منطقی</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.OnDisk">روی دیسک</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Items">محتوا</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Modified">آخرین تغییر</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Protected">مسیر محافظت‌شده‌ی سیستم</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Reparse">نقطه‌ی Reparse (جانکشن/لینک)</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Empty">برای دیدن جزئیات، یک مورد را انتخاب کنید.</sys:String>
+
+    <!-- دسته‌بندی‌ها -->
+    <sys:String x:Key="Str.Category.Unknown">دسته‌بندی‌نشده</sys:String>
+    <sys:String x:Key="Str.Category.PersonalFiles">فایل‌های شخصی</sys:String>
+    <sys:String x:Key="Str.Category.Applications">برنامه‌ها</sys:String>
+    <sys:String x:Key="Str.Category.WindowsSystem">سیستم ویندوز</sys:String>
+    <sys:String x:Key="Str.Category.TemporaryFiles">فایل‌های موقت</sys:String>
+    <sys:String x:Key="Str.Category.DeveloperTools">ابزارهای توسعه</sys:String>
+    <sys:String x:Key="Str.Category.PackageCaches">کش پکیج‌ها</sys:String>
+    <sys:String x:Key="Str.Category.BuildArtifacts">خروجی‌های بیلد</sys:String>
+    <sys:String x:Key="Str.Category.Docker">داکر</sys:String>
+    <sys:String x:Key="Str.Category.Wsl">WSL</sys:String>
+    <sys:String x:Key="Str.Category.VirtualMachines">ماشین‌های مجازی</sys:String>
+    <sys:String x:Key="Str.Category.AiModels">مدل‌های هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Category.Sdks">SDKها</sys:String>
+    <sys:String x:Key="Str.Category.IdeCaches">کش IDEها</sys:String>
+    <sys:String x:Key="Str.Category.BrowserCaches">کش مرورگرها</sys:String>
+    <sys:String x:Key="Str.Category.GameLibraries">کتابخانه‌ی بازی‌ها</sys:String>
+    <sys:String x:Key="Str.Category.Downloads">دانلودها</sys:String>
+    <sys:String x:Key="Str.Category.Media">رسانه</sys:String>
+    <sys:String x:Key="Str.Category.Backups">پشتیبان‌ها</sys:String>
+    <sys:String x:Key="Str.Category.Archives">آرشیوها</sys:String>
+    <sys:String x:Key="Str.Category.Logs">لاگ‌ها</sys:String>
+
+    <!-- سطوح ریسک -->
+    <sys:String x:Key="Str.Risk.Unknown">ریسک نامعلوم</sys:String>
+    <sys:String x:Key="Str.Risk.Low">ریسک کم</sys:String>
+    <sys:String x:Key="Str.Risk.Medium">ریسک متوسط</sys:String>
+    <sys:String x:Key="Str.Risk.High">ریسک بالا</sys:String>
+    <sys:String x:Key="Str.Risk.Protected">محافظت‌شده</sys:String>
+
+    <!-- تحلیل و نمایش بصری -->
+    <sys:String x:Key="Str.Analysis.Title">تحلیل</sys:String>
+    <sys:String x:Key="Str.Analysis.Subtitle">چه چیزی فضای شما را مصرف می‌کند و چرا.</sys:String>
+    <sys:String x:Key="Str.Analysis.Treemap">نقشه‌ی درختی</sys:String>
+    <sys:String x:Key="Str.Analysis.Categories">بر اساس دسته</sys:String>
+    <sys:String x:Key="Str.Analysis.TopConsumers">بیشترین مصرف‌کننده‌ها</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy">رنگ‌بندی بر اساس</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy.Category">دسته</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy.Risk">ریسک</sys:String>
+    <sys:String x:Key="Str.Analysis.Back">بازگشت</sys:String>
+    <sys:String x:Key="Str.Analysis.Root">ریشه</sys:String>
+    <sys:String x:Key="Str.Analysis.DrillHint">برای بزرگ‌نمایی روی یک پوشه دوبار کلیک کنید.</sys:String>
+    <sys:String x:Key="Str.Analysis.Empty">برای دیدن تفکیک بصری فضای ذخیره‌سازی، یک اسکن اجرا کنید.</sys:String>
+    <sys:String x:Key="Str.Analysis.Identified">شناسایی‌شده</sys:String>
+    <sys:String x:Key="Str.Analysis.Unclassified">دسته‌بندی‌نشده</sys:String>
+
+    <!-- پیشنهادها -->
+    <sys:String x:Key="Str.Recommendations.Title">پیشنهادها</sys:String>
+    <sys:String x:Key="Str.Recommendations.Subtitle">پیشنهادهای اولویت‌بندی‌شده. تا زمانی که خودتان انتخاب و تأیید نکنید هیچ اتفاقی نمی‌افتد.</sys:String>
+    <sys:String x:Key="Str.Recommendations.Empty">هنوز پیشنهادی نیست. یک اسکن اجرا کنید تا استوراوا آن را به‌صورت محلی تحلیل کند.</sys:String>
+    <sys:String x:Key="Str.Recommendations.NoneFound">در این اسکن چیز قابل‌توجهی برای آزادسازی پیدا نشد.</sys:String>
+    <sys:String x:Key="Str.Recommendations.Reclaimable">قابل آزادسازی</sys:String>
+    <sys:String x:Key="Str.Recommendations.TotalReclaimable">مجموع قابل آزادسازی</sys:String>
+    <sys:String x:Key="Str.Recommendations.Count">تعداد پیشنهاد</sys:String>
+    <sys:String x:Key="Str.Recommendations.Analyze">تحلیل مجدد</sys:String>
+    <sys:String x:Key="Str.Recommendations.Analyzing">در حال تحلیل…</sys:String>
+    <sys:String x:Key="Str.Recommendations.Why">چرا این پیشنهاد شده است</sys:String>
+    <sys:String x:Key="Str.Recommendations.OfficialMethod">روش پیشنهادی</sys:String>
+    <sys:String x:Key="Str.Recommendations.Fallback">روش جایگزین: جانکشن (فقط در نبود روش رسمی)</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanRegenerate">در صورت نیاز خودکار بازسازی می‌شود</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanMove">قابل انتقال</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanDelete">قابل پاک‌سازی</sys:String>
+    <sys:String x:Key="Str.Recommendations.OpenFolder">باز کردن پوشه</sys:String>
+    <sys:String x:Key="Str.Recommendations.Confidence">اطمینان</sys:String>
+    <sys:String x:Key="Str.Recommendations.SafetyNote">استوراوا هیچ چیزی را تغییر نداده است. انتخاب و اجرای عملیات در مرحله‌ی بعد انجام می‌شود و همیشه به تأیید صریح شما نیاز دارد.</sys:String>
+
     <!-- به‌زودی (صفحات آینده) -->
     <sys:String x:Key="Str.ComingSoon.Title">به‌زودی</sys:String>
     <sys:String x:Key="Str.ComingSoon.Body">این بخش مربوط به فاز بعدی توسعه است و هنوز پیاده‌سازی نشده است.</sys:String>

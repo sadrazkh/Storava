@@ -1,6 +1,8 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Storava.Application.Abstractions;
+using Storava.Application.Services;
 using Storava.Infrastructure.Persistence;
 using Storava.Infrastructure.Settings;
 
@@ -9,8 +11,8 @@ namespace Storava.Infrastructure;
 public static class DependencyInjection
 {
     /// <summary>
-    /// Registers persistence and settings. <paramref name="databasePath"/> is the full path
-    /// to the local SQLite file (created on first use).
+    /// Registers persistence, settings and scan storage. <paramref name="databasePath"/> is the
+    /// full path to the local SQLite file (created on first use).
     /// </summary>
     public static IServiceCollection AddStoravaInfrastructure(this IServiceCollection services, string databasePath)
     {
@@ -20,15 +22,34 @@ public static class DependencyInjection
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
 
-        var connectionString = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder
+        var connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = databasePath,
-            Mode = Microsoft.Data.Sqlite.SqliteOpenMode.ReadWriteCreate,
-            Cache = Microsoft.Data.Sqlite.SqliteCacheMode.Shared
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Cache = SqliteCacheMode.Shared,
+            Pooling = true
         }.ToString();
 
+        services.AddSingleton(new StoravaDbOptions
+        {
+            DatabasePath = databasePath,
+            ConnectionString = connectionString
+        });
+
         services.AddDbContextFactory<StoravaDbContext>(options => options.UseSqlite(connectionString));
+
+        // Schema + settings
+        services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         services.AddSingleton<ISettingsService, SettingsService>();
+
+        // Scan storage
+        services.AddSingleton<SqliteScanItemSinkFactory>();
+        services.AddSingleton<IScanSessionRepository, ScanSessionRepository>();
+        services.AddSingleton<IScanQueryService, ScanQueryService>();
+        services.AddSingleton<IRecommendationRepository, RecommendationRepository>();
+
+        // Scan orchestration (depends on IDiskScanner from the platform layer)
+        services.AddSingleton<ScanCoordinator>();
 
         return services;
     }

@@ -10,6 +10,10 @@
     <conv:LanguageNameConverter x:Key="Conv.LangName" />
     <conv:ThemeNameConverter x:Key="Conv.ThemeName" />
     <conv:InverseBooleanToVisibilityConverter x:Key="Conv.InvBoolVis" />
+    <conv:BytesToHumanConverter x:Key="Conv.Bytes" />
+    <conv:ItemTypeToIconConverter x:Key="Conv.ItemIcon" />
+    <conv:NullToVisibilityConverter x:Key="Conv.NullVis" />
+    <conv:InverseBooleanConverter x:Key="Conv.InvBool" />
     <BooleanToVisibilityConverter x:Key="Conv.BoolVis" />
 
     <!-- ViewModel → View mapping. The shell renders CurrentPage in a ContentControl;
@@ -25,6 +29,15 @@
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmPages:ComingSoonViewModel}">
         <views:ComingSoonView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:NewScanViewModel}">
+        <views:NewScanView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:ScanProgressViewModel}">
+        <views:ScanProgressView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:ScanExplorerViewModel}">
+        <views:ScanExplorerView />
     </DataTemplate>
 
 </ResourceDictionary>

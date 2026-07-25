@@ -83,6 +83,8 @@ public partial class App : System.Windows.Application
             services.AddSingleton<IDialogService, DialogService>();
             services.AddSingleton<NavigationService>();
             services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
+            services.AddSingleton<ScanController>();
+            services.AddSingleton<IFolderPicker, FolderPicker>();
 
             // ViewModels
             services.AddSingleton<ShellViewModel>();
@@ -90,6 +92,9 @@ public partial class App : System.Windows.Application
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<ComingSoonViewModel>();
+            services.AddTransient<NewScanViewModel>();
+            services.AddTransient<ScanProgressViewModel>();
+            services.AddTransient<ScanExplorerViewModel>();
 
             // Windows
             services.AddSingleton<ShellWindow>();

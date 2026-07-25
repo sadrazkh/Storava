@@ -16,9 +16,11 @@ public sealed class NavigationService : INavigationService
         [NavigationKeys.Welcome] = typeof(WelcomeViewModel),
         [NavigationKeys.Dashboard] = typeof(DashboardViewModel),
         [NavigationKeys.Settings] = typeof(SettingsViewModel),
-        [NavigationKeys.NewScan] = typeof(ComingSoonViewModel),
-        [NavigationKeys.ScanExplorer] = typeof(ComingSoonViewModel),
-        [NavigationKeys.Recommendations] = typeof(ComingSoonViewModel),
+        [NavigationKeys.NewScan] = typeof(NewScanViewModel),
+        [NavigationKeys.ScanProgress] = typeof(ScanProgressViewModel),
+        [NavigationKeys.ScanExplorer] = typeof(ScanExplorerViewModel),
+        [NavigationKeys.Analysis] = typeof(AnalysisViewModel),
+        [NavigationKeys.Recommendations] = typeof(RecommendationsViewModel),
         [NavigationKeys.StoragePlan] = typeof(ComingSoonViewModel),
         [NavigationKeys.MigrationCenter] = typeof(ComingSoonViewModel),
         [NavigationKeys.Reports] = typeof(ComingSoonViewModel),
@@ -28,9 +30,6 @@ public sealed class NavigationService : INavigationService
     // Localized header key shown on the placeholder ("coming soon") pages.
     private static readonly Dictionary<string, string> PlaceholderTitleKeys = new(StringComparer.Ordinal)
     {
-        [NavigationKeys.NewScan] = "Str.Nav.NewScan",
-        [NavigationKeys.ScanExplorer] = "Str.Nav.ScanExplorer",
-        [NavigationKeys.Recommendations] = "Str.Nav.Recommendations",
         [NavigationKeys.StoragePlan] = "Str.Nav.StoragePlan",
         [NavigationKeys.MigrationCenter] = "Str.Nav.MigrationCenter",
         [NavigationKeys.Reports] = "Str.Nav.Reports",

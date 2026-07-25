@@ -66,6 +66,21 @@
         <Setter Property="Margin" Value="14,16,14,6" />
     </Style>
 
+    <!-- Selectable drive tile: quiet by default, accent-outlined and tinted when chosen -->
+    <Style x:Key="Storava.DriveCardButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
+                <Setter Property="BorderThickness" Value="2" />
+                <Setter Property="Background" Value="{DynamicResource MaterialDesignSelection}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Pill badge container -->
     <Style x:Key="Storava.Badge" TargetType="Border">
         <Setter Property="CornerRadius" Value="{StaticResource Radius.Pill}" />

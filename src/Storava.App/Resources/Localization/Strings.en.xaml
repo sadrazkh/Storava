@@ -18,6 +18,7 @@
     <sys:String x:Key="Str.Nav.Dashboard">Dashboard</sys:String>
     <sys:String x:Key="Str.Nav.NewScan">New Scan</sys:String>
     <sys:String x:Key="Str.Nav.ScanExplorer">Scan Explorer</sys:String>
+    <sys:String x:Key="Str.Nav.Analysis">Analysis</sys:String>
     <sys:String x:Key="Str.Nav.Recommendations">Recommendations</sys:String>
     <sys:String x:Key="Str.Nav.StoragePlan">Storage Plan</sys:String>
     <sys:String x:Key="Str.Nav.MigrationCenter">Migration Center</sys:String>
@@ -78,6 +79,126 @@
     <sys:String x:Key="Str.Settings.Ai.Note">The API key is set later and stored encrypted. It is never written to logs, reports or exports.</sys:String>
     <sys:String x:Key="Str.Settings.Save">Save changes</sys:String>
     <sys:String x:Key="Str.Settings.Saved">Settings saved.</sys:String>
+
+    <!-- New Scan -->
+    <sys:String x:Key="Str.NewScan.Title">New Scan</sys:String>
+    <sys:String x:Key="Str.NewScan.Subtitle">Choose what to analyze. Storava reads only — it never changes your files.</sys:String>
+    <sys:String x:Key="Str.NewScan.ChooseDrive">Choose a drive</sys:String>
+    <sys:String x:Key="Str.NewScan.OrFolder">Or a specific folder</sys:String>
+    <sys:String x:Key="Str.NewScan.Browse">Browse…</sys:String>
+    <sys:String x:Key="Str.NewScan.Target">Scan target</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode">Scan mode</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Quick">Quick</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Deep">Deep</sys:String>
+    <sys:String x:Key="Str.NewScan.Mode.Hint">Deep also measures on-disk allocated size. Quick is faster.</sys:String>
+    <sys:String x:Key="Str.NewScan.Exclusions">Excluded extensions (optional)</sys:String>
+    <sys:String x:Key="Str.NewScan.Exclusions.Hint">e.g. .iso, .vhdx — comma separated</sys:String>
+    <sys:String x:Key="Str.NewScan.Start">Start scan</sys:String>
+    <sys:String x:Key="Str.NewScan.InvalidPath">Please choose an existing drive or folder.</sys:String>
+
+    <!-- Scan Progress -->
+    <sys:String x:Key="Str.Progress.Title">Scanning</sys:String>
+    <sys:String x:Key="Str.Progress.CurrentPath">Current location</sys:String>
+    <sys:String x:Key="Str.Progress.Files">Files</sys:String>
+    <sys:String x:Key="Str.Progress.Folders">Folders</sys:String>
+    <sys:String x:Key="Str.Progress.Size">Size processed</sys:String>
+    <sys:String x:Key="Str.Progress.Errors">Skipped (errors)</sys:String>
+    <sys:String x:Key="Str.Progress.Elapsed">Elapsed</sys:String>
+    <sys:String x:Key="Str.Progress.Pause">Pause</sys:String>
+    <sys:String x:Key="Str.Progress.Resume">Resume</sys:String>
+    <sys:String x:Key="Str.Progress.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Str.Progress.Paused">Paused</sys:String>
+    <sys:String x:Key="Str.Progress.Complete">Scan complete</sys:String>
+    <sys:String x:Key="Str.Progress.CompleteDesc">Your results are ready to explore.</sys:String>
+    <sys:String x:Key="Str.Progress.ViewResults">View results</sys:String>
+
+    <!-- Scan Explorer -->
+    <sys:String x:Key="Str.Explorer.Title">Scan Explorer</sys:String>
+    <sys:String x:Key="Str.Explorer.Search">Search by name…</sys:String>
+    <sys:String x:Key="Str.Explorer.Clear">Clear</sys:String>
+    <sys:String x:Key="Str.Explorer.Tree">Tree</sys:String>
+    <sys:String x:Key="Str.Explorer.Largest">Largest items</sys:String>
+    <sys:String x:Key="Str.Explorer.Results">Search results</sys:String>
+    <sys:String x:Key="Str.Explorer.Empty">No scan results yet. Run a scan to explore your storage here.</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Name">Name</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Size">Size</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Items">Files · Folders</sys:String>
+    <sys:String x:Key="Str.Explorer.Col.Modified">Modified</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Title">Details</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Path">Path</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Size">Logical size</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.OnDisk">On disk</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Items">Contents</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Modified">Last modified</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Protected">Protected system location</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Reparse">Reparse point (junction/symlink)</sys:String>
+    <sys:String x:Key="Str.Explorer.Detail.Empty">Select an item to see its details.</sys:String>
+
+    <!-- Categories -->
+    <sys:String x:Key="Str.Category.Unknown">Unclassified</sys:String>
+    <sys:String x:Key="Str.Category.PersonalFiles">Personal files</sys:String>
+    <sys:String x:Key="Str.Category.Applications">Applications</sys:String>
+    <sys:String x:Key="Str.Category.WindowsSystem">Windows system</sys:String>
+    <sys:String x:Key="Str.Category.TemporaryFiles">Temporary files</sys:String>
+    <sys:String x:Key="Str.Category.DeveloperTools">Developer tools</sys:String>
+    <sys:String x:Key="Str.Category.PackageCaches">Package caches</sys:String>
+    <sys:String x:Key="Str.Category.BuildArtifacts">Build artifacts</sys:String>
+    <sys:String x:Key="Str.Category.Docker">Docker</sys:String>
+    <sys:String x:Key="Str.Category.Wsl">WSL</sys:String>
+    <sys:String x:Key="Str.Category.VirtualMachines">Virtual machines</sys:String>
+    <sys:String x:Key="Str.Category.AiModels">AI models</sys:String>
+    <sys:String x:Key="Str.Category.Sdks">SDKs</sys:String>
+    <sys:String x:Key="Str.Category.IdeCaches">IDE caches</sys:String>
+    <sys:String x:Key="Str.Category.BrowserCaches">Browser caches</sys:String>
+    <sys:String x:Key="Str.Category.GameLibraries">Game libraries</sys:String>
+    <sys:String x:Key="Str.Category.Downloads">Downloads</sys:String>
+    <sys:String x:Key="Str.Category.Media">Media</sys:String>
+    <sys:String x:Key="Str.Category.Backups">Backups</sys:String>
+    <sys:String x:Key="Str.Category.Archives">Archives</sys:String>
+    <sys:String x:Key="Str.Category.Logs">Logs</sys:String>
+
+    <!-- Risk levels -->
+    <sys:String x:Key="Str.Risk.Unknown">Unknown risk</sys:String>
+    <sys:String x:Key="Str.Risk.Low">Low risk</sys:String>
+    <sys:String x:Key="Str.Risk.Medium">Medium risk</sys:String>
+    <sys:String x:Key="Str.Risk.High">High risk</sys:String>
+    <sys:String x:Key="Str.Risk.Protected">Protected</sys:String>
+
+    <!-- Analysis / visualization -->
+    <sys:String x:Key="Str.Analysis.Title">Analysis</sys:String>
+    <sys:String x:Key="Str.Analysis.Subtitle">What is using your space, and why.</sys:String>
+    <sys:String x:Key="Str.Analysis.Treemap">Treemap</sys:String>
+    <sys:String x:Key="Str.Analysis.Categories">By category</sys:String>
+    <sys:String x:Key="Str.Analysis.TopConsumers">Top consumers</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy">Colour by</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy.Category">Category</sys:String>
+    <sys:String x:Key="Str.Analysis.ColorBy.Risk">Risk</sys:String>
+    <sys:String x:Key="Str.Analysis.Back">Back</sys:String>
+    <sys:String x:Key="Str.Analysis.Root">Root</sys:String>
+    <sys:String x:Key="Str.Analysis.DrillHint">Double-click a folder to zoom in.</sys:String>
+    <sys:String x:Key="Str.Analysis.Empty">Run a scan to see the visual breakdown of your storage.</sys:String>
+    <sys:String x:Key="Str.Analysis.Identified">Identified</sys:String>
+    <sys:String x:Key="Str.Analysis.Unclassified">Unclassified</sys:String>
+
+    <!-- Recommendations -->
+    <sys:String x:Key="Str.Recommendations.Title">Recommendations</sys:String>
+    <sys:String x:Key="Str.Recommendations.Subtitle">Ranked suggestions. Nothing happens until you choose it and confirm.</sys:String>
+    <sys:String x:Key="Str.Recommendations.Empty">No suggestions yet. Run a scan and Storava will analyse it locally.</sys:String>
+    <sys:String x:Key="Str.Recommendations.NoneFound">Nothing worth reclaiming was found in this scan.</sys:String>
+    <sys:String x:Key="Str.Recommendations.Reclaimable">Reclaimable</sys:String>
+    <sys:String x:Key="Str.Recommendations.TotalReclaimable">Total reclaimable</sys:String>
+    <sys:String x:Key="Str.Recommendations.Count">Suggestions</sys:String>
+    <sys:String x:Key="Str.Recommendations.Analyze">Re-analyse</sys:String>
+    <sys:String x:Key="Str.Recommendations.Analyzing">Analysing…</sys:String>
+    <sys:String x:Key="Str.Recommendations.Why">Why this is suggested</sys:String>
+    <sys:String x:Key="Str.Recommendations.OfficialMethod">Recommended method</sys:String>
+    <sys:String x:Key="Str.Recommendations.Fallback">Fallback: junction (only if no official option)</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanRegenerate">Rebuilt automatically when needed</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanMove">Can be moved</sys:String>
+    <sys:String x:Key="Str.Recommendations.CanDelete">Can be cleared</sys:String>
+    <sys:String x:Key="Str.Recommendations.OpenFolder">Open folder</sys:String>
+    <sys:String x:Key="Str.Recommendations.Confidence">Confidence</sys:String>
+    <sys:String x:Key="Str.Recommendations.SafetyNote">Storava has not changed anything. Selecting actions and applying them comes later, and always needs your explicit confirmation.</sys:String>
 
     <!-- Coming soon (placeholder pages) -->
     <sys:String x:Key="Str.ComingSoon.Title">Coming soon</sys:String>

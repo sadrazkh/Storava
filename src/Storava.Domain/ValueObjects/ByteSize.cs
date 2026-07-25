@@ -46,7 +46,11 @@ public readonly record struct ByteSize : IComparable<ByteSize>
         string number = unit == 0
             ? value.ToString("0", culture)
             : value.ToString("0." + new string('#', decimals), culture);
-        return $"{number} {Units[unit]}";
+        string text = $"{number} {Units[unit]}";
+
+        // In RTL text the Latin unit would otherwise be reordered before the number
+        // ("MB 312.1"); isolating the run keeps it reading as "312.1 MB".
+        return culture.TextInfo.IsRightToLeft ? $"‎{text}‎" : text;
     }
 
     public override string ToString() => Humanize();

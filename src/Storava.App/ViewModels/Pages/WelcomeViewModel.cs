@@ -5,12 +5,13 @@ using Storava.Application.Common;
 
 namespace Storava.App.ViewModels.Pages;
 
-public sealed partial class WelcomeViewModel : ViewModelBase
+public sealed partial class WelcomeViewModel : ViewModelBase, IDisposable
 {
     private readonly ISettingsService _settings;
     private readonly INavigationService _navigation;
     private readonly IThemeService _theme;
     private readonly ILocalizationService _localization;
+    private bool _syncingFromServices;
 
     [ObservableProperty]
     private AppLanguage _selectedLanguage;
@@ -29,15 +30,47 @@ public sealed partial class WelcomeViewModel : ViewModelBase
         _theme = theme;
         _localization = localization;
 
-        _selectedLanguage = settings.Current.Language;
-        _isDarkTheme = settings.Current.Theme != AppTheme.Light;
+        _selectedLanguage = localization.CurrentLanguage;
+        _isDarkTheme = theme.CurrentTheme != AppTheme.Light;
+
+        // The shell's top bar can also change language/theme; keep this page in sync so
+        // "Get started" never persists a stale choice.
+        _localization.LanguageChanged += OnLanguageChanged;
+        _theme.ThemeChanged += OnThemeChanged;
     }
 
     public IReadOnlyList<AppLanguage> Languages { get; } = [AppLanguage.Persian, AppLanguage.English];
 
-    partial void OnSelectedLanguageChanged(AppLanguage value) => _localization.SetLanguage(value);
+    partial void OnSelectedLanguageChanged(AppLanguage value)
+    {
+        if (!_syncingFromServices)
+            _localization.SetLanguage(value);
+    }
 
-    partial void OnIsDarkThemeChanged(bool value) => _theme.ApplyTheme(value ? AppTheme.Dark : AppTheme.Light);
+    partial void OnIsDarkThemeChanged(bool value)
+    {
+        if (!_syncingFromServices)
+            _theme.ApplyTheme(value ? AppTheme.Dark : AppTheme.Light);
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+        => SyncFromServices(() => SelectedLanguage = _localization.CurrentLanguage);
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+        => SyncFromServices(() => IsDarkTheme = _theme.CurrentTheme != AppTheme.Light);
+
+    private void SyncFromServices(Action apply)
+    {
+        _syncingFromServices = true;
+        try
+        {
+            apply();
+        }
+        finally
+        {
+            _syncingFromServices = false;
+        }
+    }
 
     [RelayCommand]
     private async Task GetStartedAsync()
@@ -49,5 +82,11 @@ public sealed partial class WelcomeViewModel : ViewModelBase
         await _settings.SaveAsync(updated).ConfigureAwait(true);
 
         _navigation.NavigateTo(NavigationKeys.Dashboard);
+    }
+
+    public void Dispose()
+    {
+        _localization.LanguageChanged -= OnLanguageChanged;
+        _theme.ThemeChanged -= OnThemeChanged;
     }
 }

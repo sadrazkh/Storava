@@ -22,14 +22,17 @@ public sealed class SettingsService : ISettingsService
     };
 
     private readonly IDbContextFactory<StoravaDbContext> _contextFactory;
+    private readonly IDatabaseInitializer _databaseInitializer;
     private readonly ILogger<SettingsService> _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public SettingsService(
         IDbContextFactory<StoravaDbContext> contextFactory,
+        IDatabaseInitializer databaseInitializer,
         ILogger<SettingsService> logger)
     {
         _contextFactory = contextFactory;
+        _databaseInitializer = databaseInitializer;
         _logger = logger;
     }
 
@@ -39,11 +42,11 @@ public sealed class SettingsService : ISettingsService
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
+        await _databaseInitializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-            await db.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
 
             var row = await db.Settings
                 .AsNoTracking()
@@ -76,11 +79,11 @@ public sealed class SettingsService : ISettingsService
         ArgumentNullException.ThrowIfNull(settings);
 
         var snapshot = settings.Clone();
+        await _databaseInitializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-            await db.Database.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
 
             string json = JsonSerializer.Serialize(snapshot, JsonOptions);
             var row = await db.Settings.FirstOrDefaultAsync(s => s.Key == SettingsKey, cancellationToken).ConfigureAwait(false);

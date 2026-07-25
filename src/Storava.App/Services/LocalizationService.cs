@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.Logging;
+using Storava.App.Converters;
 using Storava.Application.Abstractions;
 using Storava.Application.Common;
 
@@ -24,6 +25,9 @@ public sealed class LocalizationService : ILocalizationService
     public LocalizationService(ILogger<LocalizationService> logger) => _logger = logger;
 
     public AppLanguage CurrentLanguage { get; private set; } = AppLanguage.Persian;
+
+    public CultureInfo CurrentCulture { get; private set; } =
+        CultureInfo.GetCultureInfo(AppLanguage.Persian.ToCultureName());
 
     public bool IsRightToLeft => CurrentLanguage.IsRightToLeft();
 
@@ -62,6 +66,8 @@ public sealed class LocalizationService : ILocalizationService
         CurrentLanguage = language;
 
         var culture = CultureInfo.GetCultureInfo(language.ToCultureName());
+        CurrentCulture = culture;
+        BytesToHumanConverter.DisplayCulture = culture;
         CultureInfo.CurrentCulture = culture;
         CultureInfo.CurrentUICulture = culture;
         CultureInfo.DefaultThreadCurrentCulture = culture;

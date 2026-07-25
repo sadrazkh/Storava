@@ -126,25 +126,65 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Last scan (empty state) -->
+                    <!-- Last scan -->
                     <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,16">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource Str.Dashboard.LastScan.Title}" Style="{StaticResource Storava.Text.H2}" />
-                            <StackPanel Margin="0,10,0,0" HorizontalAlignment="Center">
+
+                            <!-- Empty -->
+                            <StackPanel Margin="0,10,0,0" HorizontalAlignment="Center"
+                                        Visibility="{Binding HasScan, Converter={StaticResource Conv.InvBoolVis}}">
                                 <materialDesign:PackIcon Kind="Magnify" Width="34" Height="34" HorizontalAlignment="Center"
                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" Opacity="0.6" />
                                 <TextBlock Text="{DynamicResource Str.Dashboard.LastScan.Empty}"
                                            Style="{StaticResource Storava.Text.Caption}" TextAlignment="Center" Margin="0,8,0,0" />
                             </StackPanel>
+
+                            <!-- Populated -->
+                            <StackPanel Margin="0,10,0,0" Visibility="{Binding HasScan, Converter={StaticResource Conv.BoolVis}}">
+                                <TextBlock Text="{Binding LastScanPath}" Style="{StaticResource Storava.Text.Body}"
+                                           FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding LastScanSummary}" Style="{StaticResource Storava.Text.Caption}" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding LastScanWhen}" Style="{StaticResource Storava.Text.Caption}" Opacity="0.75" />
+                                <Button Command="{Binding OpenExplorerCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Height="34" Padding="14,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderSearchOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBlock Text="{DynamicResource Str.Progress.ViewResults}" VerticalAlignment="Center" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <!-- Findings (empty state) -->
+                    <!-- Top findings -->
                     <Border Style="{StaticResource Storava.Card}">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource Str.Dashboard.Findings.Title}" Style="{StaticResource Storava.Text.H2}" />
                             <TextBlock Text="{DynamicResource Str.Dashboard.Findings.Empty}"
-                                       Style="{StaticResource Storava.Text.Caption}" Margin="0,10,0,0" />
+                                       Style="{StaticResource Storava.Text.Caption}" Margin="0,10,0,0"
+                                       Visibility="{Binding HasScan, Converter={StaticResource Conv.InvBoolVis}}" />
+                            <ItemsControl ItemsSource="{Binding TopFindings}" Margin="0,10,0,0"
+                                          Visibility="{Binding HasScan, Converter={StaticResource Conv.BoolVis}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <materialDesign:PackIcon Grid.Column="0" Kind="FolderOutline" VerticalAlignment="Center"
+                                                                     Margin="0,0,8,0" Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                                                       Style="{StaticResource Storava.Text.Body}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Size, Converter={StaticResource Conv.Bytes}}"
+                                                       VerticalAlignment="Center" FontWeight="SemiBold"
+                                                       Style="{StaticResource Storava.Text.Body}" Margin="8,0,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
                 </StackPanel>
