@@ -1,0 +1,20 @@
+@inject IStringLocalizer<SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["ProductName"];
+    ViewData["Description"] = Localizer["MetaDescription"];
+}
+
+<div id="scan-page"
+     data-vue-island="scan"
+     data-initial-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name"></div>
+
+<noscript>
+    <section class="noscript-state">
+        <h1>@Localizer["NoScriptTitle"]</h1>
+        <p>@Localizer["NoScriptBody"]</p>
+    </section>
+</noscript>
+
+@section Scripts {
+    <script type="module" src="~/dist/pages/scan.js" asp-append-version="true"></script>
+}

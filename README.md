@@ -32,13 +32,16 @@ Projects for AI, Migrations, Reporting and Plugins are added in their respective
 ## Storava Web
 
 The browser edition is developed independently in `src/Storava.Web` on
-`feature/storava-web`. Phase 1 provides the production foundation: ASP.NET Core MVC and
-Razor, Vue 3 page-level islands, TypeScript/Vite, live Persian/English and light/dark
-preferences, real browser capability detection, native folder-permission onboarding, a PWA
-shell, security headers, health checks, rate limiting, and automated tests.
+`feature/storava-web`. Phases 1-4 provide ASP.NET Core MVC and Razor, Vue 3 page-level
+islands, bilingual light/dark UI, a real browser-local Web Worker scanner, versioned
+IndexedDB persistence, a virtualized explorer, local rules, Canvas treemap, history,
+comparison, and validated `.storava-web` export/import.
 
-No scanner is simulated in Phase 1. Selecting a folder verifies browser permission and stops
-at the explicit phase boundary. No scanned file upload API exists.
+Choose a folder at `/scan`. Chromium uses the File System Access API; other supported
+browsers use a `webkitdirectory` fallback. Only file metadata and root-relative paths enter
+the worker and IndexedDB. File bytes, contents, absolute personal paths, and scan trees are
+never uploaded. Pause, resume, cancellation, inaccessible-entry recovery, and indeterminate
+real metrics are implemented without a fabricated percentage.
 
 ```bash
 cd src/Storava.Web
@@ -49,7 +52,8 @@ dotnet run --project src/Storava.Web/Storava.Web.csproj
 ```
 
 Open `http://localhost:5120`. Detailed architecture and visual-system decisions are in
-`docs/WEB_ARCHITECTURE.md` and `docs/WEB_DESIGN_LANGUAGE.md`.
+`docs/WEB_ARCHITECTURE.md`, `docs/WEB_DESIGN_LANGUAGE.md`, and
+`docs/WEB_LOCAL_DATA.md`.
 
 ## Run
 

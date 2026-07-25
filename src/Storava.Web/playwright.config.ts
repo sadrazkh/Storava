@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './ClientApp/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
@@ -17,6 +18,7 @@ export default defineConfig({
     cwd: '.',
     env: {
       ASPNETCORE_ENVIRONMENT: 'Development',
+      WebSecurity__RateLimitPermit: '1000',
     },
     timeout: 120_000,
   },

@@ -21,6 +21,7 @@ export default defineConfig({
         app: fileURLToPath(new URL('./ClientApp/styles/app.css', import.meta.url)),
         landing: fileURLToPath(new URL('./ClientApp/pages/landing.ts', import.meta.url)),
         privacy: fileURLToPath(new URL('./ClientApp/pages/privacy.ts', import.meta.url)),
+        scan: fileURLToPath(new URL('./ClientApp/pages/scan.ts', import.meta.url)),
       },
       output: {
         entryFileNames: 'pages/[name].js',
@@ -35,6 +36,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     include: ['ClientApp/**/*.test.ts'],
+    setupFiles: ['ClientApp/test/setup.ts'],
     coverage: {
       reporter: ['text', 'json', 'html'],
     },

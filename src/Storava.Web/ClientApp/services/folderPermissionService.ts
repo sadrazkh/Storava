@@ -9,7 +9,7 @@ export async function selectFolder(capabilities: BrowserCapabilities): Promise<F
         id: 'storava-scan-root',
         mode: 'read',
       });
-      return { name: handle.name, method: 'native' };
+      return { name: handle.name, method: 'native', handle };
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         throw new FolderSelectionCancelledError();
@@ -40,7 +40,7 @@ export async function selectFolder(capabilities: BrowserCapabilities): Promise<F
 
       const relativePath = files[0]?.webkitRelativePath ?? '';
       const name = relativePath.split('/')[0] || 'Selected folder';
-      resolve({ name, method: 'fallback', itemCount: files.length });
+      resolve({ name, method: 'fallback', files: Array.from(files), itemCount: files.length });
     }, { once: true });
 
     window.addEventListener('focus', () => {

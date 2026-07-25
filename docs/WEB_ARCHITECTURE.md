@@ -99,3 +99,22 @@ and fails if an `IFormFile` or upload route is introduced.
 - Static assets and PWA resources.
 
 There is no scan API, upload API, proxy, AI endpoint, account system, or telemetry pipeline.
+
+## Phases 2-4 implementation
+
+The earlier migration seams are now implemented without changing Desktop projects:
+
+- `GET /scan` mounts a dedicated Vue island for scanning, exploration, history, and transfer.
+- File System Access handles or fallback `File` objects cross only into a module Worker.
+- Iterative traversal yields between bounded 200-item batches and supports pause, resume,
+  cancellation, and per-entry access-error recovery.
+- Sessions and metadata items use separate versioned IndexedDB records and compound indexes.
+- Browser-specific TypeScript rules annotate local records; the Desktop rule engine remains
+  untouched until a shared versioned schema can be introduced safely.
+- Explorer rendering virtualizes a bounded result window. Treemap rendering uses one Canvas
+  rather than a DOM node per item.
+- `.storava-web` transfer is versioned NDJSON with relative paths, streamed validation,
+  batched writes, and an integrity trailer.
+
+The ASP.NET server surface remains page delivery, static assets, health, localization, and
+security middleware. No scanned metadata or file upload endpoint was introduced.
