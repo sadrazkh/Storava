@@ -8,7 +8,7 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvi
         headers.ContentSecurityPolicy =
             "default-src 'self'; " +
             "base-uri 'self'; " +
-            "connect-src 'self' https://openrouter.ai; " +
+            "connect-src 'self' https://openrouter.ai https://eu.openrouter.ai; " +
             "font-src 'self'; " +
             "form-action 'self'; " +
             "frame-ancestors 'none'; " +
@@ -18,7 +18,7 @@ public sealed class SecurityHeadersMiddleware(RequestDelegate next, IWebHostEnvi
             "script-src 'self'; " +
             "style-src 'self'; " +
             "worker-src 'self' blob:;" +
-            (environment.IsDevelopment() ? string.Empty : " upgrade-insecure-requests;");
+            (environment.IsDevelopment() || !context.Request.IsHttps ? string.Empty : " upgrade-insecure-requests;");
         headers["Cross-Origin-Opener-Policy"] = "same-origin";
         headers["Cross-Origin-Resource-Policy"] = "same-origin";
         headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";

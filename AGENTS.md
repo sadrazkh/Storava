@@ -3,7 +3,7 @@
 - با کاربر فارسی صحبت کن.
 - Keep code and identifiers in English.
 - Read every file before editing it.
-- Perform web development only on `feature/storava-web`.
+- Continue development directly on `master` unless the user explicitly requests another branch.
 - Do not break the WPF or desktop projects.
 - Do not introduce web-specific code into Windows layers.
 - Never upload user files.

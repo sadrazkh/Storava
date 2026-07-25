@@ -1,4 +1,4 @@
-const cacheName = 'storava-shell-v2';
+const cacheName = 'storava-shell-v3';
 const shellAssets = [
   '/',
   '/privacy',
@@ -7,6 +7,7 @@ const shellAssets = [
   '/icons/favicon.svg',
   '/icons/app-icon.svg',
   '/dist/assets/app.css',
+  '/dist/assets/scan.css',
   '/dist/pages/landing.js',
   '/dist/pages/privacy.js',
   '/dist/pages/scan.js',

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue';
+import AdvisorPanel from '@/components/AdvisorPanel.vue';
 import BrandMark from '@/components/BrandMark.vue';
 import PreferenceControls from '@/components/PreferenceControls.vue';
 import TreemapCanvas from '@/components/TreemapCanvas.vue';
 import { usePreferences } from '@/composables/usePreferences';
+import { getAdvisorMessages } from '@/localization/advisorMessages';
 import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 import { detectCapabilities } from '@/services/capabilityService';
 import { FolderSelectionCancelledError, selectFolder } from '@/services/folderPermissionService';
@@ -13,7 +15,8 @@ import { ScannerService } from '@/services/scannerService';
 import { createOfflineReport } from '@/services/reportService';
 
 const { t, locale } = usePreferences();
-const activeView = ref<'overview' | 'explorer' | 'history'>('overview');
+const advisorCopy = computed(() => getAdvisorMessages(locale.value));
+const activeView = ref<'overview' | 'explorer' | 'advisor' | 'history'>('overview');
 const session = ref<ScanSession | null>(null);
 const sessions = ref<ScanSession[]>([]);
 const items = ref<ScanItem[]>([]);
@@ -296,6 +299,9 @@ onBeforeUnmount(() => {
         <button :class="{ 'is-active': activeView === 'history' }" type="button" @click="activeView = 'history'">
           <span aria-hidden="true">◷</span>{{ t('history') }}
         </button>
+        <button :class="{ 'is-active': activeView === 'advisor' }" type="button" @click="activeView = 'advisor'">
+          <span aria-hidden="true">✦</span>{{ advisorCopy.railLabel }}
+        </button>
         <div class="workspace-rail__privacy">
           <strong>{{ t('privacyPromise') }}</strong>
           <span>{{ t('browserLimit') }}</span>
@@ -309,7 +315,7 @@ onBeforeUnmount(() => {
           <button type="button" :aria-label="t('closeDialog')" @click="notice = ''">×</button>
         </div>
 
-        <section v-if="!session && activeView !== 'history'" class="scan-empty">
+        <section v-if="!session && (activeView === 'overview' || activeView === 'explorer')" class="scan-empty">
           <div class="scan-empty__orbit" aria-hidden="true"><span /><span /><span /></div>
           <p class="kicker">{{ t('privacyPromise') }}</p>
           <h1>{{ t('chooseScanFolder') }}</h1>
@@ -454,6 +460,8 @@ onBeforeUnmount(() => {
             </div>
           </section>
         </template>
+
+        <AdvisorPanel v-else-if="activeView === 'advisor'" :session="session" />
       </main>
     </div>
 
