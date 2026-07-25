@@ -16,7 +16,9 @@ public sealed class SecurityTests(WebApplicationFactoryFixture factory)
         using var response = await client.GetAsync("/");
 
         response.EnsureSuccessStatusCode();
-        Assert.Contains("default-src 'self'", Header(response, "Content-Security-Policy"));
+        var contentSecurityPolicy = Header(response, "Content-Security-Policy");
+        Assert.Contains("default-src 'self'", contentSecurityPolicy);
+        Assert.DoesNotContain("upgrade-insecure-requests", contentSecurityPolicy);
         Assert.Equal("DENY", Header(response, "X-Frame-Options"));
         Assert.Equal("nosniff", Header(response, "X-Content-Type-Options"));
         Assert.Equal("no-referrer", Header(response, "Referrer-Policy"));
@@ -46,6 +48,25 @@ public sealed class SecurityTests(WebApplicationFactoryFixture factory)
 
         Assert.DoesNotContain(typeof(IFormFile), actionParameters);
         Assert.DoesNotContain(typeof(IFormFileCollection), actionParameters);
+    }
+
+    [Fact]
+    public async Task Browser_encoded_static_assets_keep_content_and_mime_type()
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br, zstd");
+
+        using var script = await client.GetAsync("/dist/pages/landing.js?browser=1");
+        using var stylesheet = await client.GetAsync("/dist/assets/app.css?browser=1");
+        var scriptBytes = await script.Content.ReadAsByteArrayAsync();
+        var stylesheetBytes = await stylesheet.Content.ReadAsByteArrayAsync();
+
+        script.EnsureSuccessStatusCode();
+        stylesheet.EnsureSuccessStatusCode();
+        Assert.Equal("text/javascript", script.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("text/css", stylesheet.Content.Headers.ContentType?.MediaType);
+        Assert.NotEmpty(scriptBytes);
+        Assert.NotEmpty(stylesheetBytes);
     }
 
     private static string Header(HttpResponseMessage response, string name) =>

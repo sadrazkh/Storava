@@ -18,6 +18,7 @@
     <link rel="icon" href="~/icons/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="~/site.webmanifest" />
     <link rel="stylesheet" href="~/dist/assets/app.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <a class="skip-link" href="#main-content">@Localizer["SkipToContent"]</a>

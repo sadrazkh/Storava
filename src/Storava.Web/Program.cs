@@ -96,6 +96,7 @@ try
 
     app.UseResponseCompression();
     app.UseMiddleware<SecurityHeadersMiddleware>();
+    app.UseStaticFiles();
     app.UseRequestLocalization();
     app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
     app.UseRouting();

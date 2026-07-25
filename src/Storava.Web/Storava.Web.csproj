@@ -14,9 +14,23 @@
     <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
 
-  <Target Name="BuildClientAssets" BeforeTargets="ComputeFilesToPublish"
-          Condition="'$(BuildClientAssets)' != 'false'">
+  <ItemGroup>
+    <ClientAssetSource Include="$(MSBuildProjectDirectory)\ClientApp\**\*"
+                       Exclude="$(MSBuildProjectDirectory)\ClientApp\**\*.test.ts;$(MSBuildProjectDirectory)\ClientApp\e2e\**;$(MSBuildProjectDirectory)\ClientApp\test\**" />
+    <ClientAssetSource Include="$(MSBuildProjectDirectory)\package.json;$(MSBuildProjectDirectory)\package-lock.json;$(MSBuildProjectDirectory)\tsconfig.json;$(MSBuildProjectDirectory)\vite.config.ts" />
+  </ItemGroup>
+
+  <Target Name="RestoreClientDependencies"
+          Condition="'$(BuildClientAssets)' != 'false' And !Exists('$(MSBuildProjectDirectory)\node_modules\.package-lock.json')">
     <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="npm ci" />
+  </Target>
+
+  <Target Name="BuildClientAssets"
+          BeforeTargets="PrepareForBuild;ComputeFilesToPublish"
+          DependsOnTargets="RestoreClientDependencies"
+          Inputs="@(ClientAssetSource)"
+          Outputs="$(MSBuildProjectDirectory)\wwwroot\dist\pages\landing.js;$(MSBuildProjectDirectory)\wwwroot\dist\pages\scan.js;$(MSBuildProjectDirectory)\wwwroot\dist\assets\app.css;$(MSBuildProjectDirectory)\wwwroot\dist\assets\scan.css"
+          Condition="'$(BuildClientAssets)' != 'false'">
     <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="npm run build" />
   </Target>
 
