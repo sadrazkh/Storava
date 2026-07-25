@@ -1,0 +1,19 @@
+@model ErrorViewModel
+@inject IStringLocalizer<SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["ErrorTitle"];
+}
+
+<section class="error-page">
+    <div class="error-code">@Model.StatusCode</div>
+    <h1>@Localizer["ErrorTitle"]</h1>
+    <p>@Localizer["ErrorBody"]</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="request-id">
+            <strong>@Localizer["RequestId"]</strong>
+            <code>@Model.RequestId</code>
+        </p>
+    }
+    <a class="button button--primary" href="/">@Localizer["BackHome"]</a>
+</section>

@@ -1,0 +1,19 @@
+@inject IStringLocalizer<SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["LandingTitle"];
+    ViewData["Description"] = Localizer["MetaDescription"];
+}
+
+<div id="landing-page"
+     data-vue-island="landing"
+     data-initial-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name"></div>
+<noscript>
+    <section class="noscript-state">
+        <h1>@Localizer["NoScriptTitle"]</h1>
+        <p>@Localizer["NoScriptBody"]</p>
+    </section>
+</noscript>
+
+@section Scripts {
+    <script type="module" src="~/dist/pages/landing.js" asp-append-version="true"></script>
+}
