@@ -1,0 +1,20 @@
+{
+  "name": "Storava Web",
+  "short_name": "Storava",
+  "description": "Private, browser-native storage intelligence.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071a1c",
+  "theme_color": "#0d4745",
+  "lang": "en-US",
+  "dir": "auto",
+  "icons": [
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

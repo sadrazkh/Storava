@@ -29,6 +29,28 @@ tests/
 
 Projects for AI, Migrations, Reporting and Plugins are added in their respective phases.
 
+## Storava Web
+
+The browser edition is developed independently in `src/Storava.Web` on
+`feature/storava-web`. Phase 1 provides the production foundation: ASP.NET Core MVC and
+Razor, Vue 3 page-level islands, TypeScript/Vite, live Persian/English and light/dark
+preferences, real browser capability detection, native folder-permission onboarding, a PWA
+shell, security headers, health checks, rate limiting, and automated tests.
+
+No scanner is simulated in Phase 1. Selecting a folder verifies browser permission and stops
+at the explicit phase boundary. No scanned file upload API exists.
+
+```bash
+cd src/Storava.Web
+npm ci
+npm run build
+cd ../..
+dotnet run --project src/Storava.Web/Storava.Web.csproj
+```
+
+Open `http://localhost:5120`. Detailed architecture and visual-system decisions are in
+`docs/WEB_ARCHITECTURE.md` and `docs/WEB_DESIGN_LANGUAGE.md`.
+
 ## Run
 
 ```bash

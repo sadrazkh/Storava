@@ -1,0 +1,29 @@
+@using System.Globalization
+@inject IStringLocalizer<SharedResource> Localizer
+@{
+    var culture = CultureInfo.CurrentUICulture.Name;
+    var direction = culture.StartsWith("fa", StringComparison.OrdinalIgnoreCase) ? "rtl" : "ltr";
+    var pageTitle = ViewData["Title"]?.ToString() ?? Localizer["ProductName"].Value;
+    var pageDescription = ViewData["Description"]?.ToString() ?? Localizer["MetaDescription"].Value;
+}
+<!doctype html>
+<html lang="@culture" dir="@direction" data-theme="system">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="@pageDescription" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#071a1c" />
+    <title>@pageTitle · @Localizer["ProductName"]</title>
+    <link rel="icon" href="~/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="~/site.webmanifest" />
+    <link rel="stylesheet" href="~/dist/assets/app.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main-content">@Localizer["SkipToContent"]</a>
+    <main id="main-content">
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: Storava Web CI
+
+on:
+  push:
+    branches: [feature/storava-web]
+  pull_request:
+    paths:
+      - 'src/Storava.Web/**'
+      - 'tests/Storava.Web.Tests/**'
+      - '.github/workflows/web-ci.yml'
+      - 'Directory.*.props'
+      - 'Storava.slnx'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/Storava.Web/package-lock.json
+      - name: Restore .NET
+        run: dotnet restore
+      - name: Install client dependencies
+        working-directory: src/Storava.Web
+        run: npm ci
+      - name: Verify client
+        working-directory: src/Storava.Web
+        run: |
+          npm audit --audit-level=high
+          npm run lint
+          npm run typecheck
+          npm run test
+          npm run build
+      - name: Build .NET
+        run: dotnet build --no-restore
+      - name: Test .NET
+        run: dotnet test --no-build
+      - name: Install Playwright browser
+        working-directory: src/Storava.Web
+        run: npx playwright install chromium
+      - name: Browser tests
+        working-directory: src/Storava.Web
+        run: npm run test:e2e

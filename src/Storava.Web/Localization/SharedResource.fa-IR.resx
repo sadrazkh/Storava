@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ProductName" xml:space="preserve"><value>Storava Web</value></data>
+  <data name="LandingTitle" xml:space="preserve"><value>فضای ذخیره‌سازی را شفاف ببینید</value></data>
+  <data name="MetaDescription" xml:space="preserve"><value>نقشه‌ای خصوصی و بومی مرورگر از فایل‌هایی که فضای دستگاه شما را اشغال کرده‌اند.</value></data>
+  <data name="SkipToContent" xml:space="preserve"><value>رفتن به محتوای اصلی</value></data>
+  <data name="NoScriptTitle" xml:space="preserve"><value>جاوااسکریپت لازم است</value></data>
+  <data name="NoScriptBody" xml:space="preserve"><value>Storava اسکن را داخل مرورگر انجام می‌دهد و برای گرفتن اجازهٔ پوشه به جاوااسکریپت نیاز دارد.</value></data>
+  <data name="PrivacyTitle" xml:space="preserve"><value>معماری حریم خصوصی</value></data>
+  <data name="PrivacyDescription" xml:space="preserve"><value>Storava چگونه اسکن فایل را روی دستگاه شما نگه می‌دارد.</value></data>
+  <data name="PrivacyNoScriptBody" xml:space="preserve"><value>Storava هیچ endpoint سروری برای آپلود فایل‌های اسکن‌شده ندارد.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>نمایش این صفحه ممکن نشد</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>درخواست با ایمنی متوقف شد و فایل‌های محلی شما تغییری نکردند.</value></data>
+  <data name="RequestId" xml:space="preserve"><value>شناسهٔ درخواست</value></data>
+  <data name="BackHome" xml:space="preserve"><value>بازگشت به Storava</value></data>
+</root>

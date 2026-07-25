@@ -1,0 +1,19 @@
+@inject IStringLocalizer<SharedResource> Localizer
+@{
+    ViewData["Title"] = Localizer["PrivacyTitle"];
+    ViewData["Description"] = Localizer["PrivacyDescription"];
+}
+
+<div id="privacy-page"
+     data-vue-island="privacy"
+     data-initial-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name"></div>
+<noscript>
+    <section class="noscript-state">
+        <h1>@Localizer["PrivacyTitle"]</h1>
+        <p>@Localizer["PrivacyNoScriptBody"]</p>
+    </section>
+</noscript>
+
+@section Scripts {
+    <script type="module" src="~/dist/pages/privacy.js" asp-append-version="true"></script>
+}

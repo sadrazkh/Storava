@@ -284,6 +284,13 @@ FakesAssemblies/
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
 node_modules/
+**/wwwroot/dist/
+**/playwright-report/
+**/test-results/
+**/.vite/
+.env
+.env.*
+!.env.example
 
 # Visual Studio 6 build log
 *.plg

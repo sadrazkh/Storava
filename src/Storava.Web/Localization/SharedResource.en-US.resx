@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ProductName" xml:space="preserve"><value>Storava Web</value></data>
+  <data name="LandingTitle" xml:space="preserve"><value>See your storage clearly</value></data>
+  <data name="MetaDescription" xml:space="preserve"><value>A private, browser-native map of the files that use your storage.</value></data>
+  <data name="SkipToContent" xml:space="preserve"><value>Skip to content</value></data>
+  <data name="NoScriptTitle" xml:space="preserve"><value>JavaScript is required</value></data>
+  <data name="NoScriptBody" xml:space="preserve"><value>Storava scans locally in your browser and needs JavaScript to request folder permission.</value></data>
+  <data name="PrivacyTitle" xml:space="preserve"><value>Privacy architecture</value></data>
+  <data name="PrivacyDescription" xml:space="preserve"><value>How Storava keeps file scanning on your device.</value></data>
+  <data name="PrivacyNoScriptBody" xml:space="preserve"><value>Storava does not provide a server endpoint for uploading scanned files.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>We could not open this view</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>The request stopped safely. Your local files were not affected.</value></data>
+  <data name="RequestId" xml:space="preserve"><value>Request ID</value></data>
+  <data name="BackHome" xml:space="preserve"><value>Back to Storava</value></data>
+</root>
