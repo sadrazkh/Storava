@@ -7,6 +7,7 @@ using Storava.Application.Planning;
 using Storava.Application.Services;
 using Storava.Infrastructure.Persistence;
 using Storava.Infrastructure.Settings;
+using Storava.Infrastructure.Workspace;
 
 namespace Storava.Infrastructure;
 
@@ -62,6 +63,10 @@ public static class DependencyInjection
 
         // History reads back past scans and prunes its own tables; it cannot touch a user file either.
         services.AddSingleton<ScanHistoryService>();
+
+        // Portable .storava archives. Reads only the scan tables, so settings and the API key
+        // are structurally excluded from every export.
+        services.AddSingleton<IWorkspaceArchiveService, WorkspaceArchiveService>();
 
         return services;
     }

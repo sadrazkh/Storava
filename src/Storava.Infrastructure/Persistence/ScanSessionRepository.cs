@@ -8,7 +8,8 @@ namespace Storava.Infrastructure.Persistence;
 public sealed class ScanSessionRepository : IScanSessionRepository
 {
     private const string Columns =
-        "Id, RootPath, Label, Mode, Status, StartedAt, CompletedAt, TotalSize, TotalFiles, TotalFolders, ErrorCount";
+        "Id, RootPath, Label, Mode, Status, StartedAt, CompletedAt, TotalSize, TotalFiles, TotalFolders, ErrorCount, " +
+        "Origin, ImportedAt, SourceLabel, ResumeState";
 
     private readonly StoravaDbOptions _options;
     private readonly IDatabaseInitializer _initializer;
@@ -27,11 +28,13 @@ public sealed class ScanSessionRepository : IScanSessionRepository
         await using var command = connection.CreateCommand();
         command.CommandText = $"""
             INSERT INTO ScanSessions ({Columns})
-            VALUES ($Id, $RootPath, $Label, $Mode, $Status, $StartedAt, $CompletedAt, $TotalSize, $TotalFiles, $TotalFolders, $ErrorCount)
+            VALUES ($Id, $RootPath, $Label, $Mode, $Status, $StartedAt, $CompletedAt, $TotalSize, $TotalFiles,
+                    $TotalFolders, $ErrorCount, $Origin, $ImportedAt, $SourceLabel, $ResumeState)
             ON CONFLICT(Id) DO UPDATE SET
                 RootPath=$RootPath, Label=$Label, Mode=$Mode, Status=$Status, StartedAt=$StartedAt,
                 CompletedAt=$CompletedAt, TotalSize=$TotalSize, TotalFiles=$TotalFiles,
-                TotalFolders=$TotalFolders, ErrorCount=$ErrorCount;
+                TotalFolders=$TotalFolders, ErrorCount=$ErrorCount, Origin=$Origin,
+                ImportedAt=$ImportedAt, SourceLabel=$SourceLabel, ResumeState=$ResumeState;
             """;
 
         command.Parameters.AddWithValue("$Id", session.Id);
@@ -45,6 +48,10 @@ public sealed class ScanSessionRepository : IScanSessionRepository
         command.Parameters.AddWithValue("$TotalFiles", session.TotalFiles);
         command.Parameters.AddWithValue("$TotalFolders", session.TotalFolders);
         command.Parameters.AddWithValue("$ErrorCount", session.ErrorCount);
+        command.Parameters.AddWithValue("$Origin", (int)session.Origin);
+        command.Parameters.AddWithValue("$ImportedAt", (object?)session.ImportedAt ?? DBNull.Value);
+        command.Parameters.AddWithValue("$SourceLabel", (object?)session.SourceLabel ?? DBNull.Value);
+        command.Parameters.AddWithValue("$ResumeState", (object?)session.ResumeState ?? DBNull.Value);
 
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -117,6 +124,10 @@ public sealed class ScanSessionRepository : IScanSessionRepository
         TotalSize = r.GetInt64(7),
         TotalFiles = r.GetInt32(8),
         TotalFolders = r.GetInt32(9),
-        ErrorCount = r.GetInt32(10)
+        ErrorCount = r.GetInt32(10),
+        Origin = (ScanOrigin)r.GetInt32(11),
+        ImportedAt = r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12),
+        SourceLabel = r.IsDBNull(13) ? null : r.GetString(13),
+        ResumeState = r.IsDBNull(14) ? null : r.GetString(14)
     };
 }

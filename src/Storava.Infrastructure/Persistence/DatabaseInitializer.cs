@@ -161,7 +161,25 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
         CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Name   ON ScanItems (SessionId, Name);
         CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Rule   ON ScanItems (SessionId, KnownRuleId);
         CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Cat    ON ScanItems (SessionId, Category);
+
+        -- Resuming a scan looks items up by exact path to skip what is already recorded.
+        CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Path   ON ScanItems (SessionId, Path);
         """;
+
+    /// <summary>
+    /// Columns introduced after the first release. CREATE TABLE IF NOT EXISTS cannot add a column
+    /// to a table that already exists, so these are applied separately and only when missing,
+    /// which keeps existing databases upgradeable without losing their scans.
+    /// </summary>
+    private static readonly (string Table, string Column, string Definition)[] AddedColumns =
+    [
+        // Where a session came from: scanned on this machine, or imported from a .storava file.
+        ("ScanSessions", "Origin", "INTEGER NOT NULL DEFAULT 0"),
+        ("ScanSessions", "ImportedAt", "TEXT NULL"),
+        ("ScanSessions", "SourceLabel", "TEXT NULL"),
+        // Directories still pending when a scan was interrupted, so it can be continued later.
+        ("ScanSessions", "ResumeState", "TEXT NULL")
+    ];
 
     private readonly StoravaDbOptions _options;
     private readonly ILogger<DatabaseInitializer> _logger;
@@ -200,6 +218,8 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
 
+            await ApplyAddedColumnsAsync(connection, cancellationToken).ConfigureAwait(false);
+
             _initialized = true;
             _logger.LogInformation("Database schema ensured at {Path}.", _options.DatabasePath);
         }
@@ -207,5 +227,32 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
         {
             _gate.Release();
         }
+    }
+
+    private async Task ApplyAddedColumnsAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        foreach (var (table, column, definition) in AddedColumns)
+        {
+            if (await ColumnExistsAsync(connection, table, column, cancellationToken).ConfigureAwait(false))
+                continue;
+
+            await using var alter = connection.CreateCommand();
+            // Table and column names come from the constant list above, never from user input.
+            alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition};";
+            await alter.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation("Added column {Table}.{Column} to the local database.", table, column);
+        }
+    }
+
+    private static async Task<bool> ColumnExistsAsync(
+        SqliteConnection connection, string table, string column, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $column;";
+        command.Parameters.AddWithValue("$column", column);
+
+        var value = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+        return value is long count && count > 0;
     }
 }
