@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Storava.Application.Abstractions;
+using Storava.Application.Planning;
 using Storava.Application.Services;
 using Storava.Infrastructure.Persistence;
 using Storava.Infrastructure.Settings;
@@ -49,9 +50,13 @@ public static class DependencyInjection
         services.AddSingleton<IScanSessionRepository, ScanSessionRepository>();
         services.AddSingleton<IScanQueryService, ScanQueryService>();
         services.AddSingleton<IRecommendationRepository, RecommendationRepository>();
+        services.AddSingleton<IStoragePlanRepository, StoragePlanRepository>();
 
         // Scan orchestration (depends on IDiskScanner from the platform layer)
         services.AddSingleton<ScanCoordinator>();
+
+        // Planning is advice-shaping only: it writes a document, it never touches the file system.
+        services.AddSingleton<StoragePlanService>();
 
         return services;
     }

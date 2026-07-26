@@ -76,7 +76,7 @@
     <sys:String x:Key="Str.Settings.Ai.Enable">Enable AI advisor</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Model">Model</sys:String>
     <sys:String x:Key="Str.Settings.Ai.BaseUrl">Base URL</sys:String>
-    <sys:String x:Key="Str.Settings.Ai.Note">The API key is set later and stored encrypted. It is never written to logs, reports or exports.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Note">The key is stored encrypted with Windows DPAPI and never written to logs, reports or exports. Storava always shows you the exact request before anything is sent, and the AI can only advise — it can never act on your files.</sys:String>
     <sys:String x:Key="Str.Settings.Save">Save changes</sys:String>
     <sys:String x:Key="Str.Settings.Saved">Settings saved.</sys:String>
 
@@ -199,6 +199,101 @@
     <sys:String x:Key="Str.Recommendations.OpenFolder">Open folder</sys:String>
     <sys:String x:Key="Str.Recommendations.Confidence">Confidence</sys:String>
     <sys:String x:Key="Str.Recommendations.SafetyNote">Storava has not changed anything. Selecting actions and applying them comes later, and always needs your explicit confirmation.</sys:String>
+
+    <!-- AI settings -->
+    <sys:String x:Key="Str.Settings.Ai.ApiKey">OpenRouter API key</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Set">A key is saved and encrypted on this machine.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.NotSet">No key saved yet.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Save">Save key</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Remove">Remove key</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Hint">Paste your key here. It is encrypted with Windows DPAPI and never written to logs, reports or exports.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Temperature">Temperature</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.MaxTokens">Max tokens</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Timeout">Timeout (seconds)</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Retries">Retries</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Privacy">Privacy</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.SanitizedOnly">Sanitized paths only — always on, it cannot be turned off.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.AllowUnknown">Let the AI comment on unrecognised folders</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.AllowReports">Allow AI report generation</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ModelHint">Any OpenRouter model id, e.g. openrouter/free or deepseek/deepseek-r1:free</sys:String>
+
+    <!-- Reports -->
+    <sys:String x:Key="Str.Reports.Title">Reports</sys:String>
+    <sys:String x:Key="Str.Reports.Subtitle">Generate, review and export what Storava found.</sys:String>
+    <sys:String x:Key="Str.Reports.Empty">Run a scan first — reports are built from your scan results.</sys:String>
+    <sys:String x:Key="Str.Reports.ScanReport">Scan report</sys:String>
+    <sys:String x:Key="Str.Reports.Export">Export</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Html">HTML</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Json">JSON</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Csv">CSV</sys:String>
+    <sys:String x:Key="Str.Reports.Exported">Report saved.</sys:String>
+    <sys:String x:Key="Str.Reports.Summary">Summary</sys:String>
+
+    <!-- AI advisor flow -->
+    <sys:String x:Key="Str.Ai.Title">AI advisor</sys:String>
+    <sys:String x:Key="Str.Ai.Disabled">The AI advisor is turned off. Enable it in Settings and add your OpenRouter key.</sys:String>
+    <sys:String x:Key="Str.Ai.NoKey">Add your OpenRouter API key in Settings to use the advisor.</sys:String>
+    <sys:String x:Key="Str.Ai.Prepare">Prepare data to send</sys:String>
+    <sys:String x:Key="Str.Ai.Preparing">Preparing…</sys:String>
+    <sys:String x:Key="Str.Ai.ReviewTitle">Review exactly what would be sent</sys:String>
+    <sys:String x:Key="Str.Ai.ReviewNote">This is the complete request. It contains no file contents, no real paths and no user name — only sanitized placeholders and aggregate numbers. Nothing is sent until you approve it.</sys:String>
+    <sys:String x:Key="Str.Ai.Approve">I approve sending this</sys:String>
+    <sys:String x:Key="Str.Ai.Send">Send to AI</sys:String>
+    <sys:String x:Key="Str.Ai.Sending">Analysing…</sys:String>
+    <sys:String x:Key="Str.Ai.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Str.Ai.Blocked">The privacy check blocked this payload, so it cannot be sent.</sys:String>
+    <sys:String x:Key="Str.Ai.MainCause">Main cause</sys:String>
+    <sys:String x:Key="Str.Ai.Findings">Findings</sys:String>
+    <sys:String x:Key="Str.Ai.NextSteps">Next steps</sys:String>
+    <sys:String x:Key="Str.Ai.Suggestions">AI suggestions</sys:String>
+    <sys:String x:Key="Str.Ai.Rejected">Discarded by safety checks</sys:String>
+    <sys:String x:Key="Str.Ai.RejectedNote">Suggestions that referenced an unknown item, a protected location or an action the local rules do not allow were discarded.</sys:String>
+    <sys:String x:Key="Str.Ai.Model">Model</sys:String>
+    <sys:String x:Key="Str.Ai.SafetyNote">The AI only advises. It cannot select, move or delete anything, and every action still needs your explicit confirmation.</sys:String>
+    <sys:String x:Key="Str.Ai.Error">The AI request failed.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.NoKey">No API key has been set.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Unauthorized">The API key was rejected.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.RateLimited">The service is rate limiting requests. Try again shortly.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Timeout">The request timed out.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Network">The service could not be reached.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Malformed">The model returned something Storava could not read.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.ModelNotFound">The configured model was not found.</sys:String>
+
+    <!-- Storage plan -->
+    <sys:String x:Key="Str.Plan.Title">Storage plan</sys:String>
+    <sys:String x:Key="Str.Plan.Subtitle">Choose what you want to do about each finding. Storava writes the plan down — it does not carry it out.</sys:String>
+    <sys:String x:Key="Str.Plan.SafetyNote">This page only produces a document. Nothing is moved or deleted here, and no step runs until you carry it out yourself in a later release.</sys:String>
+    <sys:String x:Key="Str.Plan.Empty">Run a scan first — a plan is built from your scan's findings.</sys:String>
+    <sys:String x:Key="Str.Plan.NoCandidates">This scan produced no findings that can be moved or deleted, so there is nothing to plan.</sys:String>
+    <sys:String x:Key="Str.Plan.Candidates">Findings</sys:String>
+    <sys:String x:Key="Str.Plan.Steps">Plan steps</sys:String>
+    <sys:String x:Key="Str.Plan.NoSteps">Nothing selected yet. Tick a finding on the left to add it as a step.</sys:String>
+    <sys:String x:Key="Str.Plan.Action">Action</sys:String>
+    <sys:String x:Key="Str.Plan.Action.Move">Move</sys:String>
+    <sys:String x:Key="Str.Plan.Action.Delete">Delete</sys:String>
+    <sys:String x:Key="Str.Plan.NotPlannable">The rules allow neither moving nor deleting this item, so it cannot be planned.</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Steps">Steps</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Reclaimable">Would be freed</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.HighestRisk">Highest risk</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Moves">To move</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Deletes">To delete</sys:String>
+    <sys:String x:Key="Str.Plan.Goal">Goal (GB)</sys:String>
+    <sys:String x:Key="Str.Plan.Goal.Hint">How much you want to free. Leave at zero for no goal.</sys:String>
+    <sys:String x:Key="Str.Plan.Goal.Met">The plan meets your goal.</sys:String>
+    <sys:String x:Key="Str.Plan.Covered">Already covered</sys:String>
+    <sys:String x:Key="Str.Plan.Covered.Note">A folder above this one is already in the plan, so this step frees nothing extra and is not counted in the total.</sys:String>
+    <sys:String x:Key="Str.Plan.OfficialMethod">Official method available</sys:String>
+    <sys:String x:Key="Str.Plan.NeedsLink">No official setting exists — this move would leave a junction or symbolic link behind.</sys:String>
+    <sys:String x:Key="Str.Plan.Save">Save plan</sys:String>
+    <sys:String x:Key="Str.Plan.Saved">Plan saved.</sys:String>
+    <sys:String x:Key="Str.Plan.Clear">Clear plan</sys:String>
+    <sys:String x:Key="Str.Plan.Error">The plan could not be updated.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.Protected">That is a protected system location and can never be planned.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.DeleteNotPermitted">The rules do not allow deleting this item.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.MoveNotPermitted">The rules do not allow moving this item.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.AlreadyAdded">This item is already in the plan.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.NotPlannable">Only moving and deleting can be planned.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.WrongSession">That finding belongs to a different scan.</sys:String>
 
     <!-- Coming soon (placeholder pages) -->
     <sys:String x:Key="Str.ComingSoon.Title">Coming soon</sys:String>

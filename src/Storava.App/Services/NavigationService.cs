@@ -21,18 +21,16 @@ public sealed class NavigationService : INavigationService
         [NavigationKeys.ScanExplorer] = typeof(ScanExplorerViewModel),
         [NavigationKeys.Analysis] = typeof(AnalysisViewModel),
         [NavigationKeys.Recommendations] = typeof(RecommendationsViewModel),
-        [NavigationKeys.StoragePlan] = typeof(ComingSoonViewModel),
+        [NavigationKeys.StoragePlan] = typeof(StoragePlanViewModel),
         [NavigationKeys.MigrationCenter] = typeof(ComingSoonViewModel),
-        [NavigationKeys.Reports] = typeof(ComingSoonViewModel),
+        [NavigationKeys.Reports] = typeof(ReportsViewModel),
         [NavigationKeys.History] = typeof(ComingSoonViewModel)
     };
 
     // Localized header key shown on the placeholder ("coming soon") pages.
     private static readonly Dictionary<string, string> PlaceholderTitleKeys = new(StringComparer.Ordinal)
     {
-        [NavigationKeys.StoragePlan] = "Str.Nav.StoragePlan",
         [NavigationKeys.MigrationCenter] = "Str.Nav.MigrationCenter",
-        [NavigationKeys.Reports] = "Str.Nav.Reports",
         [NavigationKeys.History] = "Str.Nav.History"
     };
 
@@ -70,11 +68,19 @@ public sealed class NavigationService : INavigationService
             placeholder.Configure(titleKey);
         }
 
+        // Page ViewModels are transient and subscribe to singleton services (localization,
+        // settings, the scan controller). Without this the old instance keeps reacting to those
+        // events forever, so every visit to a page would add another live listener.
+        var outgoing = CurrentViewModel as IDisposable;
+
         CurrentKey = key;
         CurrentViewModel = viewModel;
         _logger.LogDebug("Navigated to {Key}.", key);
 
         CurrentChanged?.Invoke(this, EventArgs.Empty);
         Navigated?.Invoke(this, key);
+
+        // Released only after the shell has swapped in the new page.
+        outgoing?.Dispose();
     }
 }

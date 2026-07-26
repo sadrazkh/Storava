@@ -8,10 +8,12 @@ using Storava.App.Services;
 using Storava.App.ViewModels;
 using Storava.App.ViewModels.Pages;
 using Storava.App.Views;
+using Storava.AI;
 using Storava.Application.Abstractions;
 using Storava.Infrastructure;
 using Storava.Infrastructure.Persistence;
 using Storava.Platform;
+using Storava.Reporting;
 using Storava.Rules;
 
 namespace Storava.App;
@@ -77,9 +79,12 @@ public partial class App : System.Windows.Application
         builder.ConfigureServices(services =>
         {
             services.AddStoravaInfrastructure(Path.Combine(AppDataDirectory, "storava.db"));
-            services.AddStoravaPlatform();
+            // Secrets live beside the database but never inside it, so no export can carry them.
+            services.AddStoravaPlatform(Path.Combine(AppDataDirectory, "secrets"));
             // Rules decorate the persistence sink so items are classified as the scan streams them.
             services.AddStoravaRules<SqliteScanItemSinkFactory>();
+            services.AddStoravaReporting();
+            services.AddStoravaAi();
 
             // UI services
             services.AddSingleton<ILocalizationService, LocalizationService>();
@@ -89,6 +94,7 @@ public partial class App : System.Windows.Application
             services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
             services.AddSingleton<ScanController>();
             services.AddSingleton<IFolderPicker, FolderPicker>();
+            services.AddSingleton<IFileSaver, FileSaver>();
 
             // ViewModels
             services.AddSingleton<ShellViewModel>();
@@ -101,6 +107,8 @@ public partial class App : System.Windows.Application
             services.AddTransient<ScanExplorerViewModel>();
             services.AddTransient<AnalysisViewModel>();
             services.AddTransient<RecommendationsViewModel>();
+            services.AddTransient<ReportsViewModel>();
+            services.AddTransient<StoragePlanViewModel>();
 
             // Windows
             services.AddSingleton<ShellWindow>();

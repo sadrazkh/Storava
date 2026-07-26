@@ -76,7 +76,7 @@
     <sys:String x:Key="Str.Settings.Ai.Enable">فعال‌سازی مشاور هوش مصنوعی</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Model">مدل</sys:String>
     <sys:String x:Key="Str.Settings.Ai.BaseUrl">آدرس پایه</sys:String>
-    <sys:String x:Key="Str.Settings.Ai.Note">کلید API بعداً تنظیم و به‌صورت رمزنگاری‌شده ذخیره می‌شود. این کلید هرگز در لاگ، گزارش یا خروجی نوشته نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Note">کلید با DPAPI ویندوز رمزنگاری و ذخیره می‌شود و هرگز در لاگ، گزارش یا خروجی نوشته نمی‌شود. استوراوا همیشه پیش از ارسال، دقیقاً همان درخواست را به شما نشان می‌دهد و هوش مصنوعی فقط مشاوره می‌دهد — هرگز روی فایل‌های شما عمل نمی‌کند.</sys:String>
     <sys:String x:Key="Str.Settings.Save">ذخیره تغییرات</sys:String>
     <sys:String x:Key="Str.Settings.Saved">تنظیمات ذخیره شد.</sys:String>
 
@@ -199,6 +199,101 @@
     <sys:String x:Key="Str.Recommendations.OpenFolder">باز کردن پوشه</sys:String>
     <sys:String x:Key="Str.Recommendations.Confidence">اطمینان</sys:String>
     <sys:String x:Key="Str.Recommendations.SafetyNote">استوراوا هیچ چیزی را تغییر نداده است. انتخاب و اجرای عملیات در مرحله‌ی بعد انجام می‌شود و همیشه به تأیید صریح شما نیاز دارد.</sys:String>
+
+    <!-- تنظیمات هوش مصنوعی -->
+    <sys:String x:Key="Str.Settings.Ai.ApiKey">کلید API اوپن‌روتر</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Set">یک کلید ذخیره و روی همین دستگاه رمزنگاری شده است.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.NotSet">هنوز کلیدی ذخیره نشده است.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Save">ذخیره‌ی کلید</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Remove">حذف کلید</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ApiKey.Hint">کلید خود را اینجا بچسبانید. با DPAPI ویندوز رمزنگاری می‌شود و هرگز در لاگ، گزارش یا خروجی نوشته نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Temperature">دما (Temperature)</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.MaxTokens">حداکثر توکن</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Timeout">مهلت زمانی (ثانیه)</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Retries">تعداد تلاش مجدد</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.Privacy">حریم خصوصی</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.SanitizedOnly">فقط مسیرهای ضدعفونی‌شده ارسال می‌شود — همیشه فعال است و قابل خاموش‌کردن نیست.</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.AllowUnknown">هوش مصنوعی درباره‌ی پوشه‌های ناشناخته هم نظر بدهد</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.AllowReports">اجازه‌ی تولید گزارش با هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Settings.Ai.ModelHint">هر شناسه‌ی مدل اوپن‌روتر، مثلاً openrouter/free یا deepseek/deepseek-r1:free</sys:String>
+
+    <!-- گزارش‌ها -->
+    <sys:String x:Key="Str.Reports.Title">گزارش‌ها</sys:String>
+    <sys:String x:Key="Str.Reports.Subtitle">تولید، بررسی و خروجی‌گرفتن از یافته‌های استوراوا.</sys:String>
+    <sys:String x:Key="Str.Reports.Empty">ابتدا یک اسکن اجرا کنید — گزارش‌ها از نتایج اسکن ساخته می‌شوند.</sys:String>
+    <sys:String x:Key="Str.Reports.ScanReport">گزارش اسکن</sys:String>
+    <sys:String x:Key="Str.Reports.Export">خروجی</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Html">HTML</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Json">JSON</sys:String>
+    <sys:String x:Key="Str.Reports.Export.Csv">CSV</sys:String>
+    <sys:String x:Key="Str.Reports.Exported">گزارش ذخیره شد.</sys:String>
+    <sys:String x:Key="Str.Reports.Summary">خلاصه</sys:String>
+
+    <!-- جریان مشاور هوش مصنوعی -->
+    <sys:String x:Key="Str.Ai.Title">مشاور هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Ai.Disabled">مشاور هوش مصنوعی خاموش است. در تنظیمات آن را فعال کنید و کلید اوپن‌روتر خود را وارد کنید.</sys:String>
+    <sys:String x:Key="Str.Ai.NoKey">برای استفاده از مشاور، کلید API اوپن‌روتر را در تنظیمات وارد کنید.</sys:String>
+    <sys:String x:Key="Str.Ai.Prepare">آماده‌سازی داده برای ارسال</sys:String>
+    <sys:String x:Key="Str.Ai.Preparing">در حال آماده‌سازی…</sys:String>
+    <sys:String x:Key="Str.Ai.ReviewTitle">دقیقاً همان چیزی که ارسال می‌شود را ببینید</sys:String>
+    <sys:String x:Key="Str.Ai.ReviewNote">این کل درخواست است. هیچ محتوای فایلی، هیچ مسیر واقعی و هیچ نام کاربری در آن نیست — فقط جای‌نگهدارهای ضدعفونی‌شده و اعداد تجمیعی. تا وقتی تأیید نکنید چیزی ارسال نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Ai.Approve">ارسال این داده را تأیید می‌کنم</sys:String>
+    <sys:String x:Key="Str.Ai.Send">ارسال به هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Ai.Sending">در حال تحلیل…</sys:String>
+    <sys:String x:Key="Str.Ai.Cancel">لغو</sys:String>
+    <sys:String x:Key="Str.Ai.Blocked">بررسی حریم خصوصی جلوی این داده را گرفت، پس قابل ارسال نیست.</sys:String>
+    <sys:String x:Key="Str.Ai.MainCause">علت اصلی</sys:String>
+    <sys:String x:Key="Str.Ai.Findings">یافته‌ها</sys:String>
+    <sys:String x:Key="Str.Ai.NextSteps">گام‌های بعدی</sys:String>
+    <sys:String x:Key="Str.Ai.Suggestions">پیشنهادهای هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Ai.Rejected">ردشده توسط بررسی‌های ایمنی</sys:String>
+    <sys:String x:Key="Str.Ai.RejectedNote">پیشنهادهایی که به آیتم ناشناخته، مسیر محافظت‌شده یا عملیاتی که قواعد محلی اجازه نمی‌دهند اشاره می‌کردند، دور ریخته شدند.</sys:String>
+    <sys:String x:Key="Str.Ai.Model">مدل</sys:String>
+    <sys:String x:Key="Str.Ai.SafetyNote">هوش مصنوعی فقط مشاوره می‌دهد. نمی‌تواند چیزی را انتخاب، منتقل یا حذف کند و هر عملیات همچنان به تأیید صریح شما نیاز دارد.</sys:String>
+    <sys:String x:Key="Str.Ai.Error">درخواست هوش مصنوعی ناموفق بود.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.NoKey">هیچ کلید API تنظیم نشده است.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Unauthorized">کلید API پذیرفته نشد.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.RateLimited">سرویس در حال محدودسازی درخواست‌هاست. کمی بعد دوباره تلاش کنید.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Timeout">مهلت درخواست تمام شد.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Network">دسترسی به سرویس ممکن نشد.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.Malformed">مدل چیزی برگرداند که استوراوا نتوانست بخواند.</sys:String>
+    <sys:String x:Key="Str.Ai.Error.ModelNotFound">مدل تنظیم‌شده پیدا نشد.</sys:String>
+
+    <!-- برنامه‌ی فضای ذخیره‌سازی -->
+    <sys:String x:Key="Str.Plan.Title">برنامه‌ی فضا</sys:String>
+    <sys:String x:Key="Str.Plan.Subtitle">برای هر یافته انتخاب کنید چه کاری می‌خواهید بکنید. استوراوا فقط برنامه را می‌نویسد — آن را اجرا نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Plan.SafetyNote">این صفحه فقط یک سند می‌سازد. اینجا هیچ چیزی جابه‌جا یا حذف نمی‌شود و هیچ گامی تا وقتی خودتان در نسخه‌ای بعدی آن را اجرا نکنید انجام نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Plan.Empty">ابتدا یک اسکن اجرا کنید — برنامه از یافته‌های اسکن ساخته می‌شود.</sys:String>
+    <sys:String x:Key="Str.Plan.NoCandidates">این اسکن هیچ یافته‌ی قابل جابه‌جایی یا حذف نداشت، پس چیزی برای برنامه‌ریزی نیست.</sys:String>
+    <sys:String x:Key="Str.Plan.Candidates">یافته‌ها</sys:String>
+    <sys:String x:Key="Str.Plan.Steps">گام‌های برنامه</sys:String>
+    <sys:String x:Key="Str.Plan.NoSteps">هنوز چیزی انتخاب نشده. برای افزودن یک گام، یافته‌ای را در سمت راست تیک بزنید.</sys:String>
+    <sys:String x:Key="Str.Plan.Action">عملیات</sys:String>
+    <sys:String x:Key="Str.Plan.Action.Move">جابه‌جایی</sys:String>
+    <sys:String x:Key="Str.Plan.Action.Delete">حذف</sys:String>
+    <sys:String x:Key="Str.Plan.NotPlannable">قواعد نه جابه‌جایی و نه حذف این مورد را مجاز نمی‌دانند، پس قابل برنامه‌ریزی نیست.</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Steps">گام</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Reclaimable">آزاد می‌شود</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.HighestRisk">بیشترین ریسک</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Moves">برای جابه‌جایی</sys:String>
+    <sys:String x:Key="Str.Plan.Summary.Deletes">برای حذف</sys:String>
+    <sys:String x:Key="Str.Plan.Goal">هدف (گیگابایت)</sys:String>
+    <sys:String x:Key="Str.Plan.Goal.Hint">چقدر می‌خواهید آزاد شود. برای نداشتن هدف، صفر بگذارید.</sys:String>
+    <sys:String x:Key="Str.Plan.Goal.Met">برنامه به هدف شما می‌رسد.</sys:String>
+    <sys:String x:Key="Str.Plan.Covered">از قبل پوشش داده شده</sys:String>
+    <sys:String x:Key="Str.Plan.Covered.Note">پوشه‌ای بالاتر از این از قبل در برنامه هست، پس این گام فضای اضافه‌ای آزاد نمی‌کند و در جمع کل شمرده نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Plan.OfficialMethod">روش رسمی موجود است</sys:String>
+    <sys:String x:Key="Str.Plan.NeedsLink">تنظیم رسمی وجود ندارد — این جابه‌جایی یک junction یا symbolic link به‌جا می‌گذارد.</sys:String>
+    <sys:String x:Key="Str.Plan.Save">ذخیره‌ی برنامه</sys:String>
+    <sys:String x:Key="Str.Plan.Saved">برنامه ذخیره شد.</sys:String>
+    <sys:String x:Key="Str.Plan.Clear">پاک‌کردن برنامه</sys:String>
+    <sys:String x:Key="Str.Plan.Error">برنامه به‌روزرسانی نشد.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.Protected">این یک مسیر محافظت‌شده‌ی سیستمی است و هرگز قابل برنامه‌ریزی نیست.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.DeleteNotPermitted">قواعد اجازه‌ی حذف این مورد را نمی‌دهند.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.MoveNotPermitted">قواعد اجازه‌ی جابه‌جایی این مورد را نمی‌دهند.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.AlreadyAdded">این مورد از قبل در برنامه هست.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.NotPlannable">فقط جابه‌جایی و حذف قابل برنامه‌ریزی هستند.</sys:String>
+    <sys:String x:Key="Str.Plan.Error.WrongSession">این یافته مربوط به اسکن دیگری است.</sys:String>
 
     <!-- به‌زودی (صفحات آینده) -->
     <sys:String x:Key="Str.ComingSoon.Title">به‌زودی</sys:String>

@@ -46,5 +46,11 @@
     <DataTemplate DataType="{x:Type vmPages:RecommendationsViewModel}">
         <views:RecommendationsView />
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:ReportsViewModel}">
+        <views:ReportsView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vmPages:StoragePlanViewModel}">
+        <views:StoragePlanView />
+    </DataTemplate>
 
 </ResourceDictionary>

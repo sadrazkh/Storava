@@ -1,0 +1,384 @@
+<UserControl x:Class="Storava.App.Views.Pages.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1100">
+    <UserControl.Resources>
+        <!-- Bulleted line used by both the findings and the next-steps lists. -->
+        <DataTemplate x:Key="Reports.BulletLine">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                <Ellipse Width="5" Height="5" VerticalAlignment="Top" Margin="0,8,10,0"
+                         Fill="{DynamicResource PrimaryHueMidBrush}" />
+                <TextBlock Text="{Binding}" Style="{StaticResource Storava.Text.Body}"
+                           TextWrapping="Wrap" MaxWidth="720" />
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="{StaticResource Pad.Page}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{DynamicResource Str.Reports.Title}" Style="{StaticResource Storava.Text.Display}" />
+                <TextBlock Text="{DynamicResource Str.Reports.Subtitle}" Style="{StaticResource Storava.Text.Caption}" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                        Visibility="{Binding HasSession, Converter={StaticResource Conv.BoolVis}}">
+                <TextBlock Text="{DynamicResource Str.Reports.Export}" Style="{StaticResource Storava.Text.Caption}"
+                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                <Button Command="{Binding ExportHtmlCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="38" Padding="16,0" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="LanguageHtml5" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource Str.Reports.Export.Html}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ExportJsonCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="38" Padding="16,0" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CodeJson" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource Str.Reports.Export.Json}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ExportCsvCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="38" Padding="16,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileDelimitedOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource Str.Reports.Export.Csv}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Empty state: reports are built from a scan, so there is nothing honest to show without one -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440"
+                    Visibility="{Binding HasSession, Converter={StaticResource Conv.InvBoolVis}}">
+            <materialDesign:PackIcon Kind="FileChartOutline" Width="52" Height="52" HorizontalAlignment="Center"
+                                     Foreground="{DynamicResource MaterialDesignBodyLight}" Opacity="0.6" />
+            <TextBlock Text="{DynamicResource Str.Reports.Empty}" Style="{StaticResource Storava.Text.Body}"
+                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding HasSession, Converter={StaticResource Conv.BoolVis}}">
+            <StackPanel MaxWidth="980" HorizontalAlignment="Left">
+
+                <!-- Report summary -->
+                <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <materialDesign:PackIcon Kind="FileDocumentOutline" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                            <TextBlock Text="{DynamicResource Str.Reports.ScanReport}" Style="{StaticResource Storava.Text.H2}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding RootPathText}" Style="{StaticResource Storava.Text.Caption}"
+                                   TextTrimming="CharacterEllipsis" Margin="0,0,0,16" />
+
+                        <UniformGrid Columns="3">
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Text="{Binding ScannedText}" Style="{StaticResource Storava.Text.H1}" />
+                                <TextBlock Text="{DynamicResource Str.Progress.Size}" Style="{StaticResource Storava.Text.Caption}" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Text="{Binding ReclaimableText}" Style="{StaticResource Storava.Text.H1}"
+                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                <TextBlock Text="{DynamicResource Str.Recommendations.Reclaimable}" Style="{StaticResource Storava.Text.Caption}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{Binding RecommendationCount}" Style="{StaticResource Storava.Text.H1}" />
+                                <TextBlock Text="{DynamicResource Str.Recommendations.Count}" Style="{StaticResource Storava.Text.Caption}" />
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0"
+                                    Visibility="{Binding StatusMessage, Converter={StaticResource Conv.NullVis}}">
+                            <materialDesign:PackIcon Kind="CheckCircle" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                     Foreground="{StaticResource Storava.Brush.Success}" />
+                            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Storava.Text.Body}"
+                                       Foreground="{StaticResource Storava.Brush.Success}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- AI advisor -->
+                <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="RobotOutline" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                <TextBlock Text="{DynamicResource Str.Ai.Title}" Style="{StaticResource Storava.Text.H2}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Style="{StaticResource Storava.Badge}" VerticalAlignment="Center"
+                                    Background="{DynamicResource MaterialDesignChipBackground}"
+                                    Visibility="{Binding AiAvailable, Converter={StaticResource Conv.BoolVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{DynamicResource Str.Ai.Model}" FontSize="11" Opacity="0.7" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding AiModelName}" FontSize="11" FontWeight="SemiBold"
+                                               Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" MaxWidth="760"
+                                   Text="{DynamicResource Str.Ai.SafetyNote}" Margin="0,0,0,14" />
+
+                        <!-- Not configured: say exactly what is missing instead of a dead button -->
+                        <Border CornerRadius="8" Padding="14,12" Background="{DynamicResource MaterialDesignChipBackground}"
+                                Visibility="{Binding AiAvailable, Converter={StaticResource Conv.InvBoolVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="InformationOutline" VerticalAlignment="Top" Margin="0,2,8,0"
+                                                         Foreground="{StaticResource Storava.Brush.Info}" />
+                                <TextBlock TextWrapping="Wrap" MaxWidth="700">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Storava.Text.Body}">
+                                            <Setter Property="Text" Value="{DynamicResource Str.Ai.Disabled}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AiEnabled}" Value="True">
+                                                    <Setter Property="Text" Value="{DynamicResource Str.Ai.NoKey}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Step 1: build the payload locally. Nothing has left the machine yet. -->
+                        <Button HorizontalAlignment="Left" Height="40" Padding="20,0"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                materialDesign:ButtonAssist.CornerRadius="10"
+                                Command="{Binding PrepareCommand}"
+                                IsEnabled="{Binding IsPreparing, Converter={StaticResource Conv.InvBool}}"
+                                Visibility="{Binding AiAvailable, Converter={StaticResource Conv.BoolVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ShieldSearch" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{DynamicResource Str.Ai.Prepare}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPreparing}" Value="True">
+                                                    <Setter Property="Text" Value="{DynamicResource Str.Ai.Preparing}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Step 2: the user reads the exact request before anything is sent -->
+                        <StackPanel Margin="0,18,0,0" Visibility="{Binding HasPreview, Converter={StaticResource Conv.BoolVis}}">
+                            <TextBlock Text="{DynamicResource Str.Ai.ReviewTitle}" Style="{StaticResource Storava.Text.H2}" />
+                            <TextBlock Text="{DynamicResource Str.Ai.ReviewNote}" Style="{StaticResource Storava.Text.Caption}"
+                                       TextWrapping="Wrap" MaxWidth="760" Margin="0,4,0,10" />
+
+                            <Border CornerRadius="10" Padding="2" Background="{DynamicResource MaterialDesignChipBackground}">
+                                <TextBox Text="{Binding PayloadJson, Mode=OneWay}" IsReadOnly="True"
+                                         FontFamily="Consolas, Cascadia Mono, monospace" FontSize="12"
+                                         TextWrapping="NoWrap" MaxHeight="280"
+                                         FlowDirection="LeftToRight" HorizontalAlignment="Stretch"
+                                         BorderThickness="0" Background="Transparent" Padding="12"
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+                            </Border>
+
+                            <Border CornerRadius="8" Padding="12,10" Margin="0,10,0,0" Background="#22EF4444"
+                                    Visibility="{Binding PayloadBlocked, Converter={StaticResource Conv.BoolVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ShieldAlertOutline" VerticalAlignment="Top" Margin="0,2,8,0"
+                                                             Foreground="{StaticResource Storava.Brush.Danger}" />
+                                    <TextBlock Text="{DynamicResource Str.Ai.Blocked}" Style="{StaticResource Storava.Text.Body}"
+                                               TextWrapping="Wrap" MaxWidth="700" />
+                                </StackPanel>
+                            </Border>
+
+                            <CheckBox IsChecked="{Binding PayloadApproved}" Margin="0,14,0,0"
+                                      Content="{DynamicResource Str.Ai.Approve}"
+                                      IsEnabled="{Binding PayloadBlocked, Converter={StaticResource Conv.InvBool}}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button Height="40" Padding="20,0" Command="{Binding SendCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        IsEnabled="{Binding CanSend}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Send" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{DynamicResource Str.Ai.Send}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSending}" Value="True">
+                                                            <Setter Property="Text" Value="{DynamicResource Str.Ai.Sending}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Height="40" Padding="18,0" Margin="10,0,0,0" Command="{Binding CancelSendCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Content="{DynamicResource Str.Ai.Cancel}"
+                                        Visibility="{Binding IsSending, Converter={StaticResource Conv.BoolVis}}" />
+
+                                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" Value="0" IsIndeterminate="True"
+                                             Width="22" Height="22" Margin="14,0,0,0" VerticalAlignment="Center"
+                                             Visibility="{Binding IsSending, Converter={StaticResource Conv.BoolVis}}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Border CornerRadius="8" Padding="12,10" Margin="0,14,0,0" Background="#22EF4444"
+                                Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,8,0"
+                                                         Foreground="{StaticResource Storava.Brush.Danger}" />
+                                <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
+                                           TextWrapping="Wrap" MaxWidth="700" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- AI result -->
+                <StackPanel Visibility="{Binding HasAiResult, Converter={StaticResource Conv.BoolVis}}">
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="{Binding AiSummary}" Style="{StaticResource Storava.Text.H2}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                            <Border CornerRadius="8" Padding="12,10" Margin="0,0,0,14"
+                                    Background="{DynamicResource MaterialDesignChipBackground}"
+                                    Visibility="{Binding AiMainCause, Converter={StaticResource Conv.NullVis}}">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource Str.Ai.MainCause}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                    <TextBlock Text="{Binding AiMainCause}" Style="{StaticResource Storava.Text.Body}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="{Binding AiOverview}" Style="{StaticResource Storava.Text.Body}"
+                                       TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Visibility="{Binding AiOverview, Converter={StaticResource Conv.NullVis}}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                                    <TextBlock Text="{DynamicResource Str.Ai.Findings}" Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,8" />
+                                    <ItemsControl ItemsSource="{Binding AiFindings}" ItemTemplate="{StaticResource Reports.BulletLine}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{DynamicResource Str.Ai.NextSteps}" Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,8" />
+                                    <ItemsControl ItemsSource="{Binding AiNextSteps}" ItemTemplate="{StaticResource Reports.BulletLine}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{DynamicResource Str.Ai.Suggestions}" Style="{StaticResource Storava.Text.H2}" Margin="2,4,0,10" />
+
+                    <ItemsControl ItemsSource="{Binding AiSuggestions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Card UniformCornerRadius="14" Padding="20" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.H2}" VerticalAlignment="Center" />
+                                                <Border Style="{StaticResource Storava.Badge}" Background="{Binding RiskBrush}" Margin="10,0,0,0">
+                                                    <TextBlock Text="{Binding RiskText}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                                </Border>
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                        Background="{DynamicResource MaterialDesignChipBackground}">
+                                                    <TextBlock Text="{Binding CategoryText}" FontSize="11" />
+                                                </Border>
+                                            </StackPanel>
+
+                                            <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,0,0,8" />
+                                            <TextBlock Text="{Binding Reason}" Style="{StaticResource Storava.Text.Body}" TextWrapping="Wrap" />
+
+                                            <Border CornerRadius="8" Padding="12,10" Margin="0,10,0,0" Background="#22F59E0B"
+                                                    Visibility="{Binding HasWarning, Converter={StaticResource Conv.BoolVis}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="AlertOutline" Width="16" Height="16" VerticalAlignment="Top"
+                                                                             Margin="0,2,8,0" Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                    <TextBlock Text="{Binding Warning}" Style="{StaticResource Storava.Text.Caption}"
+                                                               TextWrapping="Wrap" MaxWidth="560" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" MinWidth="130" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding SizeText}" Style="{StaticResource Storava.Text.H1}"
+                                                       HorizontalAlignment="Right" Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                            <TextBlock Text="{DynamicResource Str.Recommendations.Reclaimable}"
+                                                       Style="{StaticResource Storava.Text.Caption}" HorizontalAlignment="Right" />
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                                                <TextBlock Text="{DynamicResource Str.Recommendations.Confidence}"
+                                                           Style="{StaticResource Storava.Text.Caption}" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding ConfidenceText}" Margin="6,0,0,0" FontSize="12"
+                                                           FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </materialDesign:Card>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Discarded suggestions are surfaced, not hidden: the safety net has to be visible -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,2,0,20">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="22" Height="22" VerticalAlignment="Top"
+                                                     Margin="0,2,12,0" Foreground="{StaticResource Storava.Brush.Success}" />
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="{DynamicResource Str.Ai.Rejected}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <Border Style="{StaticResource Storava.Badge}" Margin="8,0,0,0"
+                                            Background="{DynamicResource MaterialDesignChipBackground}">
+                                        <TextBlock Text="{Binding AiRejectedCount}" FontSize="11" FontWeight="SemiBold" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="{DynamicResource Str.Ai.RejectedNote}" Style="{StaticResource Storava.Text.Caption}"
+                                           TextWrapping="Wrap" MaxWidth="700" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

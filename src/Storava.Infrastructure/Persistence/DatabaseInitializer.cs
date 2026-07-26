@@ -90,7 +90,37 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
             Source                   INTEGER NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS StoragePlans (
+            Id         TEXT NOT NULL PRIMARY KEY,
+            SessionId  TEXT NOT NULL,
+            Name       TEXT NULL,
+            CreatedAt  TEXT NOT NULL,
+            UpdatedAt  TEXT NOT NULL,
+            GoalBytes  INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS StoragePlanEntries (
+            Id               TEXT NOT NULL PRIMARY KEY,
+            PlanId           TEXT NOT NULL,
+            RecommendationId TEXT NOT NULL,
+            ScanItemId       TEXT NOT NULL,
+            Path             TEXT NOT NULL,
+            Title            TEXT NOT NULL,
+            Action           INTEGER NOT NULL,
+            EstimatedSpace   INTEGER NOT NULL,
+            RiskLevel        INTEGER NOT NULL,
+            Category         INTEGER NOT NULL,
+            Technology       TEXT NULL,
+            Method           INTEGER NOT NULL,
+            MethodHint       TEXT NULL,
+            Warning          TEXT NULL,
+            AddedAt          TEXT NOT NULL,
+            SortOrder        INTEGER NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS IX_Recommendations_Session ON Recommendations (SessionId, Score DESC);
+        CREATE UNIQUE INDEX IF NOT EXISTS IX_StoragePlans_Session ON StoragePlans (SessionId);
+        CREATE INDEX IF NOT EXISTS IX_StoragePlanEntries_Plan   ON StoragePlanEntries (PlanId, SortOrder);
 
         CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Parent ON ScanItems (SessionId, ParentId);
         CREATE INDEX IF NOT EXISTS IX_ScanItems_Session_Size   ON ScanItems (SessionId, Size DESC);

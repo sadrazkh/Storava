@@ -5,6 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
+> Status: **Phase 4 — OpenRouter AI Advisor, Reporting & Privacy** (complete).
 > Status: **Desktop Phase 3 complete · Storava Web 1.0 / Phase 6 complete**.
 
 ## Tech stack
@@ -20,14 +21,16 @@ src/
   Storava.Contracts       # DTOs shared across boundaries
   Storava.Application     # abstractions, settings model, use cases
   Storava.Infrastructure  # SQLite persistence, settings service (hybrid EF + raw)
-  Storava.Platform        # Windows/storage APIs, protected paths (net10.0-windows)
+  Storava.Platform        # Windows/storage APIs, protected paths, DPAPI secrets (net10.0-windows)
+  Storava.Rules           # rule catalog, classification, scoring, recommendations
+  Storava.AI              # OpenRouter provider, payload sanitisation, response validation
+  Storava.Reporting       # report model and HTML/JSON/CSV writers
   Storava.App             # WPF UI: shell, design system, localization, pages
-tests/
-  Storava.Domain.Tests
-  Storava.Infrastructure.Tests
+  Storava.Web             # browser edition (ASP.NET Core MVC + Vue islands)
+tests/                    # one xUnit project per layer above
 ```
 
-Projects for AI, Migrations, Reporting and Plugins are added in their respective phases.
+Projects for Migrations and Plugins are added in their respective phases.
 
 ## Storava Web
 
@@ -132,3 +135,33 @@ with 19 unreadable paths skipped and no interruption.
 Category bytes are attributed to the outermost classified folder, so a `node_modules` subtree
 counts as package cache rather than thousands of unrecognised files. On a real developer tree
 this moved identification from 4% to 99% of scanned bytes.
+
+**Phase 4 — OpenRouter AI advisor, reporting & privacy**
+
+- **Reports page**: builds a report from the last scan and exports it as HTML, JSON or CSV.
+- **Two-step AI flow.** *Prepare* assembles the request locally and renders it verbatim; the
+  Send button stays disabled until you tick the approval box. The approval is a token bound to a
+  SHA-256 fingerprint of the payload you saw, so changing a setting, the language or the scan
+  invalidates it — data you have not read cannot be transmitted.
+- **Sanitisation before anything leaves the machine.** Real paths become placeholders
+  (`<UserProfile>`, `<Drive-C>`, `<PrivateFolder-3>`), the account name is replaced, and the
+  payload carries only category aggregates, rule-classified candidates and — if you leave that
+  toggle on — up to 15 large *unrecognised folders*, never file names or contents. A final check
+  re-scans the rendered payload for the account name and profile path; if either survived, the
+  payload is *blocked* rather than sent.
+- **Every reply is validated against the local scan.** Suggestions must reference a scan item
+  that was actually in the payload, must not touch a protected path, and must not ask for an
+  action the local rules forbid. Anything else is discarded, counted and shown on the page — the
+  AI cannot invent a target, and it has no access to any delete or migration service at all
+  (`Storava.AI` references only Domain, Contracts and Application).
+- The API key is entered in Settings, encrypted with **Windows DPAPI** under
+  `%LOCALAPPDATA%\Storava\secrets`, kept out of the database so no export can carry it, and
+  never bound to an observable property or written to a log.
+- Model, base URL, temperature, token cap, timeout and retry count are configurable, and
+  out-of-range values are clamped instead of rejected. Retries use exponential backoff and only
+  fire for transient failures (rate limit, server error, network, timeout) — never for a rejected
+  key or a malformed reply.
+- Typed failures (no key, unauthorized, rate limited, timeout, network, malformed, unknown
+  model) each get their own bilingual message, and a long request can be cancelled.
+- Sanitisation itself has no off switch, by design. The two settings that do exist —
+  unrecognised-folder analysis and the narrative report — each change what is actually sent.

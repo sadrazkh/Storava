@@ -10,6 +10,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settings;
     private readonly IThemeService _theme;
     private readonly ILocalizationService _localization;
+    private readonly ISecretStore _secrets;
 
     [ObservableProperty] private AppLanguage _selectedLanguage;
     [ObservableProperty] private AppTheme _selectedTheme;
@@ -17,16 +18,25 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _aiEnabled;
     [ObservableProperty] private string _aiModel = "openrouter/free";
     [ObservableProperty] private string _aiBaseUrl = "https://openrouter.ai/api/v1";
+    [ObservableProperty] private double _aiTemperature;
+    [ObservableProperty] private int _aiMaxTokens;
+    [ObservableProperty] private int _aiTimeoutSeconds;
+    [ObservableProperty] private int _aiRetryCount;
+    [ObservableProperty] private bool _aiAllowUnknownFolders;
+    [ObservableProperty] private bool _aiAllowReportGeneration;
+    [ObservableProperty] private bool _hasApiKey;
     [ObservableProperty] private bool _isSaved;
 
     public SettingsViewModel(
         ISettingsService settings,
         IThemeService theme,
-        ILocalizationService localization)
+        ILocalizationService localization,
+        ISecretStore secrets)
     {
         _settings = settings;
         _theme = theme;
         _localization = localization;
+        _secrets = secrets;
 
         var current = settings.Current;
         _selectedLanguage = current.Language;
@@ -35,6 +45,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _aiEnabled = current.Ai.Enabled;
         _aiModel = current.Ai.ModelName;
         _aiBaseUrl = current.Ai.BaseUrl;
+        _aiTemperature = current.Ai.Temperature;
+        _aiMaxTokens = current.Ai.MaxTokens;
+        _aiTimeoutSeconds = current.Ai.TimeoutSeconds;
+        _aiRetryCount = current.Ai.RetryCount;
+        _aiAllowUnknownFolders = current.Ai.AllowUnknownFolderAnalysis;
+        _aiAllowReportGeneration = current.Ai.AllowReportGeneration;
+
+        _hasApiKey = _secrets.Has(SecretNames.OpenRouterApiKey);
     }
 
     public IReadOnlyList<AppLanguage> Languages { get; } = [AppLanguage.Persian, AppLanguage.English];
@@ -67,9 +85,36 @@ public sealed partial class SettingsViewModel : ViewModelBase
     partial void OnAiEnabledChanged(bool value) => IsSaved = false;
     partial void OnAiModelChanged(string value) => IsSaved = false;
     partial void OnAiBaseUrlChanged(string value) => IsSaved = false;
+    partial void OnAiTemperatureChanged(double value) => IsSaved = false;
+    partial void OnAiMaxTokensChanged(int value) => IsSaved = false;
+    partial void OnAiTimeoutSecondsChanged(int value) => IsSaved = false;
+    partial void OnAiRetryCountChanged(int value) => IsSaved = false;
+    partial void OnAiAllowUnknownFoldersChanged(bool value) => IsSaved = false;
+    partial void OnAiAllowReportGenerationChanged(bool value) => IsSaved = false;
 
     [RelayCommand]
     private void SelectAccent(string hex) => AccentColor = hex;
+
+    /// <summary>
+    /// Takes the key straight from the password box and hands it to the encrypted store. It is
+    /// never held in an observable property, so it cannot surface in a binding trace or a dump.
+    /// </summary>
+    [RelayCommand]
+    private void SaveApiKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+            return;
+
+        _secrets.Set(SecretNames.OpenRouterApiKey, key.Trim());
+        HasApiKey = true;
+    }
+
+    [RelayCommand]
+    private void RemoveApiKey()
+    {
+        _secrets.Set(SecretNames.OpenRouterApiKey, null);
+        HasApiKey = false;
+    }
 
     [RelayCommand]
     private async Task SaveAsync()
@@ -82,7 +127,23 @@ public sealed partial class SettingsViewModel : ViewModelBase
         updated.Ai.ModelName = string.IsNullOrWhiteSpace(AiModel) ? "openrouter/free" : AiModel.Trim();
         updated.Ai.BaseUrl = string.IsNullOrWhiteSpace(AiBaseUrl) ? "https://openrouter.ai/api/v1" : AiBaseUrl.Trim();
 
+        // Clamp rather than reject: a nonsensical number in a text box should not block saving the
+        // rest of the page, and the provider must never be handed an impossible request.
+        updated.Ai.Temperature = Math.Clamp(AiTemperature, 0, 2);
+        updated.Ai.MaxTokens = Math.Clamp(AiMaxTokens, 256, 32_000);
+        updated.Ai.TimeoutSeconds = Math.Clamp(AiTimeoutSeconds, 10, 600);
+        updated.Ai.RetryCount = Math.Clamp(AiRetryCount, 0, 5);
+        updated.Ai.AllowUnknownFolderAnalysis = AiAllowUnknownFolders;
+        updated.Ai.AllowReportGeneration = AiAllowReportGeneration;
+
         await _settings.SaveAsync(updated).ConfigureAwait(true);
+
+        // Reflect whatever the clamps changed, so the page never shows a value that was not saved.
+        AiTemperature = updated.Ai.Temperature;
+        AiMaxTokens = updated.Ai.MaxTokens;
+        AiTimeoutSeconds = updated.Ai.TimeoutSeconds;
+        AiRetryCount = updated.Ai.RetryCount;
+
         IsSaved = true;
     }
 }

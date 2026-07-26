@@ -39,7 +39,8 @@ public sealed class AiSettings
     public int MaxTokens { get; set; } = 2048;
     public int TimeoutSeconds { get; set; } = 60;
     public int RetryCount { get; set; } = 2;
-    public bool SendSanitizedPathsOnly { get; set; } = true;
+    // There is deliberately no "send real paths" switch: sanitisation is unconditional, and a
+    // setting that could turn it off would contradict the guarantee shown on the consent screen.
     public bool AllowUnknownFolderAnalysis { get; set; } = true;
     public bool AllowReportGeneration { get; set; } = true;
 

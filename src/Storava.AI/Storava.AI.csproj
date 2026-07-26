@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Storava.AI</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    This project deliberately references only Application, Contracts and Domain. It has no
+    access to the platform, migration or deletion services, so the AI layer cannot act on the
+    file system even by mistake — the architecture enforces it, not just the UI.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Storava.Domain\Storava.Domain.csproj" />
+    <ProjectReference Include="..\Storava.Contracts\Storava.Contracts.csproj" />
+    <ProjectReference Include="..\Storava.Application\Storava.Application.csproj" />
+  </ItemGroup>
+
+</Project>

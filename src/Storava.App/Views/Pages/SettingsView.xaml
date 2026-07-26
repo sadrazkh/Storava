@@ -83,14 +83,98 @@
 
                         <TextBox Text="{Binding AiModel, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.Model}"
-                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,14"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" Margin="0,0,0,4"
                                  IsEnabled="{Binding AiEnabled}" />
+                        <TextBlock Text="{DynamicResource Str.Settings.Ai.ModelHint}" Style="{StaticResource Storava.Text.Caption}"
+                                   TextWrapping="Wrap" Margin="2,0,0,14" />
                         <TextBox Text="{Binding AiBaseUrl, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.BaseUrl}"
                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                  IsEnabled="{Binding AiEnabled}" />
 
-                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <!-- API key. Handled in code-behind so the plaintext never reaches a binding. -->
+                        <TextBlock Text="{DynamicResource Str.Settings.Ai.ApiKey}" Style="{StaticResource Storava.SectionLabel}"
+                                   Margin="0,20,0,8" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <PasswordBox x:Name="ApiKeyBox" Grid.Column="0" VerticalAlignment="Center"
+                                         Style="{StaticResource MaterialDesignOutlinedPasswordBox}"
+                                         materialDesign:HintAssist.Hint="sk-or-v1-…" FlowDirection="LeftToRight" />
+                            <Button Grid.Column="1" Margin="10,0,0,0" Height="40" Padding="16,0" VerticalAlignment="Center"
+                                    Click="OnSaveApiKey" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Content="{DynamicResource Str.Settings.Ai.ApiKey.Save}" />
+                            <Button Grid.Column="2" Margin="8,0,0,0" Height="40" Padding="16,0" VerticalAlignment="Center"
+                                    Command="{Binding RemoveApiKeyCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Content="{DynamicResource Str.Settings.Ai.ApiKey.Remove}"
+                                    IsEnabled="{Binding HasApiKey}" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="2,10,0,0">
+                            <materialDesign:PackIcon VerticalAlignment="Center" Margin="0,0,6,0" Width="16" Height="16">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="KeyOutline" />
+                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBodyLight}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasApiKey}" Value="True">
+                                                <Setter Property="Kind" Value="CheckCircle" />
+                                                <Setter Property="Foreground" Value="{StaticResource Storava.Brush.Success}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Storava.Text.Caption}">
+                                        <Setter Property="Text" Value="{DynamicResource Str.Settings.Ai.ApiKey.NotSet}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasApiKey}" Value="True">
+                                                <Setter Property="Text" Value="{DynamicResource Str.Settings.Ai.ApiKey.Set}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <TextBlock Text="{DynamicResource Str.Settings.Ai.ApiKey.Hint}" Style="{StaticResource Storava.Text.Caption}"
+                                   TextWrapping="Wrap" MaxWidth="700" Margin="2,6,0,0" />
+
+                        <!-- Request tuning -->
+                        <UniformGrid Columns="4" Margin="0,20,0,0">
+                            <TextBox Text="{Binding AiTemperature, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
+                                     materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.Temperature}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" IsEnabled="{Binding AiEnabled}" />
+                            <TextBox Text="{Binding AiMaxTokens, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
+                                     materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.MaxTokens}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" IsEnabled="{Binding AiEnabled}" />
+                            <TextBox Text="{Binding AiTimeoutSeconds, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
+                                     materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.Timeout}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" IsEnabled="{Binding AiEnabled}" />
+                            <TextBox Text="{Binding AiRetryCount, UpdateSourceTrigger=LostFocus}"
+                                     materialDesign:HintAssist.Hint="{DynamicResource Str.Settings.Ai.Retries}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" IsEnabled="{Binding AiEnabled}" />
+                        </UniformGrid>
+
+                        <!-- Privacy -->
+                        <TextBlock Text="{DynamicResource Str.Settings.Ai.Privacy}" Style="{StaticResource Storava.SectionLabel}"
+                                   Margin="0,22,0,10" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <materialDesign:PackIcon Kind="LockCheckOutline" VerticalAlignment="Center" Width="16" Height="16"
+                                                     Margin="0,0,6,0" Foreground="{StaticResource Storava.Brush.Success}" />
+                            <TextBlock Text="{DynamicResource Str.Settings.Ai.SanitizedOnly}"
+                                       Style="{StaticResource Storava.Text.Body}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <CheckBox IsChecked="{Binding AiAllowUnknownFolders}" Margin="0,0,0,8"
+                                  Content="{DynamicResource Str.Settings.Ai.AllowUnknown}" />
+                        <CheckBox IsChecked="{Binding AiAllowReportGeneration}"
+                                  Content="{DynamicResource Str.Settings.Ai.AllowReports}" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
                             <materialDesign:PackIcon Kind="ShieldLockOutline" VerticalAlignment="Top" Margin="0,2,8,0"
                                                      Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBlock Text="{DynamicResource Str.Settings.Ai.Note}"
