@@ -1,13 +1,19 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using Storava.Web.Data;
 using Storava.Web.Security;
+using Storava.Web.Services;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -31,6 +37,120 @@ try
         .AddDataAnnotationsLocalization();
 
     builder.Services.AddLocalization();
+    builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.Configure<AccountEmailOptions>(
+        builder.Configuration.GetSection("AccountEmail"));
+
+    builder.Services.AddDbContext<ApplicationDbContext>((services, options) =>
+    {
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var provider = configuration["Database:Provider"] ?? "Postgres";
+        var connectionString = configuration.GetConnectionString("AccountDatabase");
+        if (provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                var localDataRoot = Environment.GetFolderPath(
+                    Environment.SpecialFolder.LocalApplicationData);
+                var databaseDirectory = Path.Combine(localDataRoot, "Storava", "Web");
+                Directory.CreateDirectory(databaseDirectory);
+                connectionString =
+                    $"Data Source={Path.Combine(databaseDirectory, "storava-accounts.db")}";
+            }
+
+            options.UseSqlite(connectionString);
+            return;
+        }
+
+        if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "ConnectionStrings:AccountDatabase is required when Database:Provider is Postgres.");
+            }
+
+            options.UseNpgsql(connectionString, postgres =>
+                postgres.EnableRetryOnFailure(3));
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Database:Provider must be either Postgres or Sqlite.");
+    });
+
+    builder.Services
+        .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+        {
+            options.SignIn.RequireConfirmedEmail = true;
+            options.User.RequireUniqueEmail = true;
+            options.Password.RequiredLength = 10;
+            options.Password.RequiredUniqueChars = 4;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.AllowedForNewUsers = true;
+        })
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
+    builder.Services.ConfigureApplicationCookie(options =>
+    {
+        var productionCookie = !builder.Environment.IsDevelopment() &&
+            !string.Equals(
+                builder.Environment.EnvironmentName,
+                "Testing",
+                StringComparison.OrdinalIgnoreCase);
+        options.Cookie.Name = productionCookie
+            ? "__Host-Storava.Auth"
+            : "Storava.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.Path = "/";
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = productionCookie
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
+        options.LoginPath = "/account/login";
+        options.AccessDeniedPath = "/account/login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            await SecurityStampValidator.ValidatePrincipalAsync(context);
+            if (context.Principal?.Identity?.IsAuthenticated != true)
+            {
+                return;
+            }
+
+            var accountSessions =
+                context.HttpContext.RequestServices
+                    .GetRequiredService<IAccountSessionService>();
+            if (!await accountSessions.ValidateAsync(
+                    context.Principal,
+                    context.HttpContext.RequestAborted))
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(
+                    IdentityConstants.ApplicationScheme);
+            }
+        };
+    });
+
+    var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
+    if (!string.IsNullOrWhiteSpace(dataProtectionPath))
+    {
+        Directory.CreateDirectory(dataProtectionPath);
+        builder.Services
+            .AddDataProtection()
+            .SetApplicationName("Storava.Web")
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
+    }
+
+    builder.Services.AddScoped<IAccountSessionService, AccountSessionService>();
+    builder.Services.AddScoped<IAccountEmailSender, AccountEmailSender>();
     builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
         var cultures = new[]
@@ -80,6 +200,16 @@ try
                     QueueLimit = 0,
                     AutoReplenishment = true
                 }));
+        options.AddPolicy("account", context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }));
     });
 
     builder.Services.AddHealthChecks();
@@ -104,6 +234,7 @@ try
     app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
     app.UseRouting();
     app.UseRateLimiter();
+    app.UseAuthentication();
     app.UseAuthorization();
     app.UseAntiforgery();
 
@@ -113,6 +244,24 @@ try
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}")
         .WithStaticAssets();
+
+    if (builder.Configuration.GetValue("Database:ApplyMigrations", true))
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var configuredDatabaseProvider =
+            app.Configuration["Database:Provider"] ?? "Postgres";
+        if (configuredDatabaseProvider.Equals(
+                "Sqlite",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            await database.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await database.Database.MigrateAsync();
+        }
+    }
 
     app.Run();
 }

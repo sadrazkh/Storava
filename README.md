@@ -5,7 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Desktop Phase 6 — History & Comparison** (complete) · **Storava Web 1.0 / Phase 6** (complete).
+> Status: **Desktop Phase 6 — History & Comparison** (complete) · **Storava Web / Phase 7** (complete).
 
 ## Tech stack
 
@@ -35,11 +35,11 @@ Projects for Migrations and Plugins are added in their respective phases.
 ## Storava Web
 
 The browser edition lives independently in `src/Storava.Web` and is maintained on
-`master`. Phases 1-6 provide ASP.NET Core MVC and Razor, Vue 3 page-level islands,
+`master`. Phases 1-7 provide ASP.NET Core MVC and Razor, Vue 3 page-level islands,
 bilingual light/dark UI, a real browser-local Web Worker scanner, versioned IndexedDB
 persistence, a virtualized explorer, local rules, Canvas treemap, history, comparison,
-validated `.storava-web` export/import, a consent-gated OpenRouter advisor, and a hardened
-production container.
+validated `.storava-web` export/import, a consent-gated OpenRouter advisor, PostgreSQL-backed
+Identity accounts and sessions, and a hardened production container.
 
 Choose a folder at `/scan`. Chromium uses the File System Access API; other supported
 browsers use a `webkitdirectory` fallback. Only file metadata and root-relative paths enter
@@ -47,8 +47,10 @@ the worker and IndexedDB. File bytes, contents, absolute personal paths, and sca
 never uploaded. Pause, resume, cancellation, inaccessible-entry recovery, and indeterminate
 real metrics are implemented without a fabricated percentage.
 
-AI receives only aggregate categories, risk counts, rule counts, size/age buckets, and
-optional depth buckets. Its selected rule signals are mapped back to real items locally, so
+AI data depth is user-selectable: Essential sends totals/categories/risks, Balanced adds
+rule/size/age/depth distributions, and Detailed adds anonymous category-risk and per-rule
+byte evidence. None sends names, paths, extensions, or contents. Selected rule signals are
+mapped back to real items locally, so
 the Explorer can tag and filter cleanup/archive review candidates without disclosing file
 names or paths. Native Chromium scans can open or permanently delete a selected local item
 only after separate browser permission and exact-name confirmation. Fallback and imported
@@ -71,7 +73,9 @@ instructions are in `docs/WEB_DEPLOYMENT.md`.
 docker compose up --build
 ```
 
-The production container is then available at `http://localhost:8080`.
+Set `STORAVA_DB_PASSWORD`, `STORAVA_PUBLIC_BASE_URL`, and the `STORAVA_SMTP_*` variables for
+confirmation and password-reset email. The production container is then available at
+`http://localhost:8080`.
 
 ## Run
 

@@ -8,7 +8,8 @@ import {
 } from '@/services/openRouterProvider';
 
 const summary: SanitizedScanSummary = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  dataProfile: 'balanced',
   privacy: {
     containsFileContent: false,
     containsFileNames: false,
@@ -70,6 +71,16 @@ describe('OpenRouter advisor provider', () => {
     expect(init.body).toContain('"data_collection":"deny"');
     expect(init.body).toContain('"zdr":true');
     expect(init.body).toContain('"type":"json_schema"');
+    expect(init.body).toContain('exact counts and byte totals');
+    const request = JSON.parse(init.body) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userMessage = request.messages.find((message) => message.role === 'user');
+    expect(userMessage).toBeDefined();
+    expect(JSON.parse(userMessage?.content ?? '{}')).toMatchObject({
+      analysisContract: { dataProfile: 'balanced' },
+      sanitizedScanSummary: { dataProfile: 'balanced' },
+    });
     expect(result.model).toBe('example/free');
   });
 

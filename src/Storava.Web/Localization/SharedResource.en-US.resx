@@ -17,4 +17,73 @@
   <data name="ErrorBody" xml:space="preserve"><value>The request stopped safely. Your local files were not affected.</value></data>
   <data name="RequestId" xml:space="preserve"><value>Request ID</value></data>
   <data name="BackHome" xml:space="preserve"><value>Back to Storava</value></data>
+  <data name="AccountSignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="AccountCreateAccount" xml:space="preserve"><value>Create account</value></data>
+  <data name="AccountDashboard" xml:space="preserve"><value>Account</value></data>
+  <data name="AccountLogout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="AccountTitle" xml:space="preserve"><value>Your Storava identity</value></data>
+  <data name="AccountSubtitle" xml:space="preserve"><value>One secure account for future devices, sessions and usage—without moving browser scans off this device.</value></data>
+  <data name="AccountDisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="AccountEmail" xml:space="preserve"><value>Email address</value></data>
+  <data name="AccountPassword" xml:space="preserve"><value>Password</value></data>
+  <data name="AccountConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="AccountRememberMe" xml:space="preserve"><value>Keep me signed in on this device</value></data>
+  <data name="AccountForgotPassword" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="AccountNoAccount" xml:space="preserve"><value>New to Storava?</value></data>
+  <data name="AccountHaveAccount" xml:space="preserve"><value>Already have an account?</value></data>
+  <data name="AccountRegister" xml:space="preserve"><value>Create secure account</value></data>
+  <data name="AccountLogin" xml:space="preserve"><value>Sign in securely</value></data>
+  <data name="AccountPasswordHint" xml:space="preserve"><value>Use 10 or more characters with uppercase, lowercase, a number and a symbol.</value></data>
+  <data name="AccountCheckEmailTitle" xml:space="preserve"><value>Check your email</value></data>
+  <data name="AccountCheckEmailBody" xml:space="preserve"><value>We sent a confirmation link. Your account stays locked until the address is confirmed.</value></data>
+  <data name="AccountResetEmailBody" xml:space="preserve"><value>If that address belongs to an account, a password-reset link has been sent.</value></data>
+  <data name="AccountEmailDeliveryFailed" xml:space="preserve"><value>The account was created, but email delivery is not configured or failed. Ask the site operator to configure SMTP, then resend confirmation.</value></data>
+  <data name="AccountDevelopmentLink" xml:space="preserve"><value>Development-only email link</value></data>
+  <data name="AccountConfirmTitle" xml:space="preserve"><value>Email confirmation</value></data>
+  <data name="AccountConfirmSuccess" xml:space="preserve"><value>Your email is confirmed. You can now sign in.</value></data>
+  <data name="AccountConfirmFailed" xml:space="preserve"><value>This confirmation link is invalid, expired or already used.</value></data>
+  <data name="AccountBackToLogin" xml:space="preserve"><value>Continue to sign in</value></data>
+  <data name="AccountForgotTitle" xml:space="preserve"><value>Recover access</value></data>
+  <data name="AccountForgotBody" xml:space="preserve"><value>Enter your email. The response never reveals whether an account exists.</value></data>
+  <data name="AccountSendReset" xml:space="preserve"><value>Send reset link</value></data>
+  <data name="AccountResendConfirmation" xml:space="preserve"><value>Resend confirmation</value></data>
+  <data name="AccountResendTitle" xml:space="preserve"><value>Send a new confirmation link</value></data>
+  <data name="AccountResetTitle" xml:space="preserve"><value>Choose a new password</value></data>
+  <data name="AccountResetButton" xml:space="preserve"><value>Update password</value></data>
+  <data name="AccountResetSuccess" xml:space="preserve"><value>Your password was changed. Existing account sessions will be revalidated.</value></data>
+  <data name="AccountResetInvalid" xml:space="preserve"><value>This password-reset request is invalid or expired.</value></data>
+  <data name="AccountOverview" xml:space="preserve"><value>Security overview</value></data>
+  <data name="AccountPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="AccountPlanFree" xml:space="preserve"><value>Free foundation</value></data>
+  <data name="AccountMemberSince" xml:space="preserve"><value>Member since</value></data>
+  <data name="AccountEmailStatus" xml:space="preserve"><value>Email status</value></data>
+  <data name="AccountConfirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="AccountUnconfirmed" xml:space="preserve"><value>Not confirmed</value></data>
+  <data name="AccountSessions" xml:space="preserve"><value>Active sessions</value></data>
+  <data name="AccountSessionsBody" xml:space="preserve"><value>Only normalized browser and platform labels are stored; raw user-agent and IP addresses are not retained.</value></data>
+  <data name="AccountCurrentSession" xml:space="preserve"><value>Current session</value></data>
+  <data name="AccountLastSeen" xml:space="preserve"><value>Last active</value></data>
+  <data name="AccountExpires" xml:space="preserve"><value>Expires</value></data>
+  <data name="AccountRevoke" xml:space="preserve"><value>Revoke</value></data>
+  <data name="AccountDevices" xml:space="preserve"><value>Connected devices</value></data>
+  <data name="AccountDevicesBody" xml:space="preserve"><value>Companion Agent devices will appear here after secure pairing in the next phase.</value></data>
+  <data name="AccountNoDevices" xml:space="preserve"><value>No companion device is paired yet.</value></data>
+  <data name="AccountUsage" xml:space="preserve"><value>Usage ledger</value></data>
+  <data name="AccountUsageBody" xml:space="preserve"><value>The ledger is ready for future metering. Direct BYOK requests are not billed or counted by Storava.</value></data>
+  <data name="AccountUsageUnits" xml:space="preserve"><value>Recorded units</value></data>
+  <data name="AccountLocalPrivacy" xml:space="preserve"><value>Browser scans stay local</value></data>
+  <data name="AccountLocalPrivacyBody" xml:space="preserve"><value>Creating an account does not upload, copy or synchronize your current IndexedDB scans.</value></data>
+  <data name="AccountSecurity" xml:space="preserve"><value>Identity · sessions · future devices</value></data>
+  <data name="AccountInvalidLogin" xml:space="preserve"><value>The email or password is incorrect.</value></data>
+  <data name="AccountLockedOut" xml:space="preserve"><value>This account is temporarily locked after repeated failed attempts. Try again later.</value></data>
+  <data name="AccountEmailNotConfirmed" xml:space="preserve"><value>Confirm the email address before signing in.</value></data>
+  <data name="AccountDuplicateEmail" xml:space="preserve"><value>An account already uses this email address.</value></data>
+  <data name="AccountPasswordTooShort" xml:space="preserve"><value>The password is too short.</value></data>
+  <data name="AccountPasswordDigit" xml:space="preserve"><value>Add at least one number to the password.</value></data>
+  <data name="AccountPasswordLower" xml:space="preserve"><value>Add at least one lowercase letter to the password.</value></data>
+  <data name="AccountPasswordUpper" xml:space="preserve"><value>Add at least one uppercase letter to the password.</value></data>
+  <data name="AccountPasswordSymbol" xml:space="preserve"><value>Add at least one symbol to the password.</value></data>
+  <data name="AccountOperationFailed" xml:space="preserve"><value>The account operation could not be completed safely.</value></data>
+  <data name="AccountLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="AccountBackHome" xml:space="preserve"><value>Back to workspace</value></data>
 </root>

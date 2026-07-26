@@ -141,3 +141,22 @@ security middleware. No scanned metadata or file upload endpoint was introduced.
 - The release has a multi-stage, non-root Docker image, health check, read-only Compose
   profile, master-branch CI, browser tests, performance harness, security tests, and
   deployment/rollback documentation.
+
+## Phase 7 implementation
+
+- ASP.NET Core Identity owns registered users, password hashing, confirmed-email login,
+  lockout, reset tokens, security stamps, and hardened application cookies.
+- PostgreSQL is the production account store. SQLite is limited to local development and
+  integration tests; PostgreSQL uses the checked-in EF migration.
+- Every login creates a revocable account-session record. Only a normalized browser/platform
+  label is retained; raw user-agent strings and IP addresses are not stored.
+- Device and usage-ledger tables establish the ownership and accounting boundary for the
+  companion Agent without pretending that an Agent already exists.
+- Browser scan records, directory handles, and advisor results remain in IndexedDB. Creating
+  an account does not upload, synchronize, or attach them to the server-side identity.
+- Advisor payload depth is explicit (`essential`, `balanced`, or `detailed`). Even the detailed
+  profile contains only aggregate matrices and rule evidence—never names, extensions, paths,
+  file bytes, contents, or capability handles.
+- Copied browser addresses are normalized and de-duplicate legacy root segments. The UI calls
+  them browser-relative and explains that only the Phase 8 companion Agent can provide an
+  operating-system absolute path.

@@ -84,4 +84,31 @@ describe('advisor sanitizer', () => {
     const result = createSanitizedSummaryForTest(session, settings, items);
     expect(result.pathShape).toBeUndefined();
   });
+
+  it('offers three explicit aggregate data depths without identifiers', () => {
+    const defaults = createDefaultAdvisorSettings('en-US');
+    const essential = createSanitizedSummaryForTest(
+      session,
+      { ...defaults, dataProfile: 'essential' },
+      items,
+    );
+    const detailed = createSanitizedSummaryForTest(
+      session,
+      { ...defaults, dataProfile: 'detailed' },
+      items,
+    );
+
+    expect(essential.ruleMatches).toBeUndefined();
+    expect(essential.sizeDistribution).toBeUndefined();
+    expect(essential.pathShape).toBeUndefined();
+    expect(detailed.ruleEvidence).toEqual([{
+      rule: 'large-file',
+      count: 1,
+      bytes: 1_500_000,
+      categories: [{ category: 'documents', count: 1, bytes: 1_500_000 }],
+    }]);
+    expect(detailed.categoryRiskMatrix).toHaveLength(1);
+    expect(JSON.stringify(detailed)).not.toContain('tax-return');
+    expect(JSON.stringify(detailed)).not.toContain('private-client');
+  });
 });

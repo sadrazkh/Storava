@@ -1,8 +1,11 @@
 import type { Locale } from '@/localization/messages';
 import type { RiskLevel } from '@/models/scan';
 
+export type AdvisorDataProfile = 'essential' | 'balanced' | 'detailed';
+
 export interface AdvisorSettings {
   enabled: boolean;
+  dataProfile: AdvisorDataProfile;
   model: string;
   baseUrl: string;
   temperature: number;
@@ -16,7 +19,8 @@ export interface AdvisorSettings {
 }
 
 export interface SanitizedScanSummary {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  dataProfile: AdvisorDataProfile;
   privacy: {
     containsFileContent: false;
     containsFileNames: false;
@@ -39,16 +43,16 @@ export interface SanitizedScanSummary {
     count: number;
   }>;
   riskCounts: Record<RiskLevel, number>;
-  ruleMatches: Array<{
+  ruleMatches?: Array<{
     rule: string;
     count: number;
   }>;
-  sizeDistribution: Array<{
+  sizeDistribution?: Array<{
     bucket: string;
     count: number;
     bytes: number;
   }>;
-  ageDistribution: Array<{
+  ageDistribution?: Array<{
     bucket: string;
     count: number;
     bytes: number;
@@ -61,6 +65,20 @@ export interface SanitizedScanSummary {
       count: number;
     }>;
   };
+  categoryRiskMatrix?: Array<{
+    category: string;
+    riskCounts: Record<RiskLevel, number>;
+  }>;
+  ruleEvidence?: Array<{
+    rule: string;
+    count: number;
+    bytes: number;
+    categories: Array<{
+      category: string;
+      count: number;
+      bytes: number;
+    }>;
+  }>;
 }
 
 export type AdvisorRisk = 'low' | 'medium' | 'high';

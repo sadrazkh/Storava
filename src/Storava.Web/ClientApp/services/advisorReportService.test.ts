@@ -16,7 +16,8 @@ const result: AdvisorResult = {
 };
 
 const summary: SanitizedScanSummary = {
-  schemaVersion: 1,
+  schemaVersion: 2,
+  dataProfile: 'balanced',
   privacy: {
     containsFileContent: false,
     containsFileNames: false,

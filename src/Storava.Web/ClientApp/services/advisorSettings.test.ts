@@ -22,6 +22,7 @@ describe('advisor settings', () => {
     expect(stored).not.toContain('must-never-persist');
     expect(stored).not.toContain('apiKey');
     expect(loadAdvisorSettings('fa-IR').model).toBe('openrouter/free');
+    expect(loadAdvisorSettings('fa-IR').dataProfile).toBe('balanced');
   });
 
   it('allows only official HTTPS OpenRouter API bases', () => {

@@ -177,6 +177,11 @@ export function buildOpenRouterRequest(
   summary: SanitizedScanSummary,
 ): JsonRecord {
   const language = settings.preferredLanguage === 'fa-IR' ? 'Persian (fa-IR)' : 'English (en-US)';
+  const profileInstruction = {
+    essential: 'The user chose the essential data profile. Keep conclusions conservative and explicitly identify which deeper questions cannot be answered from totals and category/risk counts.',
+    balanced: 'The user chose the balanced data profile. Correlate category totals with rule, age, size, risk, and optional depth distributions. Cite the relevant numeric buckets in every material finding.',
+    detailed: 'The user chose the detailed aggregate profile. Cross-check the category-risk matrix and per-rule byte/category evidence against totals. Rank review opportunities by likely impact, confidence, and safety while explaining conflicting signals.',
+  }[settings.dataProfile];
   return {
     model: settings.model,
     temperature: settings.temperature,
@@ -198,12 +203,23 @@ export function buildOpenRouterRequest(
     messages: [
       {
         role: 'system',
-        content: `You are Storava's read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata. Never infer file contents, identities, personal paths, or secrets. Never claim to have inspected files. Do not issue delete, move, rename, execute, or cleanup commands. Priorities are review priorities for a human, not file-operation instructions. reviewTargets may reference only rule signals that are present in ruleMatches; they identify aggregate classes for local human review and never individual files. Use cleanup-candidate only when the aggregate evidence suggests likely regeneratable or redundant data. State uncertainty and use the required JSON schema.`,
+        content: `You are Storava's senior, read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata and do not rely on unstated assumptions. Never infer file contents, identities, personal paths, secrets, projects, or business purpose. Never claim to have inspected files. Do not issue delete, move, rename, execute, shell, or automated cleanup commands. Priorities are ordered human-review plans, not file-operation instructions. Separate measured evidence from interpretation; include exact counts and byte totals or bucket values in each finding when available. Compare signals against the whole scan so that a large count with negligible bytes is not overstated. Highlight access errors and incomplete scans as coverage limitations. Use confidence below 0.7 whenever evidence is indirect or incomplete. reviewTargets may reference only rule signals present in ruleMatches or ruleEvidence; they identify aggregate classes for local human review and never individual files. Use cleanup-candidate only for strong aggregate evidence of regeneratable or redundant data; otherwise prefer investigate or archive-candidate. Avoid repeating the same point across findings and priorities. ${profileInstruction} State uncertainty, make the privacy boundary explicit, and use the required JSON schema.`,
       },
       {
         role: 'user',
         content: JSON.stringify({
-          task: 'Explain storage pressure, notable aggregate signals, and safe human review priorities.',
+          task: [
+            'Explain the principal sources of storage pressure and their share of the scanned total.',
+            'Identify meaningful risk, age, size, and rule correlations supported by the selected data profile.',
+            'Produce a short, impact-ordered human review plan with expected benefit and verification cautions.',
+            'Call out missing evidence and what a richer aggregate profile could clarify without requesting names, paths, or contents.',
+          ],
+          analysisContract: {
+            dataProfile: settings.dataProfile,
+            advisoryOnly: true,
+            destructiveActionsAllowed: false,
+            identifyIndividualFiles: false,
+          },
           sanitizedScanSummary: summary,
         }),
       },

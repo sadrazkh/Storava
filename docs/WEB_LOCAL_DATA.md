@@ -19,6 +19,14 @@ included in export/report data, or sent over the network. Advisor results contai
 text and closed-list signal identifiers, not item identifiers. The Explorer performs the
 signal-to-item mapping locally.
 
+## Account boundary
+
+Phase 7 accounts do not change the browser-data boundary. PostgreSQL stores identity,
+revocable login sessions, future companion-device ownership, and usage-ledger entries. It
+does not store scan sessions, item metadata, directory handles, advisor payloads, advisor
+results, OpenRouter keys, or exported reports. Signing in therefore does not synchronize an
+existing browser scan to another browser or device.
+
 An interrupted tab is retained as an interrupted session for evidence, but the UI does not
 claim that traversal can resume after the permission-bearing tab closes. Starting another
 scan requires choosing the folder again.

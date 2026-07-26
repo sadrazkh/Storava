@@ -1,0 +1,24 @@
+@model Storava.Web.Models.ConfirmEmailViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountConfirmTitle"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountSecurity"]</span>
+            <h1>@T["AccountConfirmTitle"]</h1>
+            <p>@(Model.Succeeded ? T["AccountConfirmSuccess"] : T["AccountConfirmFailed"])</p>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card">
+            <div class="account-status-mark" aria-hidden="true">@(Model.Succeeded ? "✓" : "!")</div>
+            <h2>@T["AccountConfirmTitle"]</h2>
+            <p>@(Model.Succeeded ? T["AccountConfirmSuccess"] : T["AccountConfirmFailed"])</p>
+            <a class="account-inline-link" asp-action="Login">@T["AccountBackToLogin"]</a>
+        </div>
+    </section>
+</main>

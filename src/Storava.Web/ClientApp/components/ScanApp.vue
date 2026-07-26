@@ -12,6 +12,7 @@ import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 import { detectCapabilities } from '@/services/capabilityService';
 import { deleteLocalItem, readLocalFile } from '@/services/fileActionService';
 import { FolderSelectionCancelledError, selectFolder } from '@/services/folderPermissionService';
+import { buildBrowserRelativeAddress } from '@/services/itemAddressService';
 import {
   clearAllLocalData,
   deleteSession,
@@ -178,7 +179,7 @@ function matchingAdvisorTarget(item: ScanItem): AdvisorReviewTarget | undefined 
 }
 
 function itemAddress(item: ScanItem): string {
-  return item.relativePath ? `${session.value?.rootName ?? ''}/${item.relativePath}` : session.value?.rootName ?? '';
+  return buildBrowserRelativeAddress(session.value?.rootName ?? '', item.relativePath);
 }
 
 function resetRecommendationFilter(): void {
@@ -663,7 +664,7 @@ onBeforeUnmount(() => {
           <strong>{{ explorerCopy.aiTag }}</strong>
           <span>{{ matchingAdvisorTarget(selectedItem)?.rationale }}</span>
         </div>
-        <dl><div><dt>{{ explorerCopy.itemAddress }}</dt><dd>{{ itemAddress(selectedItem) }}</dd></div><div><dt>{{ t('size') }}</dt><dd>{{ formatBytes(selectedItem.size) }}</dd></div><div><dt>{{ t('modified') }}</dt><dd>{{ formatDate(selectedItem.modifiedAt) }}</dd></div><div><dt>{{ t('category') }}</dt><dd>{{ categoryLabel(selectedItem.category) }}</dd></div></dl>
+        <dl><div><dt>{{ explorerCopy.itemAddress }}</dt><dd>{{ itemAddress(selectedItem) }}<small>{{ explorerCopy.addressLimitation }}</small></dd></div><div><dt>{{ t('size') }}</dt><dd>{{ formatBytes(selectedItem.size) }}</dd></div><div><dt>{{ t('modified') }}</dt><dd>{{ formatDate(selectedItem.modifiedAt) }}</dd></div><div><dt>{{ t('category') }}</dt><dd>{{ categoryLabel(selectedItem.category) }}</dd></div></dl>
         <ul v-if="selectedItem.ruleIds.length"><li v-for="rule in selectedItem.ruleIds" :key="rule">{{ ruleLabel(rule) }}</li></ul>
         <div class="drawer-actions">
           <button class="button button--quiet" type="button" @click="copyItemAddress(selectedItem)">{{ explorerCopy.copyAddress }}</button>
@@ -720,6 +721,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.detail-drawer dd small {
+  display: block;
+  max-width: 48ch;
+  margin-top: .45rem;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
 .explorer-tools {
   grid-template-columns: minmax(240px, 1fr) repeat(5, minmax(120px, auto));
 }

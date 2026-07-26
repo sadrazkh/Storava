@@ -1,0 +1,34 @@
+@model Storava.Web.Models.ForgotPasswordViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountResendTitle"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountSecurity"]</span>
+            <h1>@T["AccountResendTitle"]</h1>
+            <p>@T["AccountCheckEmailBody"]</p>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card">
+            <h2>@T["AccountResendTitle"]</h2>
+            <p>@T["AccountCheckEmailBody"]</p>
+            <form class="account-form" method="post">
+                <div asp-validation-summary="ModelOnly" class="account-validation"></div>
+                <div class="account-field">
+                    <label asp-for="Email">@T["AccountEmail"]</label>
+                    <input asp-for="Email" autocomplete="email" inputmode="email" />
+                    <span asp-validation-for="Email" class="account-validation"></span>
+                </div>
+                <button class="account-button" type="submit">@T["AccountResendConfirmation"]</button>
+            </form>
+            <div class="account-links">
+                <a asp-action="Login">@T["AccountBackToLogin"]</a>
+            </div>
+        </div>
+    </section>
+</main>

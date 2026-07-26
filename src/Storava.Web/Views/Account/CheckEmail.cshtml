@@ -1,0 +1,45 @@
+@model Storava.Web.Models.CheckEmailViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountCheckEmailTitle"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountSecurity"]</span>
+            <h1>@T["AccountCheckEmailTitle"]</h1>
+            <p>@(Model.IsPasswordReset ? T["AccountResetEmailBody"] : T["AccountCheckEmailBody"])</p>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card">
+            <div class="account-status-mark" aria-hidden="true">→</div>
+            <h2>@T["AccountCheckEmailTitle"]</h2>
+            <p>
+                @if (!Model.DeliverySucceeded)
+                {
+                    @T["AccountEmailDeliveryFailed"]
+                }
+                else if (Model.IsPasswordReset)
+                {
+                    @T["AccountResetEmailBody"]
+                }
+                else
+                {
+                    @T["AccountCheckEmailBody"]
+                }
+            </p>
+            @if (!string.IsNullOrWhiteSpace(Model.DevelopmentLink))
+            {
+                <a class="account-dev-link" data-testid="development-email-link" href="@Model.DevelopmentLink">
+                    @T["AccountDevelopmentLink"]
+                </a>
+            }
+            <div class="account-links">
+                <a asp-action="Login">@T["AccountBackToLogin"]</a>
+            </div>
+        </div>
+    </section>
+</main>

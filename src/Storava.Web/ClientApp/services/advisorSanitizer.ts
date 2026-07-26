@@ -20,6 +20,12 @@ interface SummaryState {
   maximumDepth: number;
   depthTotal: number;
   depthCount: number;
+  categoryRiskCounts: Map<string, Record<RiskLevel, number>>;
+  ruleEvidence: Map<string, {
+    count: number;
+    bytes: number;
+    categories: Map<string, { count: number; bytes: number }>;
+  }>;
 }
 
 function boundedInteger(value: number, maximum = Number.MAX_SAFE_INTEGER): number {
@@ -53,6 +59,8 @@ function createState(): SummaryState {
     maximumDepth: 0,
     depthTotal: 0,
     depthCount: 0,
+    categoryRiskCounts: new Map(),
+    ruleEvidence: new Map(),
   };
 }
 
@@ -60,9 +68,29 @@ function addItem(state: SummaryState, item: ScanItem, settings: AdvisorSettings,
   if (!permittedCategories.has(item.category)) return;
   if (!settings.allowUnknownFolderAnalysis && item.category === 'other') return;
 
-  if (item.risk in state.riskCounts) state.riskCounts[item.risk] += 1;
+  if (item.risk in state.riskCounts) {
+    state.riskCounts[item.risk] += 1;
+    const categoryRisks = state.categoryRiskCounts.get(item.category)
+      ?? { none: 0, low: 0, medium: 0, high: 0 };
+    categoryRisks[item.risk] += 1;
+    state.categoryRiskCounts.set(item.category, categoryRisks);
+  }
   for (const rule of item.ruleIds) {
-    if (permittedRules.has(rule)) state.ruleCounts.set(rule, (state.ruleCounts.get(rule) ?? 0) + 1);
+    if (!permittedRules.has(rule)) continue;
+    state.ruleCounts.set(rule, (state.ruleCounts.get(rule) ?? 0) + 1);
+    const evidence = state.ruleEvidence.get(rule) ?? {
+      count: 0,
+      bytes: 0,
+      categories: new Map<string, { count: number; bytes: number }>(),
+    };
+    const bytes = item.kind === 'file' ? boundedInteger(item.size) : 0;
+    evidence.count += 1;
+    evidence.bytes += bytes;
+    const category = evidence.categories.get(item.category) ?? { count: 0, bytes: 0 };
+    category.count += 1;
+    category.bytes += bytes;
+    evidence.categories.set(item.category, category);
+    state.ruleEvidence.set(rule, evidence);
   }
 
   const depth = boundedInteger(item.depth, 10_000);
@@ -110,7 +138,8 @@ function finishSummary(
     .slice(0, 12);
 
   const summary: SanitizedScanSummary = {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    dataProfile: settings.dataProfile,
     privacy: {
       containsFileContent: false,
       containsFileNames: false,
@@ -129,19 +158,42 @@ function finishSummary(
     },
     categories,
     riskCounts: state.riskCounts,
-    ruleMatches: [...state.ruleCounts.entries()]
-      .map(([rule, count]) => ({ rule, count }))
-      .sort((left, right) => right.count - left.count),
-    sizeDistribution: state.sizeDistribution,
-    ageDistribution: state.ageDistribution,
   };
 
-  if (settings.includePathShape) {
+  if (settings.dataProfile !== 'essential') {
+    summary.ruleMatches = [...state.ruleCounts.entries()]
+      .map(([rule, count]) => ({ rule, count }))
+      .sort((left, right) => right.count - left.count);
+    summary.sizeDistribution = state.sizeDistribution;
+    summary.ageDistribution = state.ageDistribution;
+  }
+
+  if (settings.dataProfile !== 'essential' && settings.includePathShape) {
     summary.pathShape = {
       maximumDepth: state.maximumDepth,
       averageDepth: state.depthCount > 0 ? Math.round(state.depthTotal / state.depthCount * 10) / 10 : 0,
       depthDistribution: state.depthDistribution,
     };
+  }
+
+  if (settings.dataProfile === 'detailed') {
+    summary.categoryRiskMatrix = [...state.categoryRiskCounts.entries()]
+      .map(([category, riskCounts]) => ({ category, riskCounts }))
+      .sort((left, right) => {
+        const leftRisk = left.riskCounts.high * 3 + left.riskCounts.medium * 2 + left.riskCounts.low;
+        const rightRisk = right.riskCounts.high * 3 + right.riskCounts.medium * 2 + right.riskCounts.low;
+        return rightRisk - leftRisk;
+      });
+    summary.ruleEvidence = [...state.ruleEvidence.entries()]
+      .map(([rule, evidence]) => ({
+        rule,
+        count: evidence.count,
+        bytes: evidence.bytes,
+        categories: [...evidence.categories.entries()]
+          .map(([category, aggregate]) => ({ category, ...aggregate }))
+          .sort((left, right) => right.bytes - left.bytes),
+      }))
+      .sort((left, right) => right.bytes - left.bytes);
   }
   return summary;
 }

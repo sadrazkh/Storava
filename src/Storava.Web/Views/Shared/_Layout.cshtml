@@ -5,6 +5,10 @@
     var direction = culture.StartsWith("fa", StringComparison.OrdinalIgnoreCase) ? "rtl" : "ltr";
     var pageTitle = ViewData["Title"]?.ToString() ?? Localizer["ProductName"].Value;
     var pageDescription = ViewData["Description"]?.ToString() ?? Localizer["MetaDescription"].Value;
+    var isAccountPage = string.Equals(
+        ViewContext.RouteData.Values["controller"]?.ToString(),
+        "Account",
+        StringComparison.OrdinalIgnoreCase);
 }
 <!doctype html>
 <html lang="@culture" dir="@direction" data-theme="system">
@@ -18,10 +22,31 @@
     <link rel="icon" href="~/icons/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="~/site.webmanifest" />
     <link rel="stylesheet" href="~/dist/assets/app.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <a class="skip-link" href="#main-content">@Localizer["SkipToContent"]</a>
+    @if (!isAccountPage)
+    {
+        <nav class="account-dock" aria-label="@Localizer["AccountDashboard"]" data-testid="account-dock">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="account-dock__identity" asp-controller="Account" asp-action="Index">
+                <span aria-hidden="true"></span>
+                @Localizer["AccountDashboard"]
+            </a>
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit">@Localizer["AccountLogout"]</button>
+            </form>
+        }
+        else
+        {
+            <a asp-controller="Account" asp-action="Login">@Localizer["AccountSignIn"]</a>
+            <a class="account-dock__primary" asp-controller="Account" asp-action="Register">@Localizer["AccountCreateAccount"]</a>
+        }
+        </nav>
+    }
     <main id="main-content">
         @RenderBody()
     </main>

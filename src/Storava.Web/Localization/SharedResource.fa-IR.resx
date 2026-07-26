@@ -17,4 +17,73 @@
   <data name="ErrorBody" xml:space="preserve"><value>درخواست با ایمنی متوقف شد و فایل‌های محلی شما تغییری نکردند.</value></data>
   <data name="RequestId" xml:space="preserve"><value>شناسهٔ درخواست</value></data>
   <data name="BackHome" xml:space="preserve"><value>بازگشت به Storava</value></data>
+  <data name="AccountSignIn" xml:space="preserve"><value>ورود</value></data>
+  <data name="AccountCreateAccount" xml:space="preserve"><value>ساخت حساب</value></data>
+  <data name="AccountDashboard" xml:space="preserve"><value>حساب کاربری</value></data>
+  <data name="AccountLogout" xml:space="preserve"><value>خروج</value></data>
+  <data name="AccountTitle" xml:space="preserve"><value>هویت شما در استوراوا</value></data>
+  <data name="AccountSubtitle" xml:space="preserve"><value>یک حساب امن برای دستگاه‌ها، نشست‌ها و مصرف آینده؛ بدون انتقال اسکن مرورگر از این دستگاه.</value></data>
+  <data name="AccountDisplayName" xml:space="preserve"><value>نام نمایشی</value></data>
+  <data name="AccountEmail" xml:space="preserve"><value>نشانی ایمیل</value></data>
+  <data name="AccountPassword" xml:space="preserve"><value>رمز عبور</value></data>
+  <data name="AccountConfirmPassword" xml:space="preserve"><value>تکرار رمز عبور</value></data>
+  <data name="AccountRememberMe" xml:space="preserve"><value>در این دستگاه وارد بمانم</value></data>
+  <data name="AccountForgotPassword" xml:space="preserve"><value>رمز را فراموش کرده‌اید؟</value></data>
+  <data name="AccountNoAccount" xml:space="preserve"><value>تازه به استوراوا آمده‌اید؟</value></data>
+  <data name="AccountHaveAccount" xml:space="preserve"><value>حساب دارید؟</value></data>
+  <data name="AccountRegister" xml:space="preserve"><value>ساخت حساب امن</value></data>
+  <data name="AccountLogin" xml:space="preserve"><value>ورود امن</value></data>
+  <data name="AccountPasswordHint" xml:space="preserve"><value>حداقل ۱۰ نویسه با حرف بزرگ، حرف کوچک، عدد و نماد استفاده کنید.</value></data>
+  <data name="AccountCheckEmailTitle" xml:space="preserve"><value>ایمیل خود را بررسی کنید</value></data>
+  <data name="AccountCheckEmailBody" xml:space="preserve"><value>پیوند تأیید ارسال شد. تا تأیید نشانی، حساب قفل می‌ماند.</value></data>
+  <data name="AccountResetEmailBody" xml:space="preserve"><value>اگر این نشانی متعلق به حسابی باشد، پیوند بازیابی رمز ارسال شده است.</value></data>
+  <data name="AccountEmailDeliveryFailed" xml:space="preserve"><value>حساب ساخته شد، اما ارسال ایمیل تنظیم نشده یا ناموفق بود. پس از تنظیم SMTP، تأیید را دوباره ارسال کنید.</value></data>
+  <data name="AccountDevelopmentLink" xml:space="preserve"><value>پیوند ایمیل مخصوص محیط توسعه</value></data>
+  <data name="AccountConfirmTitle" xml:space="preserve"><value>تأیید ایمیل</value></data>
+  <data name="AccountConfirmSuccess" xml:space="preserve"><value>ایمیل شما تأیید شد و اکنون می‌توانید وارد شوید.</value></data>
+  <data name="AccountConfirmFailed" xml:space="preserve"><value>این پیوند نامعتبر، منقضی یا قبلاً استفاده شده است.</value></data>
+  <data name="AccountBackToLogin" xml:space="preserve"><value>ادامه برای ورود</value></data>
+  <data name="AccountForgotTitle" xml:space="preserve"><value>بازیابی دسترسی</value></data>
+  <data name="AccountForgotBody" xml:space="preserve"><value>ایمیل را وارد کنید. پاسخ مشخص نمی‌کند حسابی با آن وجود دارد یا نه.</value></data>
+  <data name="AccountSendReset" xml:space="preserve"><value>ارسال پیوند بازیابی</value></data>
+  <data name="AccountResendConfirmation" xml:space="preserve"><value>ارسال دوبارهٔ تأیید</value></data>
+  <data name="AccountResendTitle" xml:space="preserve"><value>ارسال پیوند تأیید تازه</value></data>
+  <data name="AccountResetTitle" xml:space="preserve"><value>رمز تازه انتخاب کنید</value></data>
+  <data name="AccountResetButton" xml:space="preserve"><value>به‌روزرسانی رمز</value></data>
+  <data name="AccountResetSuccess" xml:space="preserve"><value>رمز تغییر کرد. نشست‌های موجود دوباره اعتبارسنجی می‌شوند.</value></data>
+  <data name="AccountResetInvalid" xml:space="preserve"><value>درخواست بازیابی رمز نامعتبر یا منقضی است.</value></data>
+  <data name="AccountOverview" xml:space="preserve"><value>نمای امنیتی</value></data>
+  <data name="AccountPlan" xml:space="preserve"><value>پلن</value></data>
+  <data name="AccountPlanFree" xml:space="preserve"><value>پایهٔ رایگان</value></data>
+  <data name="AccountMemberSince" xml:space="preserve"><value>عضویت از</value></data>
+  <data name="AccountEmailStatus" xml:space="preserve"><value>وضعیت ایمیل</value></data>
+  <data name="AccountConfirmed" xml:space="preserve"><value>تأییدشده</value></data>
+  <data name="AccountUnconfirmed" xml:space="preserve"><value>تأییدنشده</value></data>
+  <data name="AccountSessions" xml:space="preserve"><value>نشست‌های فعال</value></data>
+  <data name="AccountSessionsBody" xml:space="preserve"><value>فقط عنوان استاندارد مرورگر و سیستم ذخیره می‌شود؛ User-Agent خام و IP نگهداری نمی‌شوند.</value></data>
+  <data name="AccountCurrentSession" xml:space="preserve"><value>نشست فعلی</value></data>
+  <data name="AccountLastSeen" xml:space="preserve"><value>آخرین فعالیت</value></data>
+  <data name="AccountExpires" xml:space="preserve"><value>انقضا</value></data>
+  <data name="AccountRevoke" xml:space="preserve"><value>لغو نشست</value></data>
+  <data name="AccountDevices" xml:space="preserve"><value>دستگاه‌های متصل</value></data>
+  <data name="AccountDevicesBody" xml:space="preserve"><value>Agentهای همراه پس از اتصال امن در فاز بعد اینجا نمایش داده می‌شوند.</value></data>
+  <data name="AccountNoDevices" xml:space="preserve"><value>هنوز دستگاه همراهی متصل نشده است.</value></data>
+  <data name="AccountUsage" xml:space="preserve"><value>دفتر مصرف</value></data>
+  <data name="AccountUsageBody" xml:space="preserve"><value>زیرساخت ثبت مصرف برای آینده آماده است. درخواست‌های مستقیم BYOK توسط استوراوا محاسبه یا صورتحساب نمی‌شوند.</value></data>
+  <data name="AccountUsageUnits" xml:space="preserve"><value>واحد ثبت‌شده</value></data>
+  <data name="AccountLocalPrivacy" xml:space="preserve"><value>اسکن مرورگر محلی می‌ماند</value></data>
+  <data name="AccountLocalPrivacyBody" xml:space="preserve"><value>ساخت حساب، اسکن‌های IndexedDB فعلی را آپلود، کپی یا همگام نمی‌کند.</value></data>
+  <data name="AccountSecurity" xml:space="preserve"><value>هویت · نشست‌ها · دستگاه‌های آینده</value></data>
+  <data name="AccountInvalidLogin" xml:space="preserve"><value>ایمیل یا رمز عبور نادرست است.</value></data>
+  <data name="AccountLockedOut" xml:space="preserve"><value>حساب پس از تلاش‌های ناموفق موقتاً قفل شده است. بعداً دوباره تلاش کنید.</value></data>
+  <data name="AccountEmailNotConfirmed" xml:space="preserve"><value>پیش از ورود، ایمیل را تأیید کنید.</value></data>
+  <data name="AccountDuplicateEmail" xml:space="preserve"><value>حسابی با این ایمیل وجود دارد.</value></data>
+  <data name="AccountPasswordTooShort" xml:space="preserve"><value>رمز عبور بیش از حد کوتاه است.</value></data>
+  <data name="AccountPasswordDigit" xml:space="preserve"><value>حداقل یک عدد به رمز اضافه کنید.</value></data>
+  <data name="AccountPasswordLower" xml:space="preserve"><value>حداقل یک حرف کوچک به رمز اضافه کنید.</value></data>
+  <data name="AccountPasswordUpper" xml:space="preserve"><value>حداقل یک حرف بزرگ به رمز اضافه کنید.</value></data>
+  <data name="AccountPasswordSymbol" xml:space="preserve"><value>حداقل یک نماد به رمز اضافه کنید.</value></data>
+  <data name="AccountOperationFailed" xml:space="preserve"><value>عملیات حساب با ایمنی کامل انجام نشد.</value></data>
+  <data name="AccountLanguage" xml:space="preserve"><value>زبان</value></data>
+  <data name="AccountBackHome" xml:space="preserve"><value>بازگشت به فضای کاری</value></data>
 </root>

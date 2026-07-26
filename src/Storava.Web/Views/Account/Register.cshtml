@@ -1,0 +1,55 @@
+@model Storava.Web.Models.RegisterViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountCreateAccount"];
+    ViewData["Description"] = T["AccountSubtitle"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountSecurity"]</span>
+            <h1>@T["AccountTitle"]</h1>
+            <p>@T["AccountSubtitle"]</p>
+        </div>
+        <div class="account-local-note">
+            <strong>@T["AccountLocalPrivacy"]</strong>
+            <span>@T["AccountLocalPrivacyBody"]</span>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card">
+            <h2>@T["AccountCreateAccount"]</h2>
+            <p>@T["AccountSubtitle"]</p>
+            <form class="account-form" method="post">
+                <div asp-validation-summary="ModelOnly" class="account-validation"></div>
+                <div class="account-field">
+                    <label asp-for="DisplayName">@T["AccountDisplayName"]</label>
+                    <input asp-for="DisplayName" autocomplete="name" />
+                    <span asp-validation-for="DisplayName" class="account-validation"></span>
+                </div>
+                <div class="account-field">
+                    <label asp-for="Email">@T["AccountEmail"]</label>
+                    <input asp-for="Email" autocomplete="email" inputmode="email" />
+                    <span asp-validation-for="Email" class="account-validation"></span>
+                </div>
+                <div class="account-field">
+                    <label asp-for="Password">@T["AccountPassword"]</label>
+                    <input asp-for="Password" autocomplete="new-password" />
+                    <span class="account-field-hint">@T["AccountPasswordHint"]</span>
+                    <span asp-validation-for="Password" class="account-validation"></span>
+                </div>
+                <div class="account-field">
+                    <label asp-for="ConfirmPassword">@T["AccountConfirmPassword"]</label>
+                    <input asp-for="ConfirmPassword" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmPassword" class="account-validation"></span>
+                </div>
+                <button class="account-button" type="submit">@T["AccountRegister"]</button>
+            </form>
+            <div class="account-links">
+                <span>@T["AccountHaveAccount"] <a asp-action="Login">@T["AccountSignIn"]</a></span>
+            </div>
+        </div>
+    </section>
+</main>

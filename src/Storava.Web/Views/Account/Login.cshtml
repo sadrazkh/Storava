@@ -1,0 +1,51 @@
+@model Storava.Web.Models.LoginViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountSignIn"];
+    ViewData["Description"] = T["AccountSubtitle"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountSecurity"]</span>
+            <h1>@T["AccountTitle"]</h1>
+            <p>@T["AccountSubtitle"]</p>
+        </div>
+        <div class="account-local-note">
+            <strong>@T["AccountLocalPrivacy"]</strong>
+            <span>@T["AccountLocalPrivacyBody"]</span>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card">
+            <h2>@T["AccountSignIn"]</h2>
+            <p>@T["AccountSubtitle"]</p>
+            <form class="account-form" method="post">
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="account-validation"></div>
+                <div class="account-field">
+                    <label asp-for="Email">@T["AccountEmail"]</label>
+                    <input asp-for="Email" autocomplete="email" inputmode="email" />
+                    <span asp-validation-for="Email" class="account-validation"></span>
+                </div>
+                <div class="account-field">
+                    <label asp-for="Password">@T["AccountPassword"]</label>
+                    <input asp-for="Password" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="account-validation"></span>
+                </div>
+                <label class="account-checkline">
+                    <input asp-for="RememberMe" />
+                    <span>@T["AccountRememberMe"]</span>
+                </label>
+                <button class="account-button" type="submit">@T["AccountLogin"]</button>
+            </form>
+            <div class="account-links">
+                <a asp-action="ForgotPassword">@T["AccountForgotPassword"]</a>
+                <span>@T["AccountNoAccount"] <a asp-action="Register">@T["AccountCreateAccount"]</a></span>
+                <a asp-action="ResendConfirmation">@T["AccountResendConfirmation"]</a>
+            </div>
+        </div>
+    </section>
+</main>

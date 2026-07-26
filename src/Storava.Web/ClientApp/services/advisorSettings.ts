@@ -7,6 +7,7 @@ export const defaultOpenRouterBaseUrl = 'https://openrouter.ai/api/v1';
 export function createDefaultAdvisorSettings(locale: Locale): AdvisorSettings {
   return {
     enabled: false,
+    dataProfile: 'balanced',
     model: 'openrouter/free',
     baseUrl: defaultOpenRouterBaseUrl,
     temperature: 0.2,
@@ -68,9 +69,15 @@ export function normalizeAdvisorSettings(value: unknown, locale: Locale): Adviso
   const preferredLanguage = value.preferredLanguage === 'fa-IR' || value.preferredLanguage === 'en-US'
     ? value.preferredLanguage
     : defaults.preferredLanguage;
+  const dataProfile = value.dataProfile === 'essential'
+    || value.dataProfile === 'balanced'
+    || value.dataProfile === 'detailed'
+    ? value.dataProfile
+    : defaults.dataProfile;
 
   return {
     enabled: booleanValue(value.enabled, defaults.enabled),
+    dataProfile,
     model,
     baseUrl,
     temperature: finiteNumber(value.temperature, defaults.temperature, 0, 1),

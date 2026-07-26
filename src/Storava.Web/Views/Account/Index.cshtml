@@ -1,0 +1,103 @@
+@model Storava.Web.Models.AccountIndexViewModel
+@inject IStringLocalizer<SharedResource> T
+@{
+    ViewData["Title"] = T["AccountDashboard"];
+}
+
+<main class="account-page">
+    <section class="account-intro">
+        <a class="account-wordmark" asp-controller="Home" asp-action="Index">Storava</a>
+        <div class="account-intro-copy">
+            <span class="account-kicker">@T["AccountOverview"]</span>
+            <h1>@Model.DisplayName</h1>
+            <p>@T["AccountLocalPrivacyBody"]</p>
+        </div>
+        <div class="account-local-note">
+            <strong>@T["AccountLocalPrivacy"]</strong>
+            <span>@T["AccountLocalPrivacyBody"]</span>
+        </div>
+    </section>
+    <section class="account-panel">
+        <div class="account-card account-card-wide">
+            <div class="account-card-heading">
+                <div>
+                    <h2>@T["AccountOverview"]</h2>
+                    <p>@Model.Email</p>
+                </div>
+                <form asp-action="Logout" method="post">
+                    <button class="account-revoke" type="submit">@T["AccountLogout"]</button>
+                </form>
+            </div>
+            <div class="account-summary-grid">
+                <article class="account-summary">
+                    <span>@T["AccountPlan"]</span>
+                    <strong>@T["AccountPlanFree"]</strong>
+                </article>
+                <article class="account-summary">
+                    <span>@T["AccountEmailStatus"]</span>
+                    <strong>@(Model.EmailConfirmed ? T["AccountConfirmed"] : T["AccountUnconfirmed"])</strong>
+                </article>
+                <article class="account-summary">
+                    <span>@T["AccountMemberSince"]</span>
+                    <strong>@Model.CreatedAtUtc.ToLocalTime().ToString("d")</strong>
+                </article>
+                <article class="account-summary">
+                    <span>@T["AccountUsageUnits"]</span>
+                    <strong>@Model.RecordedUsageUnits.ToString("N0")</strong>
+                </article>
+            </div>
+            <div class="account-section-grid">
+                <section class="account-section">
+                    <h3>@T["AccountSessions"]</h3>
+                    <p>@T["AccountSessionsBody"]</p>
+                    @foreach (var session in Model.Sessions)
+                    {
+                        <article class="account-session">
+                            <div>
+                                <strong>
+                                    @session.ClientLabel
+                                    @if (session.IsCurrent)
+                                    {
+                                        <span class="account-badge">@T["AccountCurrentSession"]</span>
+                                    }
+                                </strong>
+                                <div class="account-session-meta">
+                                    <span>@T["AccountLastSeen"]: @session.LastSeenAtUtc.ToLocalTime().ToString("g")</span>
+                                    <span>@T["AccountExpires"]: @session.ExpiresAtUtc.ToLocalTime().ToString("g")</span>
+                                </div>
+                            </div>
+                            <form asp-action="RevokeSession" asp-route-sessionId="@session.Id" method="post">
+                                <button class="account-revoke" type="submit">@T["AccountRevoke"]</button>
+                            </form>
+                        </article>
+                    }
+                </section>
+                <div class="account-section-grid account-section-stack">
+                    <section class="account-section">
+                        <h3>@T["AccountDevices"]</h3>
+                        <p>@T["AccountDevicesBody"]</p>
+                        @if (Model.Devices.Count == 0)
+                        {
+                            <strong>@T["AccountNoDevices"]</strong>
+                        }
+                        else
+                        {
+                            @foreach (var device in Model.Devices)
+                            {
+                                <div class="account-session">
+                                    <strong>@device.DisplayName</strong>
+                                    <span class="account-session-meta">@device.DeviceType</span>
+                                </div>
+                            }
+                        }
+                    </section>
+                    <section class="account-section">
+                        <h3>@T["AccountUsage"]</h3>
+                        <p>@T["AccountUsageBody"]</p>
+                        <strong>@Model.RecordedUsageUnits.ToString("N0") @T["AccountUsageUnits"]</strong>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
