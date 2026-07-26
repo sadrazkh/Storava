@@ -19,6 +19,9 @@ public static class DependencyInjection
         services.AddSingleton<IProtectedPathService, ProtectedPathService>();
         services.AddSingleton<IDiskScanner, DiskScanner>();
 
+        // The single implementation of the only interface that can change the file system.
+        services.AddSingleton<IFileSystemActions, WindowsFileActions>();
+
         string directory = secretsDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Storava", "secrets");
 

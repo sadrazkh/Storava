@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Storava.Migrations</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!--
+    Deliberately no reference to Storava.Platform. This project decides *whether* a step may run;
+    the act itself goes through IFileSystemActions, whose only implementation lives in the platform
+    layer. Keeping the reference out means the decision logic cannot quietly start doing its own IO.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Storava.Domain\Storava.Domain.csproj" />
+    <ProjectReference Include="..\Storava.Application\Storava.Application.csproj" />
+  </ItemGroup>
+
+</Project>

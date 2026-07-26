@@ -27,6 +27,7 @@
     <sys:String x:Key="Str.Nav.Settings">Settings</sys:String>
 
     <!-- Shell chrome -->
+    <sys:String x:Key="Str.Shell.Navigation">Main navigation</sys:String>
     <sys:String x:Key="Str.Shell.ToggleTheme">Toggle theme</sys:String>
     <sys:String x:Key="Str.Shell.ToggleLanguage">فارسی</sys:String>
 
@@ -294,6 +295,141 @@
     <sys:String x:Key="Str.Plan.Error.AlreadyAdded">This item is already in the plan.</sys:String>
     <sys:String x:Key="Str.Plan.Error.NotPlannable">Only moving and deleting can be planned.</sys:String>
     <sys:String x:Key="Str.Plan.Error.WrongSession">That finding belongs to a different scan.</sys:String>
+
+    <!-- Migration Center -->
+    <sys:String x:Key="Str.Migration.Title">Migration Center</sys:String>
+    <sys:String x:Key="Str.Migration.Subtitle">Carry out your saved plan, one step at a time. Every step is re-checked against the disk and confirmed by you before anything happens.</sys:String>
+    <sys:String x:Key="Str.Migration.SafetyNote">This is the only page that changes your files. Deletions go to the Recycle Bin, never permanently. A move copies first, verifies the copy against the original, and only then recycles the original — so your data always exists somewhere you can reach it.</sys:String>
+    <sys:String x:Key="Str.Migration.NoPlan">There is no saved plan yet. Build one on the Storage Plan page first — this page only carries out what you have already written down.</sys:String>
+    <sys:String x:Key="Str.Migration.Preflight">Dry run</sys:String>
+    <sys:String x:Key="Str.Migration.DryRun">Dry run results</sys:String>
+    <sys:String x:Key="Str.Migration.Start">Start</sys:String>
+    <sys:String x:Key="Str.Migration.Reset">Start over</sys:String>
+    <sys:String x:Key="Str.Migration.RunStep">Carry out this step</sys:String>
+    <sys:String x:Key="Str.Migration.Skip">Skip</sys:String>
+    <sys:String x:Key="Str.Migration.Stop">Stop</sys:String>
+    <sys:String x:Key="Str.Migration.Browse">Choose…</sys:String>
+    <sys:String x:Key="Str.Migration.Working">Working…</sys:String>
+    <sys:String x:Key="Str.Migration.Copying">Copied {0} of {1}</sys:String>
+    <sys:String x:Key="Str.Migration.StepPosition">Step {0} of {1}</sys:String>
+    <sys:String x:Key="Str.Migration.Destination">Where should it go?</sys:String>
+    <sys:String x:Key="Str.Migration.Destination.Hint">Destination</sys:String>
+    <sys:String x:Key="Str.Migration.Destination.Note">Pick the folder to move it into; it keeps its own name there. The destination must be on a different drive, or nothing would be freed.</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmPrompt">To confirm, type the folder's name:</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmHint">Folder name</sys:String>
+    <sys:String x:Key="Str.Migration.Log">What happened</sys:String>
+    <sys:String x:Key="Str.Migration.Finished">Every step has been dealt with.</sys:String>
+    <sys:String x:Key="Str.Migration.InRecycleBin">The original is in the Recycle Bin — restore it from Explorer if you need it back.</sys:String>
+    <sys:String x:Key="Str.Migration.LinkLeft">A link was left at the old location, so tools that expect it there still work.</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Reclaimable">Would be freed, measured now</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Runnable">Can run</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Blocked">Blocked</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Freed">Freed so far</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Done">Done</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Skipped">Skipped</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Failed">Failed</sys:String>
+
+    <sys:String x:Key="Str.Migration.Method.None">This folder will be deleted to the Recycle Bin.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.OfficialSetting">This tool has an official setting for its storage location — prefer changing that setting over moving the folder.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.Junction">No official setting exists, so a junction will be left at the old location.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.SymbolicLink">No official setting exists, so a symbolic link will be left at the old location.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Status.Pending">Waiting</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Running">Running</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Completed">Done</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Failed">Failed</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Skipped">Skipped</sys:String>
+    <sys:String x:Key="Str.Migration.Status.RolledBack">Undone</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Cancelled">Cancelled</sys:String>
+
+    <sys:String x:Key="Str.Migration.Recovered.Completed">A step that was interrupted last time had in fact finished. It has been recorded as done.</sys:String>
+    <sys:String x:Key="Str.Migration.Recovered.RolledBack">A step was interrupted last time. The partial copy has been removed and your original folder is untouched.</sys:String>
+    <sys:String x:Key="Str.Migration.Recovered.Failed">A step was interrupted last time and could not be settled automatically. Check the folder before trying again.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Error.Load">The plan could not be loaded.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Preflight">The dry run could not be completed.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Start">The run could not be started.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Step">The step could not be carried out.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Unexpected">Something went wrong. Nothing was changed.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Protected">This is a protected system location and can never be acted on.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.SourceMissing">That folder is no longer there.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.SourceIsLink">That folder is a junction or symbolic link, not real storage, so acting on it would free nothing.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationRequired">Choose where the folder should go.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationInvalid">That destination cannot be used.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationNotEmpty">The destination folder already exists and is not empty.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationInsideSource">The destination is inside the folder you are moving.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationSameVolume">The destination is on the same drive, so this move would free nothing.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotEnoughSpace">There is not enough free space at the destination.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotPermitted">The local rules do not permit this action on this item.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.CopyFailed">The folder could not be copied. Your original was left exactly as it was.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.VerificationFailed">The copy did not match the original, so the copy was discarded and nothing was removed.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleFailed">The folder could not be sent to the Recycle Bin, so nothing was removed.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.LinkFailed">The folder was moved and the space was freed, but the link back to the old location could not be created — point the tool at the new path yourself.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotConfirmed">Type the folder's name exactly to confirm this step.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Stale">Something changed after you confirmed. Confirm again.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.AnotherRunning">Another step is still running.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotPending">This step has already been dealt with.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Cancelled">You stopped this step. The partial copy was removed and your original is untouched.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Warn.Grew">This folder is larger now than when it was scanned.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.Shrank">This folder is smaller now than when it was scanned.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.NoOfficialMethod">No official relocation setting exists, so a link will be left behind.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.HighRisk">This item is marked high risk. Make sure nothing is using it right now.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.Covered">A folder above this one is also in the plan, so this step frees nothing extra.</sys:String>
+
+    <!-- History -->
+    <sys:String x:Key="Str.History.Title">History</sys:String>
+    <sys:String x:Key="Str.History.Subtitle">Every scan you have kept, how a folder's size has moved over time, and the record of every change Storava has made to your files.</sys:String>
+    <sys:String x:Key="Str.History.Empty">Nothing has been scanned yet. Once you have run a scan or two, this page shows how things are changing.</sys:String>
+    <sys:String x:Key="Str.History.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Str.History.Compare">Compare two scans</sys:String>
+    <sys:String x:Key="Str.History.CompareAction">Compare</sys:String>
+    <sys:String x:Key="Str.History.Baseline">Earlier scan</sys:String>
+    <sys:String x:Key="Str.History.Current">Later scan</sys:String>
+    <sys:String x:Key="Str.History.Before">Before</sys:String>
+    <sys:String x:Key="Str.History.After">After</sys:String>
+    <sys:String x:Key="Str.History.Span">over {0} days</sys:String>
+    <sys:String x:Key="Str.History.WhatMoved">What moved</sys:String>
+    <sys:String x:Key="Str.History.ShowNested">Include folders inside other changes</sys:String>
+    <sys:String x:Key="Str.History.Nested">already counted above</sys:String>
+    <sys:String x:Key="Str.History.NoChanges">Nothing moved by more than a megabyte between these two scans.</sys:String>
+    <sys:String x:Key="Str.History.ByCategory">By category</sys:String>
+    <sys:String x:Key="Str.History.Trend">change across the kept scans of</sys:String>
+    <sys:String x:Key="Str.History.Scans">Stored scans</sys:String>
+    <sys:String x:Key="Str.History.Files"> files</sys:String>
+    <sys:String x:Key="Str.History.Runs">Changes Storava made</sys:String>
+    <sys:String x:Key="Str.History.RunDone"> done</sys:String>
+    <sys:String x:Key="Str.History.RunSkipped"> skipped</sys:String>
+    <sys:String x:Key="Str.History.Run.Finished">Finished</sys:String>
+    <sys:String x:Key="Str.History.Run.Unfinished">Not finished</sys:String>
+    <sys:String x:Key="Str.History.Delete">Delete this scan</sys:String>
+    <sys:String x:Key="Str.History.Delete.Title">Delete a stored scan</sys:String>
+    <sys:String x:Key="Str.History.Delete.Message">Delete the stored results of "{0}"? This removes the scan and its advice from Storava's database. Your files are not touched, and the record of changes Storava has already made is kept.</sys:String>
+
+    <sys:String x:Key="Str.History.Change.Grew">Grew</sys:String>
+    <sys:String x:Key="Str.History.Change.Shrank">Shrank</sys:String>
+    <sys:String x:Key="Str.History.Change.Added">New</sys:String>
+    <sys:String x:Key="Str.History.Change.Removed">Gone</sys:String>
+    <sys:String x:Key="Str.History.Change.Unchanged">Unchanged</sys:String>
+
+    <sys:String x:Key="Str.History.Error.Load">The history could not be loaded.</sys:String>
+    <sys:String x:Key="Str.History.Error.Compare">Those two scans could not be compared.</sys:String>
+    <sys:String x:Key="Str.History.Error.SameSession">Pick two different scans.</sys:String>
+    <sys:String x:Key="Str.History.Error.DifferentRoots">Those two scans covered different folders, so there is nothing meaningful to compare.</sys:String>
+    <sys:String x:Key="Str.History.Error.SessionMissing">That scan is no longer stored.</sys:String>
+    <sys:String x:Key="Str.History.Error.Delete">The stored scan could not be deleted.</sys:String>
+
+    <sys:String x:Key="Str.ScanMode.Quick">Quick</sys:String>
+    <sys:String x:Key="Str.ScanMode.Deep">Deep</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Created">Not started</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Running">Running</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Paused">Paused</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Completed">Completed</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Cancelled">Cancelled</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Failed">Failed</sys:String>
+
+    <sys:String x:Key="Str.Common.Delete">Delete</sys:String>
+    <sys:String x:Key="Str.Common.Cancel">Cancel</sys:String>
 
     <!-- Coming soon (placeholder pages) -->
     <sys:String x:Key="Str.ComingSoon.Title">Coming soon</sys:String>

@@ -31,7 +31,9 @@ public class ViewSmokeTests
                 new AnalysisView(),
                 new RecommendationsView(),
                 new ReportsView(),
-                new StoragePlanView()
+                new StoragePlanView(),
+                new MigrationCenterView(),
+                new HistoryView()
             ];
 
             Assert.All(pages, Assert.NotNull);

@@ -33,6 +33,7 @@
     <ProjectReference Include="..\Storava.Infrastructure\Storava.Infrastructure.csproj" />
     <ProjectReference Include="..\Storava.Platform\Storava.Platform.csproj" />
     <ProjectReference Include="..\Storava.Rules\Storava.Rules.csproj" />
+    <ProjectReference Include="..\Storava.Migrations\Storava.Migrations.csproj" />
     <ProjectReference Include="..\Storava.AI\Storava.AI.csproj" />
     <ProjectReference Include="..\Storava.Reporting\Storava.Reporting.csproj" />
   </ItemGroup>

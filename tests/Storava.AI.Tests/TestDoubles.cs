@@ -1,4 +1,5 @@
 using Storava.Application.Abstractions;
+using Storava.Application.History;
 using Storava.Application.Scanning;
 using Storava.Domain.Enums;
 
@@ -71,6 +72,11 @@ internal sealed class FakeScanQueryService : IScanQueryService
 
     public Task<IReadOnlyList<ScanItemView>> GetRootsAsync(string sessionId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ScanItemView>>([]);
+
+    // History comparison is not part of what the AI layer sees, so this stays empty.
+    public Task<IReadOnlyList<FolderSize>> GetFolderSizesAsync(
+        string sessionId, int maxDepth, int limit, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<FolderSize>>([]);
 
     public Task<IReadOnlyList<ScanItemView>> GetChildrenAsync(string sessionId, string parentId, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<ScanItemView>>([]);

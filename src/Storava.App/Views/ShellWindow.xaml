@@ -45,11 +45,19 @@
                 <ListBox x:Name="NavList"
                          ItemsSource="{Binding NavItemsView}"
                          SelectedItem="{Binding SelectedNavItem}"
-                         ItemContainerStyle="{StaticResource Storava.NavItem}"
                          Background="Transparent" BorderThickness="0"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          VirtualizingPanel.IsVirtualizing="False"
+                         AutomationProperties.Name="{DynamicResource Str.Shell.Navigation}"
                          Margin="0,4,0,12">
+                    <ListBox.ItemContainerStyle>
+                        <!-- Without this a screen reader announces the item's type name, because the
+                             label lives inside the template rather than on the container. -->
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource Storava.NavItem}">
+                            <Setter Property="AutomationProperties.Name"
+                                    Value="{Binding TitleResourceKey, Converter={StaticResource Conv.LocKey}}" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

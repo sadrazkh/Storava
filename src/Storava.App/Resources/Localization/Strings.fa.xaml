@@ -27,6 +27,7 @@
     <sys:String x:Key="Str.Nav.Settings">تنظیمات</sys:String>
 
     <!-- نوار برنامه -->
+    <sys:String x:Key="Str.Shell.Navigation">ناوبری اصلی</sys:String>
     <sys:String x:Key="Str.Shell.ToggleTheme">تغییر تم</sys:String>
     <sys:String x:Key="Str.Shell.ToggleLanguage">English</sys:String>
 
@@ -294,6 +295,141 @@
     <sys:String x:Key="Str.Plan.Error.AlreadyAdded">این مورد از قبل در برنامه هست.</sys:String>
     <sys:String x:Key="Str.Plan.Error.NotPlannable">فقط جابه‌جایی و حذف قابل برنامه‌ریزی هستند.</sys:String>
     <sys:String x:Key="Str.Plan.Error.WrongSession">این یافته مربوط به اسکن دیگری است.</sys:String>
+
+    <!-- مرکز انتقال -->
+    <sys:String x:Key="Str.Migration.Title">مرکز انتقال</sys:String>
+    <sys:String x:Key="Str.Migration.Subtitle">برنامه‌ی ذخیره‌شده را گام‌به‌گام اجرا کنید. هر گام دوباره با وضعیت فعلی دیسک بررسی و پیش از هر کاری توسط شما تأیید می‌شود.</sys:String>
+    <sys:String x:Key="Str.Migration.SafetyNote">این تنها صفحه‌ای است که فایل‌های شما را تغییر می‌دهد. حذف همیشه به سطل بازیافت است، نه حذف دائمی. جابه‌جایی اول کپی می‌کند، کپی را با نسخه‌ی اصلی مقایسه می‌کند و تنها پس از آن نسخه‌ی اصلی را به سطل بازیافت می‌فرستد — پس داده‌ی شما همیشه جایی در دسترس هست.</sys:String>
+    <sys:String x:Key="Str.Migration.NoPlan">هنوز برنامه‌ای ذخیره نشده است. اول در صفحه‌ی «برنامه‌ی فضا» یکی بسازید؛ این صفحه فقط چیزی را اجرا می‌کند که از پیش نوشته‌اید.</sys:String>
+    <sys:String x:Key="Str.Migration.Preflight">اجرای آزمایشی</sys:String>
+    <sys:String x:Key="Str.Migration.DryRun">نتیجه‌ی اجرای آزمایشی</sys:String>
+    <sys:String x:Key="Str.Migration.Start">شروع</sys:String>
+    <sys:String x:Key="Str.Migration.Reset">شروع دوباره</sys:String>
+    <sys:String x:Key="Str.Migration.RunStep">این گام را انجام بده</sys:String>
+    <sys:String x:Key="Str.Migration.Skip">رد کن</sys:String>
+    <sys:String x:Key="Str.Migration.Stop">توقف</sys:String>
+    <sys:String x:Key="Str.Migration.Browse">انتخاب…</sys:String>
+    <sys:String x:Key="Str.Migration.Working">در حال انجام…</sys:String>
+    <sys:String x:Key="Str.Migration.Copying">{0} از {1} کپی شد</sys:String>
+    <sys:String x:Key="Str.Migration.StepPosition">گام {0} از {1}</sys:String>
+    <sys:String x:Key="Str.Migration.Destination">کجا منتقل شود؟</sys:String>
+    <sys:String x:Key="Str.Migration.Destination.Hint">مقصد</sys:String>
+    <sys:String x:Key="Str.Migration.Destination.Note">پوشه‌ای را انتخاب کنید که این پوشه داخل آن برود؛ نامش همان می‌ماند. مقصد باید روی درایو دیگری باشد، وگرنه فضایی آزاد نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmPrompt">برای تأیید، نام پوشه را تایپ کنید:</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmHint">نام پوشه</sys:String>
+    <sys:String x:Key="Str.Migration.Log">چه اتفاقی افتاد</sys:String>
+    <sys:String x:Key="Str.Migration.Finished">تکلیف همه‌ی گام‌ها روشن شد.</sys:String>
+    <sys:String x:Key="Str.Migration.InRecycleBin">نسخه‌ی اصلی در سطل بازیافت است — اگر لازم شد از File Explorer برگردانید.</sys:String>
+    <sys:String x:Key="Str.Migration.LinkLeft">در مسیر قبلی یک لینک گذاشته شد تا ابزارهایی که آنجا را می‌شناسند همچنان کار کنند.</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Reclaimable">آزاد می‌شود، بر اساس اندازه‌گیری فعلی</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Runnable">قابل اجرا</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Blocked">مسدود</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Freed">تا اینجا آزاد شده</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Done">انجام‌شده</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Skipped">رد‌شده</sys:String>
+    <sys:String x:Key="Str.Migration.Summary.Failed">ناموفق</sys:String>
+
+    <sys:String x:Key="Str.Migration.Method.None">این پوشه به سطل بازیافت فرستاده می‌شود.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.OfficialSetting">این ابزار تنظیم رسمی برای محل ذخیره‌سازی دارد — بهتر است به‌جای جابه‌جایی، همان تنظیم را تغییر دهید.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.Junction">تنظیم رسمی وجود ندارد، پس در مسیر قبلی یک Junction گذاشته می‌شود.</sys:String>
+    <sys:String x:Key="Str.Migration.Method.SymbolicLink">تنظیم رسمی وجود ندارد، پس در مسیر قبلی یک لینک نمادین گذاشته می‌شود.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Status.Pending">در انتظار</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Running">در حال اجرا</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Completed">انجام شد</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Failed">ناموفق</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Skipped">رد شد</sys:String>
+    <sys:String x:Key="Str.Migration.Status.RolledBack">برگردانده شد</sys:String>
+    <sys:String x:Key="Str.Migration.Status.Cancelled">لغو شد</sys:String>
+
+    <sys:String x:Key="Str.Migration.Recovered.Completed">گامی که دفعه‌ی قبل نیمه‌کاره ماند در واقع تمام شده بود و به‌عنوان انجام‌شده ثبت شد.</sys:String>
+    <sys:String x:Key="Str.Migration.Recovered.RolledBack">گامی دفعه‌ی قبل نیمه‌کاره ماند. کپی ناقص حذف شد و پوشه‌ی اصلی شما دست‌نخورده است.</sys:String>
+    <sys:String x:Key="Str.Migration.Recovered.Failed">گامی دفعه‌ی قبل نیمه‌کاره ماند و به‌طور خودکار قابل تعیین‌تکلیف نبود. پیش از تلاش دوباره پوشه را بررسی کنید.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Error.Load">برنامه بارگذاری نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Preflight">اجرای آزمایشی کامل نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Start">اجرا شروع نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Step">این گام انجام نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Unexpected">مشکلی پیش آمد. هیچ چیزی تغییر نکرد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Protected">این مسیر محافظت‌شده‌ی سیستمی است و هرگز روی آن عملی انجام نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.SourceMissing">این پوشه دیگر آنجا نیست.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.SourceIsLink">این پوشه یک Junction یا لینک نمادین است، نه فضای واقعی؛ پس عملی روی آن فضایی آزاد نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationRequired">مقصد را انتخاب کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationInvalid">این مقصد قابل استفاده نیست.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationNotEmpty">پوشه‌ی مقصد از قبل وجود دارد و خالی نیست.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationInsideSource">مقصد داخل همان پوشه‌ای است که می‌خواهید جابه‌جا کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.DestinationSameVolume">مقصد روی همان درایو است، پس این جابه‌جایی فضایی آزاد نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotEnoughSpace">فضای آزاد مقصد کافی نیست.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotPermitted">قواعد محلی این عمل را روی این مورد مجاز نمی‌دانند.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.CopyFailed">کپی انجام نشد. نسخه‌ی اصلی شما دقیقاً همان‌طور که بود باقی ماند.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.VerificationFailed">کپی با نسخه‌ی اصلی مطابقت نداشت، پس کپی دور ریخته شد و چیزی حذف نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleFailed">پوشه به سطل بازیافت فرستاده نشد، پس چیزی حذف نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.LinkFailed">پوشه جابه‌جا شد و فضا آزاد شد، اما لینک به مسیر قبلی ساخته نشد — خودتان ابزار را به مسیر جدید معرفی کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotConfirmed">برای تأیید این گام، نام پوشه را دقیقاً تایپ کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Stale">بعد از تأیید شما چیزی تغییر کرد. دوباره تأیید کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.AnotherRunning">گام دیگری هنوز در حال اجراست.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotPending">تکلیف این گام از قبل روشن شده است.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.Cancelled">شما این گام را متوقف کردید. کپی ناقص حذف شد و نسخه‌ی اصلی دست‌نخورده است.</sys:String>
+
+    <sys:String x:Key="Str.Migration.Warn.Grew">این پوشه اکنون از زمان اسکن بزرگ‌تر شده است.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.Shrank">این پوشه اکنون از زمان اسکن کوچک‌تر شده است.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.NoOfficialMethod">تنظیم رسمی برای جابه‌جایی وجود ندارد، پس یک لینک در مسیر قبلی می‌ماند.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.HighRisk">این مورد پرخطر علامت خورده است. مطمئن شوید همین حالا چیزی از آن استفاده نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Migration.Warn.Covered">پوشه‌ای بالاتر از این هم در برنامه هست، پس این گام فضای اضافه‌ای آزاد نمی‌کند.</sys:String>
+
+    <!-- تاریخچه -->
+    <sys:String x:Key="Str.History.Title">تاریخچه</sys:String>
+    <sys:String x:Key="Str.History.Subtitle">همه‌ی اسکن‌هایی که نگه داشته‌اید، روند تغییر حجم یک پوشه در طول زمان، و سابقه‌ی هر تغییری که Storava روی فایل‌های شما انجام داده است.</sys:String>
+    <sys:String x:Key="Str.History.Empty">هنوز چیزی اسکن نشده است. بعد از یکی دو اسکن، این صفحه نشان می‌دهد اوضاع چطور تغییر می‌کند.</sys:String>
+    <sys:String x:Key="Str.History.Refresh">تازه‌سازی</sys:String>
+    <sys:String x:Key="Str.History.Compare">مقایسه‌ی دو اسکن</sys:String>
+    <sys:String x:Key="Str.History.CompareAction">مقایسه</sys:String>
+    <sys:String x:Key="Str.History.Baseline">اسکن قدیمی‌تر</sys:String>
+    <sys:String x:Key="Str.History.Current">اسکن جدیدتر</sys:String>
+    <sys:String x:Key="Str.History.Before">قبل</sys:String>
+    <sys:String x:Key="Str.History.After">بعد</sys:String>
+    <sys:String x:Key="Str.History.Span">در {0} روز</sys:String>
+    <sys:String x:Key="Str.History.WhatMoved">چه چیزی تغییر کرد</sys:String>
+    <sys:String x:Key="Str.History.ShowNested">پوشه‌های داخل تغییرات دیگر هم نمایش داده شوند</sys:String>
+    <sys:String x:Key="Str.History.Nested">بالاتر حساب شده</sys:String>
+    <sys:String x:Key="Str.History.NoChanges">بین این دو اسکن چیزی بیشتر از یک مگابایت جابه‌جا نشده است.</sys:String>
+    <sys:String x:Key="Str.History.ByCategory">بر اساس دسته</sys:String>
+    <sys:String x:Key="Str.History.Trend">تغییر در اسکن‌های نگه‌داشته‌شده‌ی</sys:String>
+    <sys:String x:Key="Str.History.Scans">اسکن‌های ذخیره‌شده</sys:String>
+    <sys:String x:Key="Str.History.Files"> فایل</sys:String>
+    <sys:String x:Key="Str.History.Runs">تغییراتی که Storava انجام داد</sys:String>
+    <sys:String x:Key="Str.History.RunDone"> انجام‌شده</sys:String>
+    <sys:String x:Key="Str.History.RunSkipped"> رد‌شده</sys:String>
+    <sys:String x:Key="Str.History.Run.Finished">تمام‌شده</sys:String>
+    <sys:String x:Key="Str.History.Run.Unfinished">ناتمام</sys:String>
+    <sys:String x:Key="Str.History.Delete">حذف این اسکن</sys:String>
+    <sys:String x:Key="Str.History.Delete.Title">حذف یک اسکن ذخیره‌شده</sys:String>
+    <sys:String x:Key="Str.History.Delete.Message">نتایج ذخیره‌شده‌ی «{0}» حذف شود؟ این کار اسکن و توصیه‌هایش را از پایگاه‌داده‌ی Storava پاک می‌کند. فایل‌های شما دست نمی‌خورند و سابقه‌ی تغییراتی که Storava قبلاً انجام داده نگه داشته می‌شود.</sys:String>
+
+    <sys:String x:Key="Str.History.Change.Grew">بزرگ‌تر شد</sys:String>
+    <sys:String x:Key="Str.History.Change.Shrank">کوچک‌تر شد</sys:String>
+    <sys:String x:Key="Str.History.Change.Added">جدید</sys:String>
+    <sys:String x:Key="Str.History.Change.Removed">حذف شده</sys:String>
+    <sys:String x:Key="Str.History.Change.Unchanged">بدون تغییر</sys:String>
+
+    <sys:String x:Key="Str.History.Error.Load">تاریخچه بارگذاری نشد.</sys:String>
+    <sys:String x:Key="Str.History.Error.Compare">این دو اسکن قابل مقایسه نبودند.</sys:String>
+    <sys:String x:Key="Str.History.Error.SameSession">دو اسکن متفاوت انتخاب کنید.</sys:String>
+    <sys:String x:Key="Str.History.Error.DifferentRoots">این دو اسکن پوشه‌های متفاوتی را پوشش داده‌اند، پس مقایسه‌ی معناداری ممکن نیست.</sys:String>
+    <sys:String x:Key="Str.History.Error.SessionMissing">این اسکن دیگر ذخیره نیست.</sys:String>
+    <sys:String x:Key="Str.History.Error.Delete">اسکن ذخیره‌شده حذف نشد.</sys:String>
+
+    <sys:String x:Key="Str.ScanMode.Quick">سریع</sys:String>
+    <sys:String x:Key="Str.ScanMode.Deep">عمیق</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Created">شروع‌نشده</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Running">در حال اجرا</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Paused">متوقف‌شده</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Completed">کامل‌شده</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Cancelled">لغو‌شده</sys:String>
+    <sys:String x:Key="Str.ScanStatus.Failed">ناموفق</sys:String>
+
+    <sys:String x:Key="Str.Common.Delete">حذف</sys:String>
+    <sys:String x:Key="Str.Common.Cancel">انصراف</sys:String>
 
     <!-- به‌زودی (صفحات آینده) -->
     <sys:String x:Key="Str.ComingSoon.Title">به‌زودی</sys:String>

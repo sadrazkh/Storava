@@ -1,0 +1,405 @@
+<UserControl x:Class="Storava.App.Views.Pages.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1200">
+    <Grid Margin="{StaticResource Pad.Page}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="{DynamicResource Str.History.Title}" Style="{StaticResource Storava.Text.Display}" />
+                <TextBlock Text="{DynamicResource Str.History.Subtitle}" Style="{StaticResource Storava.Text.Caption}"
+                           TextWrapping="Wrap" MaxWidth="760" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <Button Grid.Column="1" Command="{Binding RefreshCommand}"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Height="38" Padding="16,0" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBlock Text="{DynamicResource Str.History.Refresh}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Border Grid.Row="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,12" Background="#22EF4444"
+                Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
+                                         Foreground="{StaticResource Storava.Brush.Danger}" />
+                <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
+                           TextWrapping="Wrap" MaxWidth="920" />
+            </StackPanel>
+        </Border>
+
+        <!-- Nothing scanned yet -->
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440"
+                    Visibility="{Binding HasSessions, Converter={StaticResource Conv.InvBoolVis}}">
+            <materialDesign:PackIcon Kind="History" Width="52" Height="52" HorizontalAlignment="Center"
+                                     Foreground="{DynamicResource MaterialDesignBodyLight}" Opacity="0.6" />
+            <TextBlock Text="{DynamicResource Str.History.Empty}" Style="{StaticResource Storava.Text.Body}"
+                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+        </StackPanel>
+
+        <Grid Grid.Row="2" Visibility="{Binding HasSessions, Converter={StaticResource Conv.BoolVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="440" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: comparison -->
+            <Grid Grid.Column="0" Margin="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Pick two scans -->
+                <materialDesign:Card Grid.Row="0" UniformCornerRadius="14" Padding="18" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Str.History.Compare}"
+                                   Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,12" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Sessions}"
+                                      SelectedItem="{Binding BaselineSelection}"
+                                      DisplayMemberPath="PickerText"
+                                      AutomationProperties.Name="{DynamicResource Str.History.Baseline}"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      materialDesign:HintAssist.Hint="{DynamicResource Str.History.Baseline}" />
+
+                            <materialDesign:PackIcon Grid.Column="1" Kind="ArrowRight" VerticalAlignment="Center"
+                                                     Margin="12,0" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+
+                            <ComboBox Grid.Column="2" ItemsSource="{Binding Sessions}"
+                                      SelectedItem="{Binding CurrentSelection}"
+                                      DisplayMemberPath="PickerText"
+                                      AutomationProperties.Name="{DynamicResource Str.History.Current}"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      materialDesign:HintAssist.Hint="{DynamicResource Str.History.Current}" />
+
+                            <Button Grid.Column="3" Command="{Binding CompareCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    Height="40" Padding="20,0" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{DynamicResource Str.History.CompareAction}" />
+                            </Button>
+                        </Grid>
+
+                        <!-- Headline numbers -->
+                        <Grid Margin="0,18,0,0" Visibility="{Binding HasComparison, Converter={StaticResource Conv.BoolVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,28,0">
+                                <TextBlock Text="{Binding ComparisonDeltaText}" Style="{StaticResource Storava.Text.Display}"
+                                           Foreground="{StaticResource Storava.Brush.Danger}"
+                                           Visibility="{Binding ComparisonGrew, Converter={StaticResource Conv.BoolVis}}" />
+                                <TextBlock Text="{Binding ComparisonDeltaText}" Style="{StaticResource Storava.Text.Display}"
+                                           Foreground="{StaticResource Storava.Brush.Success}"
+                                           Visibility="{Binding ComparisonGrew, Converter={StaticResource Conv.InvBoolVis}}" />
+                                <TextBlock Text="{Binding ComparisonSpanText}" Style="{StaticResource Storava.Text.Caption}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <StackPanel Margin="0,0,24,0">
+                                    <TextBlock Text="{Binding ComparisonBeforeText}" Style="{StaticResource Storava.Text.H1}" />
+                                    <TextBlock Text="{DynamicResource Str.History.Before}" Style="{StaticResource Storava.Text.Caption}" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ComparisonAfterText}" Style="{StaticResource Storava.Text.H1}" />
+                                    <TextBlock Text="{DynamicResource Str.History.After}" Style="{StaticResource Storava.Text.Caption}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- What moved -->
+                <Grid Grid.Row="1" Margin="0,0,0,10"
+                      Visibility="{Binding HasComparison, Converter={StaticResource Conv.BoolVis}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="{DynamicResource Str.History.WhatMoved}"
+                               Style="{StaticResource Storava.SectionLabel}" VerticalAlignment="Center" Margin="2,0,0,0" />
+
+                    <CheckBox Grid.Column="1" IsChecked="{Binding ShowNestedChanges}"
+                              Content="{DynamicResource Str.History.ShowNested}"
+                              VerticalAlignment="Center" />
+                </Grid>
+
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              Visibility="{Binding HasComparison, Converter={StaticResource Conv.BoolVis}}">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Str.History.NoChanges}"
+                                   Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" Opacity="0.75"
+                                   Visibility="{Binding HasChanges, Converter={StaticResource Conv.InvBoolVis}}" />
+
+                        <ItemsControl ItemsSource="{Binding Changes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Storava.Card}" Padding="14,12" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <Border Style="{StaticResource Storava.Badge}" Background="{Binding DeltaBrush}">
+                                                        <TextBlock Text="{Binding KindText}" Foreground="White"
+                                                                   FontSize="11" FontWeight="SemiBold" />
+                                                    </Border>
+                                                    <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                            Background="{DynamicResource MaterialDesignChipBackground}">
+                                                        <TextBlock Text="{Binding CategoryText}" FontSize="11" />
+                                                    </Border>
+                                                    <!-- Space already counted by a folder above this one -->
+                                                    <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                            Background="{DynamicResource MaterialDesignChipBackground}"
+                                                            Visibility="{Binding IsNested, Converter={StaticResource Conv.BoolVis}}">
+                                                        <TextBlock Text="{DynamicResource Str.History.Nested}" FontSize="11" />
+                                                    </Border>
+                                                </StackPanel>
+
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Storava.Text.Body}" />
+                                                <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" MinWidth="120">
+                                                <TextBlock Text="{Binding DeltaText}" Style="{StaticResource Storava.Text.H2}"
+                                                           HorizontalAlignment="Right" Foreground="{Binding DeltaBrush}" />
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,2,0,0">
+                                                    <TextBlock Text="{Binding BeforeText}" Style="{StaticResource Storava.Text.Caption}" />
+                                                    <TextBlock Text=" → " Style="{StaticResource Storava.Text.Caption}" />
+                                                    <TextBlock Text="{Binding AfterText}" Style="{StaticResource Storava.Text.Caption}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Category movement -->
+                        <TextBlock Text="{DynamicResource Str.History.ByCategory}"
+                                   Style="{StaticResource Storava.SectionLabel}" Margin="2,14,0,10" />
+
+                        <ItemsControl ItemsSource="{Binding CategoryChanges}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Border Grid.Column="0" Width="10" Height="10" CornerRadius="5"
+                                                Background="{Binding CategoryBrush}" VerticalAlignment="Center"
+                                                Margin="2,0,10,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding CategoryText}"
+                                                   Style="{StaticResource Storava.Text.Body}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{Binding AfterText}"
+                                                   Style="{StaticResource Storava.Text.Caption}"
+                                                   VerticalAlignment="Center" Margin="0,0,14,0" />
+                                        <TextBlock Grid.Column="3" Text="{Binding DeltaText}" FontSize="13" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" MinWidth="90" TextAlignment="Right"
+                                                   Foreground="{StaticResource Storava.Brush.Danger}"
+                                                   Visibility="{Binding Grew, Converter={StaticResource Conv.BoolVis}}" />
+                                        <TextBlock Grid.Column="3" Text="{Binding DeltaText}" FontSize="13" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" MinWidth="90" TextAlignment="Right"
+                                                   Foreground="{StaticResource Storava.Brush.Success}"
+                                                   Visibility="{Binding Grew, Converter={StaticResource Conv.InvBoolVis}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Right: trend, past scans, and the record of real changes -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <!-- Trend for one root -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding HasTrend, Converter={StaticResource Conv.BoolVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding TrendDeltaText}" Style="{StaticResource Storava.Text.Display}"
+                                       Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                            <TextBlock Text="{DynamicResource Str.History.Trend}" Style="{StaticResource Storava.Text.Caption}" />
+                            <TextBlock Text="{Binding TrendRootPath}" Style="{StaticResource Storava.Text.Caption}"
+                                       TextTrimming="CharacterEllipsis" Opacity="0.75" Margin="0,2,0,14" />
+
+                            <ItemsControl ItemsSource="{Binding TrendPoints}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Grid Grid.Row="0" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding StartedText}" Style="{StaticResource Storava.Text.Caption}"
+                                                           HorizontalAlignment="Left" />
+                                                <TextBlock Text="{Binding SizeText}" FontSize="12" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Right" />
+                                            </Grid>
+                                            <ProgressBar Grid.Row="1" Value="{Binding TrendFraction, Mode=OneWay}"
+                                                         Minimum="0" Maximum="1" Height="6" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- What Storava actually changed -->
+                    <TextBlock Text="{DynamicResource Str.History.Runs}" Style="{StaticResource Storava.SectionLabel}"
+                               Margin="2,4,0,10"
+                               Visibility="{Binding HasExecutions, Converter={StaticResource Conv.BoolVis}}" />
+
+                    <ItemsControl ItemsSource="{Binding Executions}"
+                                  Visibility="{Binding HasExecutions, Converter={StaticResource Conv.BoolVis}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Storava.Card}" Padding="14,12" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,6">
+                                            <TextBlock Text="{Binding StartedText}" Style="{StaticResource Storava.Text.Body}"
+                                                       HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding FreedText}" FontSize="13" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Right"
+                                                       Foreground="{StaticResource Storava.Brush.Success}" />
+                                        </Grid>
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding StatusText}" Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text=" · " Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text="{Binding CompletedText}" Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text="{DynamicResource Str.History.RunDone}" Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text=" · " Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text="{Binding SkippedText}" Style="{StaticResource Storava.Text.Caption}" />
+                                            <TextBlock Text="{DynamicResource Str.History.RunSkipped}" Style="{StaticResource Storava.Text.Caption}" />
+                                        </StackPanel>
+
+                                        <ItemsControl ItemsSource="{Binding Steps}" Margin="0,8,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                        <materialDesign:PackIcon Kind="CheckCircleOutline" Width="13" Height="13"
+                                                                                 VerticalAlignment="Top" Margin="0,3,6,0"
+                                                                                 Foreground="{StaticResource Storava.Brush.Success}"
+                                                                                 Visibility="{Binding WasCompleted, Converter={StaticResource Conv.BoolVis}}" />
+                                                        <materialDesign:PackIcon Kind="MinusCircleOutline" Width="13" Height="13"
+                                                                                 VerticalAlignment="Top" Margin="0,3,6,0"
+                                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                                                 Visibility="{Binding WasCompleted, Converter={StaticResource Conv.InvBoolVis}}" />
+                                                        <TextBlock Style="{StaticResource Storava.Text.Caption}"
+                                                                   TextWrapping="Wrap" MaxWidth="330">
+                                                            <Run Text="{Binding ActionText, Mode=OneWay}" FontWeight="SemiBold" />
+                                                            <Run Text="{Binding Title, Mode=OneWay}" />
+                                                            <Run Text="—" />
+                                                            <Run Text="{Binding StatusText, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Stored scans -->
+                    <TextBlock Text="{DynamicResource Str.History.Scans}" Style="{StaticResource Storava.SectionLabel}"
+                               Margin="2,10,0,10" />
+
+                    <ItemsControl ItemsSource="{Binding Sessions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Storava.Card}" Padding="14,12" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding SizeText}" FontSize="14" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="8,0,0,0"
+                                                        Background="{DynamicResource MaterialDesignChipBackground}">
+                                                    <TextBlock Text="{Binding ModeText}" FontSize="11" />
+                                                </Border>
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                        Background="{DynamicResource MaterialDesignChipBackground}"
+                                                        Visibility="{Binding IsCompleted, Converter={StaticResource Conv.InvBoolVis}}">
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="11" />
+                                                </Border>
+                                            </StackPanel>
+
+                                            <TextBlock Text="{Binding RootPath}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding StartedText}" Style="{StaticResource Storava.Text.Caption}" />
+                                                <TextBlock Text=" · " Style="{StaticResource Storava.Text.Caption}" />
+                                                <TextBlock Text="{Binding FilesText}" Style="{StaticResource Storava.Text.Caption}" />
+                                                <TextBlock Text="{DynamicResource Str.History.Files}" Style="{StaticResource Storava.Text.Caption}" />
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <Button Grid.Column="1" VerticalAlignment="Top"
+                                                Style="{StaticResource MaterialDesignIconButton}"
+                                                Height="32" Width="32"
+                                                ToolTip="{DynamicResource Str.History.Delete}"
+                                                AutomationProperties.Name="{DynamicResource Str.History.Delete}"
+                                                Command="{Binding DataContext.DeleteSessionCommand,
+                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" />
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

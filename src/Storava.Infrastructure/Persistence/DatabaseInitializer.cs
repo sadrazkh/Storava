@@ -118,6 +118,39 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
             SortOrder        INTEGER NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS PlanExecutions (
+            Id          TEXT NOT NULL PRIMARY KEY,
+            PlanId      TEXT NOT NULL,
+            SessionId   TEXT NOT NULL,
+            StartedAt   TEXT NOT NULL,
+            CompletedAt TEXT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS PlanExecutionSteps (
+            Id              TEXT NOT NULL PRIMARY KEY,
+            ExecutionId     TEXT NOT NULL,
+            PlanEntryId     TEXT NOT NULL,
+            ScanItemId      TEXT NOT NULL,
+            SourcePath      TEXT NOT NULL,
+            Title           TEXT NOT NULL,
+            Action          INTEGER NOT NULL,
+            Method          INTEGER NOT NULL,
+            SortOrder       INTEGER NOT NULL,
+            DestinationPath TEXT NULL,
+            Status          INTEGER NOT NULL,
+            MeasuredBytes   INTEGER NOT NULL,
+            BytesFreed      INTEGER NOT NULL,
+            StartedAt       TEXT NULL,
+            CompletedAt     TEXT NULL,
+            RecycledPath    TEXT NULL,
+            LinkPath        TEXT NULL,
+            ErrorCode       TEXT NULL,
+            ErrorMessage    TEXT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS IX_PlanExecutions_Session     ON PlanExecutions (SessionId, StartedAt DESC);
+        CREATE INDEX IF NOT EXISTS IX_PlanExecutionSteps_Run     ON PlanExecutionSteps (ExecutionId, SortOrder);
+
         CREATE INDEX IF NOT EXISTS IX_Recommendations_Session ON Recommendations (SessionId, Score DESC);
         CREATE UNIQUE INDEX IF NOT EXISTS IX_StoragePlans_Session ON StoragePlans (SessionId);
         CREATE INDEX IF NOT EXISTS IX_StoragePlanEntries_Plan   ON StoragePlanEntries (PlanId, SortOrder);

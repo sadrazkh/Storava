@@ -4,17 +4,9 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Storava.App.Services;
 using Storava.App.ViewModels;
-using Storava.App.ViewModels.Pages;
 using Storava.App.Views;
-using Storava.AI;
 using Storava.Application.Abstractions;
-using Storava.Infrastructure;
-using Storava.Infrastructure.Persistence;
-using Storava.Platform;
-using Storava.Reporting;
-using Storava.Rules;
 
 namespace Storava.App;
 
@@ -76,43 +68,7 @@ public partial class App : System.Windows.Application
     {
         var builder = Host.CreateDefaultBuilder();
         builder.UseSerilog();
-        builder.ConfigureServices(services =>
-        {
-            services.AddStoravaInfrastructure(Path.Combine(AppDataDirectory, "storava.db"));
-            // Secrets live beside the database but never inside it, so no export can carry them.
-            services.AddStoravaPlatform(Path.Combine(AppDataDirectory, "secrets"));
-            // Rules decorate the persistence sink so items are classified as the scan streams them.
-            services.AddStoravaRules<SqliteScanItemSinkFactory>();
-            services.AddStoravaReporting();
-            services.AddStoravaAi();
-
-            // UI services
-            services.AddSingleton<ILocalizationService, LocalizationService>();
-            services.AddSingleton<IThemeService, ThemeService>();
-            services.AddSingleton<IDialogService, DialogService>();
-            services.AddSingleton<NavigationService>();
-            services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
-            services.AddSingleton<ScanController>();
-            services.AddSingleton<IFolderPicker, FolderPicker>();
-            services.AddSingleton<IFileSaver, FileSaver>();
-
-            // ViewModels
-            services.AddSingleton<ShellViewModel>();
-            services.AddTransient<WelcomeViewModel>();
-            services.AddTransient<DashboardViewModel>();
-            services.AddTransient<SettingsViewModel>();
-            services.AddTransient<ComingSoonViewModel>();
-            services.AddTransient<NewScanViewModel>();
-            services.AddTransient<ScanProgressViewModel>();
-            services.AddTransient<ScanExplorerViewModel>();
-            services.AddTransient<AnalysisViewModel>();
-            services.AddTransient<RecommendationsViewModel>();
-            services.AddTransient<ReportsViewModel>();
-            services.AddTransient<StoragePlanViewModel>();
-
-            // Windows
-            services.AddSingleton<ShellWindow>();
-        });
+        builder.ConfigureServices(services => services.AddStoravaApp(AppDataDirectory));
 
         return builder.Build();
     }

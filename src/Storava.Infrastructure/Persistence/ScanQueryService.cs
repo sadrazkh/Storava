@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Storava.Application.Abstractions;
+using Storava.Application.History;
 using Storava.Application.Scanning;
 using Storava.Domain.Enums;
 
@@ -97,6 +98,41 @@ public sealed class ScanQueryService : IScanQueryService
     /// counted twice, and whatever is left over is reported as <see cref="StorageCategory.Unknown"/>.
     /// </para>
     /// </summary>
+    public async Task<IReadOnlyList<FolderSize>> GetFolderSizesAsync(
+        string sessionId, int maxDepth, int limit, CancellationToken cancellationToken = default)
+    {
+        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var connection = new SqliteConnection(_options.ConnectionString);
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            SELECT Path, Name, Size, Depth, Category
+            FROM ScanItems
+            WHERE SessionId = $s AND ItemType = {(int)ItemType.Folder} AND Depth <= $d AND Size > 0
+            ORDER BY Size DESC
+            LIMIT $n;
+            """;
+        command.Parameters.AddWithValue("$s", sessionId);
+        command.Parameters.AddWithValue("$d", maxDepth);
+        command.Parameters.AddWithValue("$n", limit);
+
+        var folders = new List<FolderSize>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            folders.Add(new FolderSize(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetInt64(2),
+                reader.GetInt32(3),
+                (StorageCategory)reader.GetInt32(4)));
+        }
+
+        return folders;
+    }
+
     public async Task<IReadOnlyList<CategoryUsage>> GetCategoryUsageAsync(
         string sessionId, CancellationToken cancellationToken = default)
     {

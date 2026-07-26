@@ -5,8 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Phase 4 — OpenRouter AI Advisor, Reporting & Privacy** (complete).
-> Status: **Desktop Phase 3 complete · Storava Web 1.0 / Phase 6 complete**.
+> Status: **Desktop Phase 6 — History & Comparison** (complete) · **Storava Web 1.0 / Phase 6** (complete).
 
 ## Tech stack
 
@@ -24,6 +23,7 @@ src/
   Storava.Platform        # Windows/storage APIs, protected paths, DPAPI secrets (net10.0-windows)
   Storava.Rules           # rule catalog, classification, scoring, recommendations
   Storava.AI              # OpenRouter provider, payload sanitisation, response validation
+  Storava.Migrations      # preflight, execution guard, step-by-step plan execution
   Storava.Reporting       # report model and HTML/JSON/CSV writers
   Storava.App             # WPF UI: shell, design system, localization, pages
   Storava.Web             # browser edition (ASP.NET Core MVC + Vue islands)
@@ -165,3 +165,54 @@ this moved identification from 4% to 99% of scanned bytes.
   model) each get their own bilingual message, and a long request can be cancelled.
 - Sanitisation itself has no off switch, by design. The two settings that do exist —
   unrecognised-folder analysis and the narrative report — each change what is actually sent.
+
+**Phase 5 — Migration Center**
+
+The first and only page that changes your files. Everything before it produced documents.
+
+- **Dry run first.** Every step of the saved plan is re-checked against the disk as it is *now* —
+  the folder still exists, is not a junction, is not protected, and measures however much it
+  measures today rather than whatever the scan recorded. Blocked steps are listed with the reason
+  rather than quietly dropped, and the reclaimable figure shown is the freshly measured one.
+- **One step at a time, and each one confirmed by hand.** A step runs only after you pick its
+  destination and type the folder's own name. Typing that name mints an approval bound to a
+  SHA-256 fingerprint of the step; changing the destination afterwards invalidates it, so an
+  approval can never be spent on something other than what you read.
+- **Deletion means the Recycle Bin.** `IFileSystemActions` has no permanent-delete operation at
+  all — not even for cleaning up a copy Storava made itself — so no code path in the app can
+  destroy data outright.
+- **A move copies, verifies, and only then removes.** The copy is checked against a fresh
+  measurement of the source (bytes *and* file count) before the original goes to the Recycle Bin.
+  If the copy is short, the copy is discarded and the original is untouched. If the original
+  cannot be recycled, the copy is discarded instead, putting the machine back where it started.
+  Because the source is only ever removed after a verified copy exists, both never fail to exist.
+- **Interruptions are recovered from the disk, not guessed at.** The step row is written while it
+  is still marked running, so a crash mid-operation leaves a trace: on the next visit Storava
+  reads which of the two paths survived and settles the step as done, undone, or failed.
+- **Links back.** Where no official relocation setting exists, an NTFS junction is left at the old
+  path so tools that hard-code it keep working. A junction needs no administrator rights, which is
+  why it is preferred over a symbolic link. If only the link fails, the step still counts as done —
+  the space was freed and the data is safe — and says so.
+- Reparse points are counted but never followed, by both the measure and the copy, so a move can
+  never drag in a folder you did not choose.
+
+**Phase 6 — history, trend and comparison**
+
+- **Compare any two scans of the same folder** and see what actually moved: folders that grew,
+  shrank, appeared or disappeared, ordered by how far they moved in either direction. Comparing
+  two scans of *different* roots is refused rather than producing a diff where everything looks
+  new; whichever ran first is used as the baseline no matter which you picked first.
+- **Nested changes are marked, not double-counted.** One cache growing by 3 GB would otherwise be
+  reported for itself and again for every folder above it. Rows inside another change are hidden
+  by default and labelled when shown — the same rule the storage plan applies to nested steps.
+- Movement under a megabyte is left out: on a developer machine that is log churn, and listing it
+  buries the findings that matter.
+- **Category movement** shows which kinds of storage are responsible for the difference.
+- **A trend for one root**, scaled against its largest scan so the shape is readable even when the
+  scans are within a few percent of each other. Only completed scans count — a cancelled run
+  stopped partway and its total would read as a cliff that never happened.
+- **The record of what Storava did.** Every plan run appears with its steps, their outcome and the
+  space it actually freed.
+- **Pruning is honest about what it keeps.** Deleting a stored scan removes its items and its
+  advice, and leaves your files alone. The execution log is deliberately kept: it records real
+  changes to your disk, which outlive the scan that suggested them.

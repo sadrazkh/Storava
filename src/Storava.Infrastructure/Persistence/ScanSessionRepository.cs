@@ -84,7 +84,16 @@ public sealed class ScanSessionRepository : IScanSessionRepository
         await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
 
         await using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM ScanItems WHERE SessionId = $Id; DELETE FROM ScanSessions WHERE Id = $Id;";
+
+        // Recommendations are derived from the items, so they have to go with them; leaving them
+        // behind would let a deleted scan keep feeding advice into pages that read by session id.
+        // The execution log is *not* touched here: it records real changes to the user's files and
+        // outlives the scan that suggested them.
+        command.CommandText = """
+            DELETE FROM ScanItems       WHERE SessionId = $Id;
+            DELETE FROM Recommendations WHERE SessionId = $Id;
+            DELETE FROM ScanSessions    WHERE Id = $Id;
+            """;
         command.Parameters.AddWithValue("$Id", sessionId);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }

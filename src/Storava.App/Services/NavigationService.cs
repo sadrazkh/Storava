@@ -22,17 +22,14 @@ public sealed class NavigationService : INavigationService
         [NavigationKeys.Analysis] = typeof(AnalysisViewModel),
         [NavigationKeys.Recommendations] = typeof(RecommendationsViewModel),
         [NavigationKeys.StoragePlan] = typeof(StoragePlanViewModel),
-        [NavigationKeys.MigrationCenter] = typeof(ComingSoonViewModel),
+        [NavigationKeys.MigrationCenter] = typeof(MigrationCenterViewModel),
         [NavigationKeys.Reports] = typeof(ReportsViewModel),
-        [NavigationKeys.History] = typeof(ComingSoonViewModel)
+        [NavigationKeys.History] = typeof(HistoryViewModel)
     };
 
-    // Localized header key shown on the placeholder ("coming soon") pages.
-    private static readonly Dictionary<string, string> PlaceholderTitleKeys = new(StringComparer.Ordinal)
-    {
-        [NavigationKeys.MigrationCenter] = "Str.Nav.MigrationCenter",
-        [NavigationKeys.History] = "Str.Nav.History"
-    };
+    // Localized header key shown on the placeholder ("coming soon") pages. Empty now that every
+    // navigation destination is implemented; ComingSoonViewModel is kept for the next one.
+    private static readonly Dictionary<string, string> PlaceholderTitleKeys = new(StringComparer.Ordinal);
 
     private readonly IServiceProvider _services;
     private readonly ILogger<NavigationService> _logger;

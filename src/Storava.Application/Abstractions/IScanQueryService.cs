@@ -1,3 +1,4 @@
+using Storava.Application.History;
 using Storava.Application.Scanning;
 
 namespace Storava.Application.Abstractions;
@@ -29,4 +30,11 @@ public interface IScanQueryService
         string sessionId, string? parentId, int limit, CancellationToken cancellationToken = default);
 
     Task<ScanItemView?> GetByIdAsync(string sessionId, string itemId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Folder sizes for comparing one scan against another, keyed by path. Bounded by depth and
+    /// count because a full tree can hold millions of rows and a comparison only needs the movers.
+    /// </summary>
+    Task<IReadOnlyList<FolderSize>> GetFolderSizesAsync(
+        string sessionId, int maxDepth, int limit, CancellationToken cancellationToken = default);
 }
