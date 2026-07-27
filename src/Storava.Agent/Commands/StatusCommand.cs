@@ -1,5 +1,6 @@
 using Serilog;
 using Storava.Agent.Identity;
+using Storava.Agent.Tray;
 
 namespace Storava.Agent.Commands;
 
@@ -9,7 +10,7 @@ namespace Storava.Agent.Commands;
 /// </summary>
 internal static class StatusCommand
 {
-    public static int Run(AgentKeyStore keys, AgentRegistrationStore registrations)
+    public static int Run(AgentKeyStore keys, AgentRegistrationStore registrations, AutoStart autoStart)
     {
         using var key = keys.TryLoad();
 
@@ -35,6 +36,7 @@ internal static class StatusCommand
         Log.Information("Account   {Server}", registration.ServerBaseUrl);
         Log.Information("Device    {Name} ({DeviceId})", registration.DeviceName, registration.DeviceId);
         Log.Information("Since     {PairedAt:g}", registration.PairedAtUtc.ToLocalTime());
+        Log.Information("At logon  {AutoStart}", autoStart.IsEnabled ? "starts automatically" : "does not start");
         Log.Information("Removing this device on the account page stops the browser from reaching it.");
         return ExitCodes.Success;
     }

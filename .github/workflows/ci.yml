@@ -1,4 +1,4 @@
-name: Storava Web CI
+name: Storava CI
 
 on:
   push:
@@ -9,7 +9,9 @@ on:
       - 'tests/Storava.Web.Tests/**'
       - 'src/Storava.Agent/**'
       - 'tests/Storava.Agent.Tests/**'
-      - '.github/workflows/web-ci.yml'
+      - 'src/Storava.App/**'
+      - 'tests/Storava.App.Tests/**'
+      - '.github/workflows/ci.yml'
       - 'Dockerfile'
       - 'compose.yaml'
       - '.dockerignore'
@@ -21,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: storava-web-${{ github.ref }}
+  group: storava-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -61,6 +63,73 @@ jobs:
       - name: Browser tests
         working-directory: src/Storava.Web
         run: npm run test:e2e
+
+  # The two editions a person installs. Built on every run rather than only on a tag, so a change
+  # that breaks packaging is caught by the commit that made it instead of at release time.
+  desktop:
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish companion agent
+        run: dotnet publish src/Storava.Agent/Storava.Agent.csproj -p:PublishProfile=win-x64
+
+      - name: Publish desktop edition
+        run: dotnet publish src/Storava.App/Storava.App.csproj -p:PublishProfile=win-x64
+
+      # Self-contained and single-file are the two claims the profiles make; a stray runtime
+      # assembly beside the executable means one of them silently stopped being true.
+      - name: Verify each edition is one self-contained file
+        shell: pwsh
+        run: |
+          foreach ($edition in @(
+            @{ Name = 'agent';   Path = 'artifacts/agent/win-x64';   Exe = 'storava-agent.exe' },
+            @{ Name = 'desktop'; Path = 'artifacts/desktop/win-x64'; Exe = 'Storava.exe' }
+          )) {
+            $files = Get-ChildItem $edition.Path -File
+            if ($files.Count -ne 1) {
+              throw "$($edition.Name) published $($files.Count) files, expected 1: $($files.Name -join ', ')"
+            }
+            if ($files[0].Name -ne $edition.Exe) {
+              throw "$($edition.Name) published $($files[0].Name), expected $($edition.Exe)"
+            }
+            "$($edition.Name): $($files[0].Name), $([math]::Round($files[0].Length / 1MB)) MB"
+          }
+
+      - name: Check the agent runs without a .NET runtime installed
+        shell: pwsh
+        run: |
+          # Self-contained means it must not need the shared runtime. Emptying the environment's
+          # hint variables is the cheapest approximation of a machine that has none.
+          $env:DOTNET_ROOT = ''
+          $env:DOTNET_MULTILEVEL_LOOKUP = '0'
+          $output = & ./artifacts/agent/win-x64/storava-agent.exe status 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) { throw "agent status exited $LASTEXITCODE`n$output" }
+          $output
+
+      - name: Build the agent installer
+        run: dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj
+
+      # ALLUSERS=2 reads like the careful choice and silently produces a machine-wide install on
+      # an administrator's machine. The marker is only visible by reading the built package.
+      - name: Verify the installer is per-user
+        shell: pwsh
+        run: ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storava-windows-x64
+          path: |
+            artifacts/agent/win-x64/storava-agent.exe
+            artifacts/desktop/win-x64/Storava.exe
+            artifacts/installers/StoravaAgent.msi
+          if-no-files-found: error
+          retention-days: 14
 
   container:
     needs: verify

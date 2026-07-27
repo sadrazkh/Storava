@@ -21,6 +21,13 @@ public static class AgentPaths
     /// Agent takes its scans with it.
     /// </summary>
     public static string ScanDatabase => Path.Combine(Root, "agent-scans.db");
+
+    /// <summary>
+    /// Where the Agent writes its log. Running from the tray there is no console to print to, so
+    /// without a file a failure at logon would leave nothing to look at. Rolled daily and kept for
+    /// a week: enough to explain yesterday, not enough to become storage the tool complains about.
+    /// </summary>
+    public static string LogFile => Path.Combine(Root, "logs", "agent-.log");
 }
 
 /// <summary>

@@ -302,3 +302,47 @@ were.
 
 Phase 8 is complete. Undo from within Storava is deliberately absent — the Recycle Bin is the undo,
 and it belongs to the operating system rather than to this application.
+
+
+## Phase 10 — one archive across three editions
+
+A scan taken in any edition opens in any other. That needed more than a shared container: the
+editions do not hold the same shape. The desktop links its tree by parent id and matches one rule
+per item; the browser links by parent path and matches several. The desktop's categories name a
+storage purpose (`PackageCaches`), the browser's name a file-type bucket (`media`). Declaring one
+of them "the" format would have made the other's export lossy in a way nobody could see.
+
+So `.storava` schema 2 carries an explicit interchange schema — `Storava.Contracts/Workspace/
+ArchiveInterchange.cs`, mirrored in `ClientApp/services/archiveFormat.ts` — that holds both
+linkages and the superset of the fields. Every edition maps to and from it.
+
+Two fields carry the difference that actually matters:
+
+- **`pathKind`** — `Absolute` or `RootRelative`. The desktop and the Agent walk a file system and
+  know where things are; a browser is granted one folder and knows nothing above it. A reader that
+  assumed the wrong one would either show locations that do not exist or refuse to act on ones that
+  do. Absent means version 1, which only the desktop wrote, so absent reads as absolute.
+- **`producedBy`** — which edition wrote it. Shown to the user, never used to gate a feature.
+
+Decisions worth stating:
+
+- **Version 1 archives still open.** Only the desktop wrote them and nothing writes them now, but
+  an archive that outlives its release is the entire point of having one.
+- **Absolute paths are kept as they are on import.** They describe a real machine; rewriting them
+  would be inventing a folder structure. Such a scan is marked imported, and the Storage Plan and
+  Migration Center already refuse to fall back to an imported scan.
+- **The browser asserts nothing about what may be removed.** It exports `canDelete` and `canMove`
+  as false, because it has no rule catalog qualified to judge another machine.
+- **Item lines are separated by `
+` on both sides.** The hash is taken over `
+`; a platform
+  newline in the browser would produce an archive that failed its own integrity check.
+- **Integrity is verified before anything is written.** A tampered archive leaves the local
+  database untouched rather than partly filled.
+- The browser still imports the older `.storava-web` NDJSON files. People have them already, and a
+  format change that cost them their scans would not be an improvement.
+
+The two implementations are kept honest by a shared fixture: the desktop test suite writes
+`ClientApp/test/fixtures/desktop-v2.storava`, and the browser's tests read that file rather than
+one they produced themselves. Refresh it with
+`STORAVA_REFRESH_FIXTURES=1 dotnet test tests/Storava.Infrastructure.Tests`.

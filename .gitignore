@@ -368,3 +368,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Storava's publish profiles are tracked on purpose. The default rule above assumes a .pubxml is a
+# developer's own web-deploy settings, possibly with a connection string in it. These are neither:
+# they define the self-contained single-file builds the release job produces, and CI cannot build a
+# release without them. They contain no credentials.
+!src/**/Properties/PublishProfiles/*.pubxml

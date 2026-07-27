@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource-variable/manrope": "^5.2.6",
     "@fontsource-variable/vazirmatn": "^5.2.6",
+    "fflate": "^0.8.3",
     "vue": "^3.5.0"
   },
   "devDependencies": {

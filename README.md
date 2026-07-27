@@ -86,11 +86,17 @@ Agent runs on your own machine, so it has the real file system — and it talks 
 in your browser over loopback rather than through the server, because a scan that went through the
 server would be a scan that left your machine.
 
-Pairing is implemented. Generate a code on your account page and, on the machine you want to
-connect:
+It ships as one self-contained file — no runtime to install first — and lives in the notification
+area. Full instructions are in `docs/AGENT_INSTALL.md`.
 
 ```bash
-dotnet run --project src/Storava.Agent/Storava.Agent.csproj -- pair --server https://storava.example
+dotnet publish src/Storava.Agent/Storava.Agent.csproj -p:PublishProfile=win-x64
+```
+
+Generate a code on your account page and, on the machine you want to connect:
+
+```bash
+storava-agent pair --server https://storava.example
 ```
 
 The Agent generates a key pair locally and presents only the public half; the private key is
@@ -103,11 +109,14 @@ reach it at all.
 Nothing about the machine's contents reaches the server: pairing records that an Agent exists,
 what to call it, and whether it is still allowed.
 
-Then run it, and open **Companion Agent** in the workspace at `/scan`:
+Then double-click it — or `storava-agent autostart --enable` to have it start with Windows — and
+open **Companion Agent** in the workspace at `/scan`. The tray icon shows whether it is listening
+and its menu can stop it or disconnect the computer. `storava-agent serve` runs it in a terminal
+instead, printing as it goes.
 
-```bash
-dotnet run --project src/Storava.Agent/Storava.Agent.csproj -- serve
-```
+Startup is per-user, and deliberately so: the Agent's identity and channel secret are DPAPI-encrypted
+for your Windows account, so an Agent started as anyone else — a service running as SYSTEM
+included — could not read them. That is why there is no Windows Service.
 
 The Agent listens on `127.0.0.1` only, answers just the one site it is paired with, and requires a
 five-minute pass the page fetches from your account. Since Chrome 142 the browser also asks your

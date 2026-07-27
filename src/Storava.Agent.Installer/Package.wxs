@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A per-user installer, deliberately.
+
+  Scope="perUser" is not about avoiding a UAC prompt for its own sake. The Agent's identity and
+  channel secret are encrypted with Windows DPAPI scoped to one Windows account, so an Agent
+  installed machine-wide and started as another user — or as SYSTEM — could not decrypt them and
+  would be useless. Installing where it can actually run is the honest choice, and it happens to
+  need no administrator.
+
+  Autostart is not written here. The Agent owns that setting (its tray menu, or the "autostart"
+  command), and two owners of one registry value is how a checkbox ends up disagreeing with
+  reality.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package
+    Name="Storava Agent"
+    Manufacturer="Storava"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="8f3a1c62-5d47-4b19-9a2e-7c4e6b0d51f8"
+    Scope="perUser"
+    Compressed="yes"
+    InstallerVersion="500">
+
+    <SummaryInformation Description="Storava companion Agent" />
+
+    <!--
+      ALLUSERS is deliberately absent. Its three states are: absent means per-user, 1 means
+      per-machine, and 2 means "per-machine if this user is allowed, otherwise per-user". Setting
+      it to 2 read like the careful choice and was the wrong one — on a machine whose user is a
+      local administrator it takes the per-machine branch, registering the product machine-wide
+      while its files sit in one user's profile.
+
+      MSIINSTALLPERUSER=1 states the intent for the installer UI. The summary information already
+      declares the package installable without elevation, so nothing here needs administrator
+      rights, and scripts/verify-installer.ps1 reads all of it back out of the built MSI.
+
+      This is not a preference. The Agent's identity and channel secret are DPAPI-encrypted for one
+      Windows account; installed anywhere else it could not decrypt them.
+    -->
+    <Property Id="MSIINSTALLPERUSER" Value="1" />
+
+    <!-- Installing over an older copy replaces it rather than leaving two side by side. -->
+    <MajorUpgrade
+      AllowSameVersionUpgrades="yes"
+      DowngradeErrorMessage="A newer version of Storava Agent is already installed." />
+
+    <!-- The payload is an already-compressed single-file executable, so the cab cannot do much
+         with it; high is still worth asking for and costs only build time. -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="StoravaAgentIcon" SourceFile="$(var.PublishedDir)storava-agent.exe" />
+    <Property Id="ARPPRODUCTICON" Value="StoravaAgentIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/sadrazkh/Storava" />
+    <!-- Nothing here modifies anything outside the user's own profile. -->
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Storava" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="Storava" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Storava Agent" Level="1">
+      <ComponentGroupRef Id="AgentFiles" />
+      <ComponentGroupRef Id="AgentShortcuts" />
+    </Feature>
+
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="AgentFiles" Directory="INSTALLFOLDER">
+      <Component Id="AgentExecutable" Guid="c1b7f4a9-2e83-4d16-b5c0-9f2a6e8d3b41">
+        <File Id="StoravaAgentExe"
+              Name="storava-agent.exe"
+              Source="$(var.PublishedDir)storava-agent.exe"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="AgentShortcuts" Directory="ShortcutFolder">
+      <Component Id="AgentShortcut" Guid="4d9e2b71-6a35-4c88-8e17-2b5f9c0a7d63">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="Storava Agent"
+                  Description="Runs in the notification area so the Storava page in your browser can reach this computer"
+                  Target="[INSTALLFOLDER]storava-agent.exe"
+                  Arguments="tray"
+                  WorkingDirectory="INSTALLFOLDER" />
+
+        <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
+
+        <!-- A per-user component needs a per-user key path, and this is the only registry value
+             the installer owns. The Agent's own settings are its business, so uninstalling the
+             package does not reach in and delete a pairing the user may want back. -->
+        <RegistryValue Root="HKCU"
+                       Key="Software\Storava\Agent"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

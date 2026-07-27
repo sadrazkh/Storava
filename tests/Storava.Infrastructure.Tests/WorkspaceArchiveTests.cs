@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.Json;
 using Storava.Application.Abstractions;
 using Storava.Application.Scanning;
 using Storava.Application.Services;
@@ -251,7 +252,12 @@ public sealed class WorkspaceArchiveTests : IDisposable
             using (var reader = new StreamReader(entry.Open()))
                 json = await reader.ReadToEndAsync();
 
-            json = json.Replace("\"schemaVersion\": 1", "\"schemaVersion\": 99");
+            // Matched by shape rather than by the current number, so bumping the schema does not
+            // quietly turn this test into one that edits nothing.
+            string replaced = System.Text.RegularExpressions.Regex.Replace(
+                json, "\"schemaVersion\":\\s*\\d+", "\"schemaVersion\": 99");
+            Assert.NotEqual(json, replaced);
+            json = replaced;
             entry.Delete();
 
             var replacement = archive.CreateEntry(StoravaArchiveEntries.Manifest);
@@ -393,6 +399,242 @@ public sealed class WorkspaceArchiveTests : IDisposable
 
         Assert.DoesNotContain('\r', content);
         Assert.Contains('\n', content);
+    }
+
+    [Fact]
+    public async Task An_archive_says_which_edition_wrote_it_and_what_its_paths_mean()
+    {
+        using var tree = new TestTree();
+        tree.AddFile("a.bin", 1024);
+        string path = ArchivePath();
+
+        using var host = new TestHost(withRules: true);
+        var scan = await ScanAsync(host, tree.Root);
+        await host.Get<IWorkspaceArchiveService>().ExportAsync(scan.SessionId, path, "en-US");
+
+        var manifest = (await host.Get<IWorkspaceArchiveService>().InspectAsync(path)).Value;
+
+        // A reader that assumed the wrong path kind would either show locations that do not exist
+        // or refuse to act on ones that do.
+        Assert.Equal(ArchivePathKind.Absolute, manifest.PathKind);
+        Assert.Equal(ArchiveProducer.Desktop, manifest.ProducedBy);
+        Assert.Equal(StoravaArchiveManifest.CurrentSchemaVersion, manifest.SchemaVersion);
+    }
+
+    /// <summary>
+    /// The interchange schema is what the browser edition reads, so the field names it depends on
+    /// are part of the file format rather than an implementation detail of this class.
+    /// </summary>
+    [Fact]
+    public async Task Items_are_written_in_the_shared_interchange_shape()
+    {
+        using var tree = new TestTree();
+        tree.AddFile(@"proj\node_modules\big.bin", 64 * 1024);
+        string path = ArchivePath();
+
+        using var host = new TestHost(withRules: true);
+        var scan = await ScanAsync(host, tree.Root);
+        await host.Get<AnalysisService>().AnalyzeAsync(scan.SessionId, "en");
+        await host.Get<IWorkspaceArchiveService>().ExportAsync(scan.SessionId, path, "en-US");
+
+        using var archive = ZipFile.OpenRead(path);
+        using var reader = new StreamReader(archive.GetEntry(StoravaArchiveEntries.Items)!.Open());
+        string firstLine = (await reader.ReadToEndAsync()).Split('\n')[0];
+
+        var item = JsonSerializer.Deserialize<ArchiveItem>(firstLine);
+        Assert.NotNull(item);
+        Assert.NotEmpty(item!.Id);
+        Assert.Contains(item.Kind, new[] { ArchiveItemKinds.File, ArchiveItemKinds.Folder });
+
+        // camelCase, spelled out on the contract. A serializer's default naming is not something
+        // to bet a file format on.
+        Assert.Contains("\"id\":", firstLine, StringComparison.Ordinal);
+        Assert.Contains("\"ruleIds\":", firstLine, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Id\":", firstLine, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Version 1 archives were written by the first release. Refusing to open one would be the
+    /// format failing at the only job it has.
+    /// </summary>
+    [Fact]
+    public async Task A_version_one_archive_can_still_be_opened()
+    {
+        string path = ArchivePath("legacy");
+        WriteVersionOneArchive(path);
+
+        using var host = new TestHost(withRules: true);
+        var import = await host.Get<IWorkspaceArchiveService>().ImportAsync(path);
+
+        Assert.True(import.IsSuccess);
+        Assert.Equal(2, import.Value.ItemCount);
+
+        var items = await host.Get<IScanQueryService>()
+            .GetLargestAsync(import.Value.SessionId, 50, foldersOnly: false);
+
+        Assert.Contains(items, item => item.Name == "old.bin" && item.Size == 4096);
+        Assert.Equal(ScanOrigin.Imported, (await host.Get<IScanSessionRepository>()
+            .GetAsync(import.Value.SessionId))!.Origin);
+    }
+
+    /// <summary>
+    /// Hand-built rather than produced by an old build, because there is no old build to run. The
+    /// shapes are the entity shapes as the first release serialized them, PascalCase and all.
+    /// </summary>
+    private void WriteVersionOneArchive(string path)
+    {
+        const string sessionId = "legacysession";
+        var scan = new
+        {
+            Id = sessionId,
+            RootPath = @"C:\Legacy",
+            Label = (string?)null,
+            Mode = "Quick",
+            Status = "Completed",
+            StartedAt = DateTimeOffset.Parse("2026-01-01T10:00:00Z"),
+            CompletedAt = (DateTimeOffset?)DateTimeOffset.Parse("2026-01-01T10:05:00Z"),
+            TotalSize = 5120L,
+            TotalFiles = 1,
+            TotalFolders = 1,
+            ErrorCount = 0
+        };
+
+        object Item(string id, string? parent, string name, string itemPath, string type, long size) => new
+        {
+            Id = id,
+            ParentId = parent,
+            Path = itemPath,
+            SanitizedPath = (string?)null,
+            Name = name,
+            Extension = (string?)null,
+            ItemType = type,
+            Size = size,
+            AllocatedSize = size,
+            FileCount = 0,
+            FolderCount = 0,
+            Depth = 1,
+            CreationTime = (DateTimeOffset?)null,
+            LastWriteTime = (DateTimeOffset?)null,
+            LastAccessTime = (DateTimeOffset?)null,
+            Attributes = 0,
+            IsHidden = false,
+            IsSystem = false,
+            IsReparsePoint = false,
+            IsProtected = false,
+            Category = "Unknown",
+            DetectedTechnology = (string?)null,
+            KnownRuleId = (string?)null,
+            RiskLevel = "Low",
+            Confidence = 0.5,
+            CanDelete = false,
+            CanMove = false,
+            CanRegenerate = false,
+            SuggestedAction = "NoAction",
+            Reason = (string?)null
+        };
+
+        var items = new[]
+        {
+            Item("legacyroot", null, "Legacy", @"C:\Legacy", "Folder", 5120),
+            Item("legacyfile", "legacyroot", "old.bin", @"C:\Legacy\old.bin", "File", 4096)
+        };
+
+        var entries = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            [StoravaArchiveEntries.Scan] = JsonSerializer.SerializeToUtf8Bytes(scan),
+            [StoravaArchiveEntries.Items] = Encoding.UTF8.GetBytes(
+                string.Concat(items.Select(i => JsonSerializer.Serialize(i) + "\n"))),
+            [StoravaArchiveEntries.Categories] = "[]"u8.ToArray(),
+            [StoravaArchiveEntries.Recommendations] = "[]"u8.ToArray()
+        };
+
+        using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+
+        foreach (var (name, bytes) in entries)
+        {
+            using var entryStream = archive.CreateEntry(name).Open();
+            entryStream.Write(bytes);
+        }
+
+        var manifest = new
+        {
+            schemaVersion = 1,
+            appVersion = "1.0.0.0",
+            createdAt = DateTimeOffset.Parse("2026-01-01T10:06:00Z"),
+            scanDate = scan.StartedAt,
+            os = "Windows",
+            culture = "en-US",
+            sessionId,
+            rootPath = scan.RootPath,
+            itemCount = items.Length,
+            recommendationCount = 0,
+            hashes = entries.ToDictionary(
+                e => e.Key,
+                e => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(e.Value)),
+                StringComparer.Ordinal)
+        };
+
+        using var manifestStream = archive.CreateEntry(StoravaArchiveEntries.Manifest).Open();
+        manifestStream.Write(JsonSerializer.SerializeToUtf8Bytes(manifest));
+    }
+
+    /// <summary>
+    /// Writes the archive the browser edition's tests read, so that side is checked against a file
+    /// this code actually produced rather than one its own tests invented. Two implementations of
+    /// one file format is the hazard; a shared fixture is the cheapest way to keep them honest.
+    /// <para>
+    /// It only writes when the fixture is missing or <c>STORAVA_REFRESH_FIXTURES</c> is set, and
+    /// otherwise asserts the committed one still round-trips. A test that rewrote a checked-in file
+    /// on every run would make a format change look like no change at all.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task The_shared_fixture_the_browser_reads_still_round_trips()
+    {
+        var repository = RepositoryRoot();
+        string fixture = Path.Combine(
+            repository.FullName, "src", "Storava.Web", "ClientApp", "test", "fixtures", "desktop-v2.storava");
+
+        bool refresh = Environment.GetEnvironmentVariable("STORAVA_REFRESH_FIXTURES") is { Length: > 0 };
+
+        if (refresh || !File.Exists(fixture))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(fixture)!);
+
+            using var tree = new TestTree();
+            tree.AddFile(@"proj\node_modules\pkg\lib.bin", 8192);
+            tree.AddFile(@"docs\notes.txt", 512);
+
+            using var writer = new TestHost(withRules: true);
+            var scan = await ScanAsync(writer, tree.Root);
+            await writer.Get<AnalysisService>().AnalyzeAsync(scan.SessionId, "en");
+
+            var written = await writer.Get<IWorkspaceArchiveService>()
+                .ExportAsync(scan.SessionId, fixture, "en-US");
+            Assert.True(written.IsSuccess);
+        }
+
+        using var host = new TestHost(withRules: true);
+        var inspection = await host.Get<IWorkspaceArchiveService>().InspectAsync(fixture);
+
+        Assert.True(inspection.IsSuccess, "The committed fixture is no longer readable by this build.");
+        Assert.Equal(ArchivePathKind.Absolute, inspection.Value.PathKind);
+        Assert.Equal(ArchiveProducer.Desktop, inspection.Value.ProducedBy);
+
+        var import = await host.Get<IWorkspaceArchiveService>().ImportAsync(fixture);
+        Assert.True(import.IsSuccess);
+        Assert.True(import.Value.ItemCount > 0);
+    }
+
+    private static DirectoryInfo RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src")))
+            directory = directory.Parent;
+
+        Assert.NotNull(directory);
+        return directory!;
     }
 
     public void Dispose()

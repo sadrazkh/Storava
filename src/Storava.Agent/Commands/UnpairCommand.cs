@@ -1,5 +1,6 @@
 using Serilog;
 using Storava.Agent.Identity;
+using Storava.Agent.Tray;
 
 namespace Storava.Agent.Commands;
 
@@ -10,7 +11,11 @@ namespace Storava.Agent.Commands;
 /// </summary>
 internal static class UnpairCommand
 {
-    public static int Run(CommandLine command, AgentKeyStore keys, AgentRegistrationStore registrations)
+    public static int Run(
+        CommandLine command,
+        AgentKeyStore keys,
+        AgentRegistrationStore registrations,
+        AutoStart autoStart)
     {
         var registration = registrations.Load();
         registrations.Clear();
@@ -19,6 +24,9 @@ internal static class UnpairCommand
         // presenting the same key the server still has on file.
         if (!command.HasFlag("keep-identity"))
             keys.Delete();
+
+        // An agent with nothing to serve should not keep starting itself at every logon.
+        autoStart.Disable();
 
         if (registration is null)
         {

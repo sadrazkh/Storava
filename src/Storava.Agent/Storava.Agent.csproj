@@ -1,13 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <!-- Windows-targeted so the Agent can reuse the same DPAPI secret store and, from the next
-         stage, the same disk scanner the desktop app runs. -->
+    <!-- WinExe, not Exe: the Agent's normal life is a tray icon, and a console window flashing up
+         at every logon would be its most visible feature. The command-line verbs still print by
+         attaching to the terminal that launched them. -->
+    <OutputType>WinExe</OutputType>
+    <!-- Windows-targeted so the Agent can reuse the same DPAPI secret store and the same disk
+         scanner the desktop app runs. -->
     <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Storava.Agent</RootNamespace>
     <AssemblyName>storava-agent</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <ApplicationIcon>storava-agent.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Shipping settings live in Properties/PublishProfiles/win-x64.pubxml rather than here.
+         A RuntimeIdentifier in the project file would make every ordinary build and every
+         referencing test project architecture-specific, for a setting only publishing needs. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +36,8 @@
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
+    <!-- Running from the tray there is no console, so a failure at logon needs somewhere to land. -->
+    <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <ItemGroup>

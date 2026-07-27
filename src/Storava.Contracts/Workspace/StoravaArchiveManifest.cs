@@ -9,8 +9,20 @@ namespace Storava.Contracts.Workspace;
 /// </summary>
 public sealed class StoravaArchiveManifest
 {
-    /// <summary>Bumped only when the layout changes in a way older readers cannot handle.</summary>
-    public const int CurrentSchemaVersion = 1;
+    /// <summary>
+    /// Bumped only when the layout changes in a way older readers cannot handle.
+    /// <para>
+    /// Version 2 made the archive something all three editions can read. Version 1 was the desktop
+    /// writing its own entity shapes with whatever names the serializer chose; version 2 carries an
+    /// explicit interchange schema, says whether its paths are absolute or root-relative, and names
+    /// the edition that wrote it. A version 1 file is still read — archives outlive releases — but
+    /// nothing writes one any more.
+    /// </para>
+    /// </summary>
+    public const int CurrentSchemaVersion = 2;
+
+    /// <summary>The oldest layout this build can still open.</summary>
+    public const int MinimumReadableSchemaVersion = 1;
 
     [JsonPropertyName("schemaVersion")]
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
@@ -37,6 +49,18 @@ public sealed class StoravaArchiveManifest
 
     [JsonPropertyName("rootPath")]
     public string RootPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Whether <see cref="RootPath"/> and every item path are real locations or positions inside
+    /// the scanned folder. Absent in version 1, which only the desktop wrote, so absent reads as
+    /// absolute.
+    /// </summary>
+    [JsonPropertyName("pathKind")]
+    public ArchivePathKind PathKind { get; set; } = ArchivePathKind.Absolute;
+
+    /// <summary>Which edition wrote this. Shown to the user; never used to gate a feature.</summary>
+    [JsonPropertyName("producedBy")]
+    public ArchiveProducer ProducedBy { get; set; } = ArchiveProducer.Unknown;
 
     [JsonPropertyName("itemCount")]
     public int ItemCount { get; set; }

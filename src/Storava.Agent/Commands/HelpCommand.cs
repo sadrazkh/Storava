@@ -19,13 +19,23 @@ internal static class HelpCommand
                     Connect this computer. Generate the code on your account page.
                     Leave --code out and the agent asks for it, keeping it out of your shell history.
 
+              tray  Run in the notification area. This is what a double-click and the logon task
+                    do, and the normal way to leave the agent running: the icon shows whether it is
+                    listening, and its menu can stop it or disconnect the computer.
+
               serve
-                    Run the agent so the Storava page in your browser can reach it. It listens on
-                    127.0.0.1 only, answers just the one site it is paired with, and requires a
-                    short-lived token that site gets from your account.
+                    Run in this terminal instead, printing as it goes. Useful for a look at what
+                    the agent is doing. It listens on 127.0.0.1 only, answers just the one site it
+                    is paired with, and requires a short-lived token that site gets from your
+                    account.
+
+              autostart [--enable | --disable]
+                    Whether the agent starts when you sign in to Windows. Per-user, and no
+                    administrator rights are involved.
 
               status
-                    Show this installation's key fingerprint and whether it is paired.
+                    Show this installation's key fingerprint, whether it is paired, and whether it
+                    starts at logon.
 
               unpair [--keep-identity]
                     Forget the pairing on this computer. Also remove the device on your account

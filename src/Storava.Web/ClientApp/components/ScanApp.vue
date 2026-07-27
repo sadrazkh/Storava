@@ -24,7 +24,8 @@ import {
   putAdvisorResult,
   queryItems,
 } from '@/services/scanDatabase';
-import { downloadExport, exportSession, importSession } from '@/services/exportImportService';
+import { exportArchive, importArchive } from '@/services/archiveService';
+import { downloadExport, importSession } from '@/services/exportImportService';
 import { ScannerService } from '@/services/scannerService';
 import { createOfflineReport } from '@/services/reportService';
 
@@ -339,7 +340,8 @@ async function refreshHistory(): Promise<void> {
 }
 
 async function exportCurrent(target: ScanSession): Promise<void> {
-  const result = await exportSession(target.id);
+  // The shared .storava archive, which the desktop edition and the Agent open too.
+  const result = await exportArchive(target.id);
   downloadExport(result.blob, result.fileName);
   notice.value = t('exportReady');
 }
@@ -368,9 +370,13 @@ async function importFile(event: Event): Promise<void> {
   importPercent.value = 0;
   notice.value = t('importProgress');
   try {
-    const importedSession = await importSession(file, (processed, total) => {
-      importPercent.value = total > 0 ? Math.round(processed / total * 100) : 0;
-    });
+    const importedSession = file.name.endsWith('.storava-web')
+      ? await importSession(file, (processed, total) => {
+        importPercent.value = total > 0 ? Math.round(processed / total * 100) : 0;
+      })
+      : await importArchive(file, (imported, total) => {
+        importPercent.value = total > 0 ? Math.round(imported / total * 100) : 0;
+      });
     session.value = importedSession;
     advisorResult.value = null;
     resetRecommendationFilter();
@@ -624,7 +630,7 @@ onBeforeUnmount(() => {
             <div><p class="kicker">{{ t('localDatabase') }}</p><h1>{{ t('scanHistory') }}</h1><p>{{ t('historyBody') }}</p></div>
             <div><button class="button button--quiet" type="button" @click="importInput?.click()">{{ t('importScan') }}</button><button class="button button--danger" type="button" @click="clearData">{{ t('clearLocalData') }}</button></div>
           </header>
-          <input ref="importInput" class="visually-hidden" type="file" accept=".storava-web,application/x-ndjson" @change="importFile">
+          <input ref="importInput" class="visually-hidden" type="file" accept=".storava,.storava-web,application/zip,application/x-ndjson" @change="importFile">
           <section class="history-grid">
             <article v-for="stored in sessions" :key="stored.id" class="history-card">
               <label><input type="checkbox" :checked="compareIds.includes(stored.id)" @change="toggleCompare(stored.id)"><span>{{ t('compare') }}</span></label>

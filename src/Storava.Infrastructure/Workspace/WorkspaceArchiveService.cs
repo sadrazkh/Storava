@@ -97,7 +97,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             {
                 progress?.Report(new ArchiveProgress("scan", 0));
                 hashes[StoravaArchiveEntries.Scan] = await WriteJsonEntryAsync(
-                    archive, StoravaArchiveEntries.Scan, ToDto(session), cancellationToken).ConfigureAwait(false);
+                    archive, StoravaArchiveEntries.Scan, ToArchive(session), cancellationToken).ConfigureAwait(false);
 
                 progress?.Report(new ArchiveProgress("items", 0));
                 (itemCount, hashes[StoravaArchiveEntries.Items]) = await WriteItemsAsync(
@@ -123,6 +123,10 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
                     Culture = culture,
                     SessionId = session.Id,
                     RootPath = session.RootPath,
+                    // This edition walks the file system, so its paths are real locations. The
+                    // browser's are not, and a reader has to be told which it is holding.
+                    PathKind = ArchivePathKind.Absolute,
+                    ProducedBy = ArchiveProducer.Desktop,
                     ItemCount = itemCount,
                     RecommendationCount = recommendationCount,
                     Hashes = hashes
@@ -176,7 +180,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
 
         await foreach (var item in store.StreamAsync(sessionId, cancellationToken).ConfigureAwait(false))
         {
-            string line = JsonSerializer.Serialize(ToDto(item), JsonOptions);
+            string line = JsonSerializer.Serialize(ToArchive(item), JsonOptions);
             hasher.AppendData(Encoding.UTF8.GetBytes(line));
             hasher.AppendData("\n"u8);
 
@@ -220,8 +224,13 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             if (manifest is null)
                 return Result.Failure<StoravaArchiveManifest>(ArchiveErrors.NotAnArchive);
 
-            if (manifest.SchemaVersion > StoravaArchiveManifest.CurrentSchemaVersion)
+            // Newer than this build can read is a refusal; older is not. An archive is meant to
+            // outlive the release that wrote it.
+            if (manifest.SchemaVersion > StoravaArchiveManifest.CurrentSchemaVersion ||
+                manifest.SchemaVersion < StoravaArchiveManifest.MinimumReadableSchemaVersion)
+            {
                 return Result.Failure<StoravaArchiveManifest>(ArchiveErrors.UnsupportedVersion);
+            }
 
             return Result.Success(manifest);
         }
@@ -267,11 +276,15 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             if (verification.IsFailure)
                 return Result.Failure<ArchiveImportResult>(verification.Error);
 
-            var sessionDto = await ReadJsonEntryAsync<SessionDto>(sessionEntry, cancellationToken).ConfigureAwait(false);
-            if (sessionDto is null)
+            var session = manifest.SchemaVersion >= 2
+                ? await ReadJsonEntryAsync<ArchiveScan>(sessionEntry, cancellationToken)
+                    .ConfigureAwait(false) is { } scan ? FromArchive(scan) : null
+                : await ReadJsonEntryAsync<LegacySessionDto>(sessionEntry, cancellationToken)
+                    .ConfigureAwait(false) is { } legacy ? FromLegacy(legacy) : null;
+
+            if (session is null)
                 return Result.Failure<ArchiveImportResult>(ArchiveErrors.MissingEntry);
 
-            var session = FromDto(sessionDto);
             session.Origin = ScanOrigin.Imported;
             session.ImportedAt = DateTimeOffset.Now;
             session.SourceLabel = Path.GetFileName(filePath);
@@ -283,8 +296,8 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             await _sessions.SaveAsync(session, cancellationToken).ConfigureAwait(false);
 
             progress?.Report(new ArchiveProgress("items", 0));
-            int imported = await ImportItemsAsync(itemsEntry, session.Id, progress, cancellationToken)
-                .ConfigureAwait(false);
+            int imported = await ImportItemsAsync(
+                itemsEntry, session.Id, manifest.SchemaVersion, progress, cancellationToken).ConfigureAwait(false);
 
             int recommendationCount = await ImportRecommendationsAsync(archive, session.Id, cancellationToken)
                 .ConfigureAwait(false);
@@ -333,6 +346,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
     private async Task<int> ImportItemsAsync(
         ZipArchiveEntry entry,
         string sessionId,
+        int schemaVersion,
         IProgress<ArchiveProgress>? progress,
         CancellationToken cancellationToken)
     {
@@ -348,11 +362,17 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             if (string.IsNullOrWhiteSpace(line))
                 continue;
 
-            var dto = JsonSerializer.Deserialize<ItemDto>(line, JsonOptions);
-            if (dto is null)
+            var item = schemaVersion >= 2
+                ? JsonSerializer.Deserialize<ArchiveItem>(line, JsonOptions) is { } archived
+                    ? FromArchive(archived)
+                    : null
+                : JsonSerializer.Deserialize<LegacyItemDto>(line, JsonOptions) is { } legacy
+                    ? FromLegacy(legacy)
+                    : null;
+
+            if (item is null)
                 continue;
 
-            var item = FromDto(dto);
             item.SessionId = sessionId;
             await sink.AddAsync(item, cancellationToken).ConfigureAwait(false);
 
@@ -439,14 +459,105 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
 
     // --- Archive shapes ----------------------------------------------------------
-    // Explicit DTOs so the archive format is decoupled from the entities: renaming a
-    // property later cannot silently change what old files are expected to contain.
+    // Version 2 writes the interchange schema from Storava.Contracts, which every edition maps to
+    // and from. Version 1 wrote these entities directly, so its readers stay below: an archive
+    // outlives the release that produced it, and refusing to open one would be the format failing
+    // at the only job it has.
 
-    private static SessionDto ToDto(ScanSession s) => new(
-        s.Id, s.RootPath, s.Label, s.Mode, s.Status, s.StartedAt, s.CompletedAt,
-        s.TotalSize, s.TotalFiles, s.TotalFolders, s.ErrorCount);
+    private static ArchiveScan ToArchive(ScanSession s) => new()
+    {
+        Id = s.Id,
+        Root = s.RootPath,
+        Label = s.Label,
+        Mode = s.Mode == ScanMode.Deep ? "deep" : "quick",
+        Status = s.Status.ToString().ToLowerInvariant(),
+        StartedAt = s.StartedAt,
+        CompletedAt = s.CompletedAt,
+        TotalBytes = s.TotalSize,
+        TotalFiles = s.TotalFiles,
+        TotalFolders = s.TotalFolders,
+        ErrorCount = s.ErrorCount
+    };
 
-    private static ScanSession FromDto(SessionDto d) => new()
+    private static ScanSession FromArchive(ArchiveScan a) => new()
+    {
+        Id = a.Id,
+        RootPath = a.Root,
+        Label = a.Label,
+        Mode = string.Equals(a.Mode, "deep", StringComparison.OrdinalIgnoreCase) ? ScanMode.Deep : ScanMode.Quick,
+        Status = Enum.TryParse<ScanStatus>(a.Status, ignoreCase: true, out var status) ? status : ScanStatus.Completed,
+        StartedAt = a.StartedAt,
+        CompletedAt = a.CompletedAt,
+        TotalSize = a.TotalBytes,
+        TotalFiles = a.TotalFiles,
+        TotalFolders = a.TotalFolders,
+        ErrorCount = a.ErrorCount
+    };
+
+    private static ArchiveItem ToArchive(ScanItem i) => new()
+    {
+        Id = i.Id,
+        ParentId = i.ParentId,
+        Path = i.Path,
+        Name = i.Name,
+        Kind = i.ItemType == ItemType.Folder ? ArchiveItemKinds.Folder : ArchiveItemKinds.File,
+        Extension = i.Extension,
+        Size = i.Size,
+        AllocatedSize = i.AllocatedSize,
+        FileCount = i.FileCount,
+        FolderCount = i.FolderCount,
+        Depth = i.Depth,
+        CreatedAt = i.CreationTime,
+        ModifiedAt = i.LastWriteTime,
+        Category = i.Category.ToString(),
+        Technology = i.DetectedTechnology,
+        // A list even though this edition matches one rule: the browser matches several, and a
+        // superset is lossless in both directions where a single value would not be.
+        RuleIds = i.KnownRuleId is { Length: > 0 } rule ? [rule] : [],
+        Risk = i.RiskLevel.ToString(),
+        IsProtected = i.IsProtected,
+        IsReparsePoint = i.IsReparsePoint,
+        CanDelete = i.CanDelete,
+        CanMove = i.CanMove
+    };
+
+    private static ScanItem FromArchive(ArchiveItem a) => new()
+    {
+        Id = a.Id,
+        ParentId = a.ParentId,
+        Path = a.Path,
+        Name = a.Name,
+        Extension = a.Extension,
+        ItemType = string.Equals(a.Kind, ArchiveItemKinds.Folder, StringComparison.OrdinalIgnoreCase)
+            ? ItemType.Folder
+            : ItemType.File,
+        Size = a.Size,
+        AllocatedSize = a.AllocatedSize ?? a.Size,
+        FileCount = a.FileCount,
+        FolderCount = a.FolderCount,
+        Depth = a.Depth,
+        CreationTime = a.CreatedAt,
+        LastWriteTime = a.ModifiedAt,
+        Category = Enum.TryParse<StorageCategory>(a.Category, ignoreCase: true, out var category)
+            ? category
+            : StorageCategory.Unknown,
+        DetectedTechnology = a.Technology,
+        KnownRuleId = a.RuleIds.Count > 0 ? a.RuleIds[0] : null,
+        RiskLevel = Enum.TryParse<RiskLevel>(a.Risk, ignoreCase: true, out var risk) ? risk : RiskLevel.Unknown,
+        IsProtected = a.IsProtected,
+        IsReparsePoint = a.IsReparsePoint,
+        CanDelete = a.CanDelete,
+        CanMove = a.CanMove,
+        // Advice from another machine is advice, not an instruction. Import already forces this on
+        // recommendations; items get the same treatment.
+        SuggestedAction = SuggestedAction.NoAction
+    };
+
+    // --- Version 1 readers -------------------------------------------------------
+    // Only ever read. These mirror the entity shapes as the first release happened to serialize
+    // them, which is exactly why version 2 stopped doing that.
+
+    private static ScanSession FromLegacy(LegacySessionDto d) => new()
     {
         Id = d.Id,
         RootPath = d.RootPath,
@@ -461,14 +572,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         ErrorCount = d.ErrorCount
     };
 
-    private static ItemDto ToDto(ScanItem i) => new(
-        i.Id, i.ParentId, i.Path, i.SanitizedPath, i.Name, i.Extension, i.ItemType, i.Size,
-        i.AllocatedSize, i.FileCount, i.FolderCount, i.Depth, i.CreationTime, i.LastWriteTime,
-        i.LastAccessTime, (int)i.Attributes, i.IsHidden, i.IsSystem, i.IsReparsePoint, i.IsProtected,
-        i.Category, i.DetectedTechnology, i.KnownRuleId, i.RiskLevel, i.Confidence,
-        i.CanDelete, i.CanMove, i.CanRegenerate, i.SuggestedAction, i.Reason);
-
-    private static ScanItem FromDto(ItemDto d) => new()
+    private static ScanItem FromLegacy(LegacyItemDto d) => new()
     {
         Id = d.Id,
         ParentId = d.ParentId,
@@ -502,12 +606,12 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         Reason = d.Reason
     };
 
-    private sealed record SessionDto(
+    private sealed record LegacySessionDto(
         string Id, string RootPath, string? Label, ScanMode Mode, ScanStatus Status,
         DateTimeOffset StartedAt, DateTimeOffset? CompletedAt,
         long TotalSize, int TotalFiles, int TotalFolders, int ErrorCount);
 
-    private sealed record ItemDto(
+    private sealed record LegacyItemDto(
         string Id, string? ParentId, string Path, string? SanitizedPath, string Name, string? Extension,
         ItemType ItemType, long Size, long AllocatedSize, int FileCount, int FolderCount, int Depth,
         DateTimeOffset? CreationTime, DateTimeOffset? LastWriteTime, DateTimeOffset? LastAccessTime,
