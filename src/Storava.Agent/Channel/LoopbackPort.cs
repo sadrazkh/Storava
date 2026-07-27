@@ -14,19 +14,11 @@ namespace Storava.Agent.Channel;
 /// </summary>
 public static class LoopbackPort
 {
-    /// <summary>Returns the first port on the list nothing else is holding, or null when all are taken.</summary>
-    public static int? FirstAvailable()
-    {
-        foreach (int port in AgentEndpoints.Ports)
-        {
-            if (IsFree(port))
-                return port;
-        }
-
-        return null;
-    }
-
-    private static bool IsFree(int port)
+    /// <summary>
+    /// Whether this process can take the port right now. Only a hint: the caller still has to
+    /// cope with losing the race between this answer and its own bind.
+    /// </summary>
+    public static bool IsFree(int port)
     {
         // Bound and released rather than merely inspected: the answer that matters is whether this
         // process can take it, and a listing of the machine's sockets would not say that.

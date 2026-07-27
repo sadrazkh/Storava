@@ -51,8 +51,39 @@ const en = {
 
   boundary:
     'The server issues a short-lived pass and learns that you asked. It never sees a drive, a path, or a scan.',
-  notYet:
-    'Reading drives and scanning through the Agent are not built yet. Connecting proves the channel works and does nothing else.',
+
+  drivesTitle: 'Drives on this computer',
+  drivesBody: 'A browser cannot list these. Choose one to walk, or type any folder path.',
+  driveFree: 'free of',
+  folderLabel: 'Folder to walk',
+  folderPlaceholder: 'C:\\Users\\you\\projects',
+  deepMode: 'Deep — also read each file’s size on disk (slower)',
+  startScan: 'Scan with the Agent',
+  cancelScan: 'Stop',
+
+  scanning: 'Walking {path}',
+  scanStats: '{files} files · {folders} folders · {bytes}',
+  scanElapsed: '{seconds}s elapsed',
+  scanErrors: '{errors} unreadable',
+
+  scanDoneTitle: 'Finished',
+  scanCancelledTitle: 'Stopped',
+  scanFailedTitle: 'The walk failed',
+  scanDoneBody: '{files} files and {folders} folders, {bytes} in total.',
+
+  resultsTitle: 'Largest items',
+  resultsBody:
+    'These are real paths on this computer — the thing the browser edition can never show you. They stay between the Agent and this page.',
+  colPath: 'Path',
+  colSize: 'Size',
+  colKind: 'Identified as',
+  foldersOnly: 'Folders only',
+  copyPath: 'Copy',
+  copied: 'Copied',
+  protectedItem: 'protected',
+  noResults: 'Nothing was stored for that walk.',
+
+  notYet: 'Acting on what the Agent finds — moving or deleting — is the next stage. Nothing here changes a file.',
 };
 
 export type AgentMessageKey = keyof typeof en;
@@ -108,8 +139,39 @@ const fa: Record<AgentMessageKey, string> = {
 
   boundary:
     'سرور فقط یک مجوز کوتاه‌عمر صادر می‌کند و می‌داند که شما درخواست داده‌اید. هیچ درایو، مسیر یا اسکنی نمی‌بیند.',
-  notYet:
-    'خواندن درایوها و اسکن از طریق Agent هنوز ساخته نشده است. اتصال فقط ثابت می‌کند که کانال کار می‌کند و کار دیگری نمی‌کند.',
+
+  drivesTitle: 'درایوهای این کامپیوتر',
+  drivesBody: 'مرورگر نمی‌تواند این‌ها را فهرست کند. یکی را برای پیمایش انتخاب کنید، یا مسیر هر پوشه‌ای را بنویسید.',
+  driveFree: 'آزاد از',
+  folderLabel: 'پوشه‌ای که پیمایش شود',
+  folderPlaceholder: 'C:\\Users\\you\\projects',
+  deepMode: 'عمیق — حجم روی دیسک هر فایل هم خوانده شود (کندتر)',
+  startScan: 'اسکن با Agent',
+  cancelScan: 'توقف',
+
+  scanning: 'در حال پیمایش {path}',
+  scanStats: '{files} فایل · {folders} پوشه · {bytes}',
+  scanElapsed: '{seconds} ثانیه',
+  scanErrors: '{errors} غیرقابل‌خواندن',
+
+  scanDoneTitle: 'تمام شد',
+  scanCancelledTitle: 'متوقف شد',
+  scanFailedTitle: 'پیمایش ناموفق بود',
+  scanDoneBody: '{files} فایل و {folders} پوشه، در مجموع {bytes}.',
+
+  resultsTitle: 'بزرگ‌ترین موردها',
+  resultsBody:
+    'این‌ها مسیرهای واقعی روی این کامپیوتر هستند — همان چیزی که نسخهٔ مرورگری هرگز نمی‌تواند نشانتان بدهد. بین Agent و این صفحه می‌مانند.',
+  colPath: 'مسیر',
+  colSize: 'حجم',
+  colKind: 'شناسایی‌شده به‌عنوان',
+  foldersOnly: 'فقط پوشه‌ها',
+  copyPath: 'کپی',
+  copied: 'کپی شد',
+  protectedItem: 'محافظت‌شده',
+  noResults: 'برای آن پیمایش چیزی ذخیره نشد.',
+
+  notYet: 'اقدام روی چیزی که Agent پیدا می‌کند — جابه‌جایی یا حذف — مرحلهٔ بعدی است. اینجا هیچ فایلی تغییر نمی‌کند.',
 };
 
 export function getAgentMessages(locale: Locale): Record<AgentMessageKey, string> {

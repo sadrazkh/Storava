@@ -6,8 +6,8 @@ moved or renamed without your explicit selection and confirmation. The AI adviso
 recommend, but it can never act.
 
 > Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) ·
-> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing and the
-> browser↔Agent channel complete; scanning and local actions still to come).
+> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing, the
+> browser↔Agent channel and Agent-side scanning complete; local actions still to come).
 
 ## Tech stack
 
@@ -116,8 +116,17 @@ permission the first time a public site reaches anything on your local network; 
 that prompt rather than reporting a bare network error. Removing the device on your account page
 destroys the secret those passes are signed with, so no new one can be issued.
 
-Connecting proves the channel and does nothing else yet — reading drives and scanning through the
-Agent are the next stage.
+Once connected, the panel lists the machine's real drives — something a browser cannot enumerate
+at all — and will walk any folder you name. The walk uses the desktop edition's scanner, its rule
+catalog and its storage unchanged, so it identifies an npm cache or a .NET output folder for the
+same reason the desktop app does. Results come back with **operating-system absolute paths**,
+which is the thing the browser edition can never show you.
+
+Measured on a real run: 8,392 files and 1,237 folders across 183 MB, walked and classified in 0.6
+seconds, with every path shown in full.
+
+The Agent has no write path at all — acting on what it finds is the next stage, and nothing there
+today can change a file.
 
 ## Run
 

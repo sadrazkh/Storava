@@ -234,8 +234,37 @@ than papered over.
 `connect-src` had to be widened for any of this to work, and was widened as narrowly as possible:
 four literal loopback addresses, no wildcard port, no `localhost` alias.
 
+### Reading the machine (implemented)
+
+Behind the pass, the Agent exposes what a browser cannot reach: `GET /v1/drives` lists real
+volumes, `POST /v1/scans` walks a folder, `GET /v1/scans/{id}` reports progress, and
+`GET /v1/scans/{id}/items` returns the largest items **with operating-system absolute paths**.
+
+None of that is a second implementation. The Agent references `Storava.Platform`,
+`Storava.Rules` and `Storava.Infrastructure` and gets the desktop edition's scanner, its ~35-rule
+catalog and its SQLite storage as they are. A walk through the Agent classifies `node_modules` as
+an npm cache for the same reason the desktop app does — it is the same rule engine.
+
+Decisions worth stating:
+
+- **Polled, not streamed.** The numbers are cumulative, so a missed tick costs nothing and there
+  is no stream to reconnect when the page is backgrounded. An `EventSource` could not have carried
+  the pass anyway.
+- **One walk at a time.** A second request is refused rather than queued: two concurrent walks of
+  one disk are slower than one, and a page that could start them without limit could be made to
+  thrash the machine.
+- **Results only after the walk finishes.** A partial tree has folder rows that have not been
+  totalled yet; reporting those as sizes would be wrong rather than merely incomplete.
+- **The one place an outside caller names a path.** It must be absolute and must exist. Everything
+  past that — reparse loops, unreadable folders, protected locations — is already the scanner's
+  business and is not changed by the caller being a page.
+- **The scan state crosses the wire as a name.** Declared on the contract rather than left to
+  ambient serializer options: as integers the page's comparisons fail silently and a finished walk
+  looks like one that never ends.
+- The Agent keeps its scans in its own database, apart from the desktop's, so the two never
+  contend for one file and removing the Agent takes its scans with it.
+
 ### Not yet built
 
-Drive and scan endpoints, operating-system absolute paths, and local actions are the remaining
-stages. Connecting today proves the channel and does nothing else — the panel says so, and the
-Explorer still calls its addresses browser-relative, because that is still all it can offer.
+Acting on what the Agent finds — moving a folder, deleting one — is the remaining stage. Nothing
+in the Agent can change a file today: it has no write path at all, and the panel says so.

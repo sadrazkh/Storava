@@ -14,6 +14,13 @@ public static class AgentPaths
 
     /// <summary>Encrypted identity and registration. Nothing else is written here.</summary>
     public static string SecretsDirectory => Path.Combine(Root, "secrets");
+
+    /// <summary>
+    /// Scans the Agent has run, in the same SQLite shape the desktop application uses. Kept apart
+    /// from the desktop's own database so the two never contend for one file, and so removing the
+    /// Agent takes its scans with it.
+    /// </summary>
+    public static string ScanDatabase => Path.Combine(Root, "agent-scans.db");
 }
 
 /// <summary>

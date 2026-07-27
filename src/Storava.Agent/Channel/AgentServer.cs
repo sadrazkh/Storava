@@ -1,6 +1,7 @@
 using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +9,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Storava.Agent.Identity;
+using Storava.Agent.Scanning;
+using Storava.Application.Abstractions;
 using Storava.Contracts.Agent;
+using Storava.Infrastructure;
+using Storava.Infrastructure.Persistence;
+using Storava.Platform;
+using Storava.Rules;
 
 namespace Storava.Agent.Channel;
 
@@ -26,7 +33,14 @@ namespace Storava.Agent.Channel;
 /// token signed with the channel secret only that account server holds.
 /// </para>
 /// </summary>
-public sealed class AgentServer(AgentRegistration registration, string deviceFingerprint)
+/// <param name="scanDatabasePath">
+/// Where walks are stored. A parameter rather than a constant so a test never writes into the
+/// real <c>%LOCALAPPDATA%\Storava\Agent</c> and two of them never share one file.
+/// </param>
+public sealed class AgentServer(
+    AgentRegistration registration,
+    string deviceFingerprint,
+    string? scanDatabasePath = null)
 {
     /// <summary>The scheme+authority of the account server this Agent belongs to.</summary>
     private readonly string _allowedOrigin = OriginOf(registration.ServerBaseUrl);
@@ -37,18 +51,40 @@ public sealed class AgentServer(AgentRegistration registration, string deviceFin
 
     public int Port { get; private set; }
 
+    /// <summary>
+    /// Binds the first port that will actually take us and serves until cancelled.
+    /// <para>
+    /// Probing a port and then binding it are two moments, and something else can arrive in
+    /// between — most easily another Agent starting at the same instant. Rather than trust the
+    /// probe, a failed bind simply moves to the next port.
+    /// </para>
+    /// </summary>
     public async Task<int> RunAsync(CancellationToken cancellationToken)
     {
-        int? port = LoopbackPort.FirstAvailable();
-        if (port is null)
+        foreach (int candidate in AgentEndpoints.Ports)
         {
-            Log.Error(
-                "Every agent port is already in use ({Ports}). Another agent is probably running.",
-                string.Join(", ", AgentEndpoints.Ports));
-            return ExitCodes.Failed;
+            if (!LoopbackPort.IsFree(candidate))
+                continue;
+
+            try
+            {
+                return await ServeAsync(candidate, cancellationToken).ConfigureAwait(false);
+            }
+            catch (IOException exception) when (exception.InnerException is AddressInUseException)
+            {
+                Log.Debug("Port {Port} was taken between the check and the bind; trying the next.", candidate);
+            }
         }
 
-        Port = port.Value;
+        Log.Error(
+            "Every agent port is already in use ({Ports}). Another agent is probably running.",
+            string.Join(", ", AgentEndpoints.Ports));
+        return ExitCodes.Failed;
+    }
+
+    private async Task<int> ServeAsync(int port, CancellationToken cancellationToken)
+    {
+        Port = port;
 
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
@@ -63,8 +99,15 @@ public sealed class AgentServer(AgentRegistration registration, string deviceFin
 
         builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy => policy
             .WithOrigins(_allowedOrigin)
-            .WithMethods("GET")
+            .WithMethods("GET", "POST")
             .WithHeaders("Authorization", "Content-Type")));
+
+        // The scanner, the rule catalog and the storage are the desktop application's, unchanged.
+        // The Agent is a different caller for them, not a second implementation.
+        builder.Services.AddStoravaInfrastructure(scanDatabasePath ?? AgentPaths.ScanDatabase);
+        builder.Services.AddStoravaPlatform(AgentPaths.SecretsDirectory);
+        builder.Services.AddStoravaRules<SqliteScanItemSinkFactory>();
+        builder.Services.AddSingleton<AgentScanService>();
 
         var app = builder.Build();
         // Before CORS, which answers a preflight and stops: a header added afterwards would never
@@ -105,6 +148,66 @@ public sealed class AgentServer(AgentRegistration registration, string deviceFin
                 registration.DeviceName,
                 Version(),
                 _startedAt));
+        });
+
+        // Everything below needs a pass. These are the endpoints that read the machine.
+
+        app.MapGet(AgentScanPaths.Drives, (HttpContext context, IStorageInfoService storage) =>
+            Authorize(context) ?? Results.Json(storage.GetDrives()
+                .Select(drive => new AgentDrive(
+                    drive.Name,
+                    drive.VolumeLabel,
+                    drive.DriveFormat,
+                    drive.TotalSize.Bytes,
+                    drive.FreeSpace.Bytes,
+                    drive.IsReady))
+                .ToList()));
+
+        app.MapPost(AgentScanPaths.Scans, async (
+            HttpContext context,
+            AgentScanRequest request,
+            AgentScanService scans) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var started = await scans.StartAsync(request);
+            return started.Problem is { } problem
+                ? Results.Json(problem, statusCode: StatusCodes.Status400BadRequest)
+                : Results.Json(started.Progress);
+        });
+
+        app.MapGet($"{AgentScanPaths.Scans}/{{scanId}}", (
+            HttpContext context,
+            string scanId,
+            AgentScanService scans) =>
+            Authorize(context) ?? (scans.Get(scanId) is { } progress
+                ? Results.Json(progress)
+                : Results.NotFound()));
+
+        app.MapPost($"{AgentScanPaths.Scans}/{{scanId}}/cancel", (
+            HttpContext context,
+            string scanId,
+            AgentScanService scans) =>
+            Authorize(context) ?? (scans.Cancel(scanId)
+                ? Results.Json(scans.Get(scanId))
+                : Results.NotFound()));
+
+        app.MapGet($"{AgentScanPaths.Scans}/{{scanId}}/items", async (
+            HttpContext context,
+            string scanId,
+            AgentScanService scans,
+            CancellationToken cancellationToken,
+            int limit = 100,
+            bool foldersOnly = false) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var items = await scans.ItemsAsync(scanId, limit, foldersOnly, cancellationToken);
+            return items is null ? Results.NotFound() : Results.Json(items);
         });
     }
 

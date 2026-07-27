@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePreferences } from '@/composables/usePreferences';
 import { getAgentMessages } from '@/localization/agentMessages';
 import {
+  cancelScan,
   connectToAgent,
+  getScan,
+  getScanItems,
   listDevices,
+  listDrives,
   readPageCredentials,
+  startScan,
   type AgentConnection,
+  type AgentDrive,
   type AgentFailure,
+  type AgentScanItem,
+  type AgentScanProgress,
   type BrowserDevice,
 } from '@/services/agentService';
 
@@ -55,10 +63,149 @@ const connectedBody = computed(() => {
     .replace('{port}', String(connection.value.port));
 });
 
+const drives = ref<AgentDrive[]>([]);
+const rootPath = ref('');
+const deep = ref(false);
+const scan = ref<AgentScanProgress | null>(null);
+const scanProblem = ref<string | null>(null);
+const results = ref<AgentScanItem[]>([]);
+const foldersOnly = ref(false);
+const copiedPath = ref('');
+
+let poller: number | null = null;
+
+const isScanning = computed(() => scan.value?.state === 'Running');
+const canScan = computed(() => Boolean(connection.value) && rootPath.value.trim().length > 0 && !isScanning.value);
+
+const scanHeading = computed(() => {
+  switch (scan.value?.state) {
+    case 'Completed': return copy.value.scanDoneTitle;
+    case 'Cancelled': return copy.value.scanCancelledTitle;
+    case 'Failed': return copy.value.scanFailedTitle;
+    default: return '';
+  }
+});
+
 function formatMoment(value: string): string {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleString(locale.value);
 }
+
+/** Binary units, matching how the rest of the workspace reports sizes. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB', 'PB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value >= 100 ? 0 : 1)} ${units[unit]}`;
+}
+
+function fill(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, value),
+    template,
+  );
+}
+
+function describeItem(item: AgentScanItem): string {
+  if (item.technology) return item.technology;
+  return item.category;
+}
+
+async function copyPath(path: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(path);
+    copiedPath.value = path;
+    setTimeout(() => {
+      if (copiedPath.value === path) copiedPath.value = '';
+    }, 2000);
+  } catch {
+    // Clipboard permission can be refused; the path is on screen either way.
+  }
+}
+
+function stopPolling(): void {
+  if (poller !== null) {
+    clearInterval(poller);
+    poller = null;
+  }
+}
+
+/**
+ * Polls the walk rather than streaming it. The numbers are cumulative, so a missed tick costs
+ * nothing, and there is no stream to reconnect when the page is backgrounded.
+ */
+function followScan(): void {
+  stopPolling();
+  poller = window.setInterval(() => void tick(), 500);
+}
+
+async function tick(): Promise<void> {
+  const current = connection.value;
+  const running = scan.value;
+  if (!current || !running) {
+    stopPolling();
+    return;
+  }
+
+  const next = await getScan(current, running.scanId);
+  if (!next) {
+    stopPolling();
+    return;
+  }
+
+  scan.value = next;
+  if (next.state !== 'Running') {
+    stopPolling();
+    if (next.state === 'Completed') await loadResults();
+  }
+}
+
+async function loadResults(): Promise<void> {
+  const current = connection.value;
+  const finished = scan.value;
+  if (!current || !finished || finished.state !== 'Completed') return;
+
+  results.value = await getScanItems(current, finished.scanId, 100, foldersOnly.value);
+}
+
+async function beginScan(): Promise<void> {
+  const current = connection.value;
+  if (!current || !canScan.value) return;
+
+  scanProblem.value = null;
+  results.value = [];
+
+  const started = await startScan(current, rootPath.value.trim(), deep.value ? 'deep' : 'quick');
+  if ('problem' in started) {
+    scanProblem.value = started.problem.message;
+    return;
+  }
+
+  scan.value = started.progress;
+  followScan();
+}
+
+async function stopScan(): Promise<void> {
+  const current = connection.value;
+  const running = scan.value;
+  if (current && running) await cancelScan(current, running.scanId);
+}
+
+async function loadDrives(): Promise<void> {
+  const current = connection.value;
+  if (!current) return;
+
+  drives.value = await listDrives(current);
+  const first = drives.value.find((drive) => drive.isReady);
+  if (!rootPath.value && first) rootPath.value = first.name;
+}
+
+onBeforeUnmount(stopPolling);
 
 async function loadDevices(): Promise<void> {
   devices.value = await listDevices(credentials);
@@ -75,11 +222,16 @@ async function connect(): Promise<void> {
   isConnecting.value = true;
   failure.value = null;
   connection.value = null;
+  stopPolling();
+  scan.value = null;
+  results.value = [];
+  drives.value = [];
 
   try {
     const result = await connectToAgent(credentials, selectedDeviceId.value);
     if (result.ok) {
       connection.value = result.connection;
+      await loadDrives();
     } else {
       failure.value = result.failure;
     }
@@ -156,6 +308,111 @@ onMounted(loadDevices);
         </dl>
         <p class="agent__note">{{ copy.notYet }}</p>
       </section>
+
+      <template v-if="connection">
+        <section class="agent__drives">
+          <h2>{{ copy.drivesTitle }}</h2>
+          <p>{{ copy.drivesBody }}</p>
+
+          <div class="agent__drive-grid">
+            <button
+              v-for="drive in drives"
+              :key="drive.name"
+              type="button"
+              class="agent__drive"
+              :class="{ 'is-active': rootPath === drive.name }"
+              :disabled="!drive.isReady || isScanning"
+              @click="rootPath = drive.name"
+            >
+              <strong>{{ drive.name }}</strong>
+              <span>{{ drive.volumeLabel || drive.driveFormat }}</span>
+              <small>{{ formatBytes(drive.freeBytes) }} {{ copy.driveFree }} {{ formatBytes(drive.totalBytes) }}</small>
+            </button>
+          </div>
+
+          <label class="agent__field">
+            <span>{{ copy.folderLabel }}</span>
+            <input v-model="rootPath" type="text" dir="ltr" :placeholder="copy.folderPlaceholder" :disabled="isScanning">
+          </label>
+
+          <label class="agent__check">
+            <input v-model="deep" type="checkbox" :disabled="isScanning">
+            <span>{{ copy.deepMode }}</span>
+          </label>
+
+          <div class="agent__actions">
+            <button type="button" class="agent__connect" :disabled="!canScan" @click="beginScan">
+              {{ copy.startScan }}
+            </button>
+            <button v-if="isScanning" type="button" class="agent__stop" @click="stopScan">
+              {{ copy.cancelScan }}
+            </button>
+          </div>
+
+          <p v-if="scanProblem" class="agent__scan-problem" role="alert">{{ scanProblem }}</p>
+        </section>
+
+        <section v-if="scan" class="agent__scan" :data-state="scan.state">
+          <h2 v-if="isScanning">{{ fill(copy.scanning, { path: scan.currentPath }) }}</h2>
+          <h2 v-else>{{ scanHeading }}</h2>
+
+          <p>
+            {{ fill(copy.scanStats, {
+              files: scan.files.toLocaleString(locale),
+              folders: scan.folders.toLocaleString(locale),
+              bytes: formatBytes(scan.bytes),
+            }) }}
+            ·
+            {{ fill(copy.scanElapsed, { seconds: String(scan.elapsedSeconds) }) }}
+            <template v-if="scan.errors > 0">
+              · {{ fill(copy.scanErrors, { errors: scan.errors.toLocaleString(locale) }) }}
+            </template>
+          </p>
+
+          <p v-if="scan.error" class="agent__scan-problem">{{ scan.error }}</p>
+        </section>
+
+        <section v-if="scan?.state === 'Completed'" class="agent__results">
+          <header>
+            <div>
+              <h2>{{ copy.resultsTitle }}</h2>
+              <p>{{ copy.resultsBody }}</p>
+            </div>
+            <label class="agent__check">
+              <input v-model="foldersOnly" type="checkbox" @change="loadResults">
+              <span>{{ copy.foldersOnly }}</span>
+            </label>
+          </header>
+
+          <p v-if="results.length === 0">{{ copy.noResults }}</p>
+
+          <table v-else>
+            <thead>
+              <tr>
+                <th scope="col">{{ copy.colPath }}</th>
+                <th scope="col">{{ copy.colKind }}</th>
+                <th scope="col">{{ copy.colSize }}</th>
+                <th scope="col"><span class="agent__sr">{{ copy.copyPath }}</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in results" :key="item.id">
+                <td>
+                  <code dir="ltr">{{ item.path }}</code>
+                  <em v-if="item.isProtected">{{ copy.protectedItem }}</em>
+                </td>
+                <td>{{ describeItem(item) }}</td>
+                <td class="agent__size">{{ formatBytes(item.size) }}</td>
+                <td>
+                  <button type="button" class="agent__copy" @click="copyPath(item.path)">
+                    {{ copiedPath === item.path ? copy.copied : copy.copyPath }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </template>
 
       <section v-else-if="problem" class="agent__problem" role="alert">
         <h2>{{ problem.title }}</h2>
@@ -291,6 +548,112 @@ onMounted(loadDevices);
 }
 .agent__connected dt { color: var(--ink); font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .agent__connected dd { margin: .25rem 0 0; color: var(--muted); }
+
+.agent__drives, .agent__scan, .agent__results {
+  display: grid;
+  gap: .8rem;
+  padding: 1.3rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.agent__drives h2, .agent__scan h2, .agent__results h2 { margin: 0; font-size: 1.2rem; }
+.agent__drives > p, .agent__results p { max-width: 68ch; margin: 0; color: var(--muted); line-height: 1.65; }
+
+.agent__drive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .6rem;
+}
+.agent__drive {
+  display: grid;
+  gap: .2rem;
+  padding: .8rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+}
+.agent__drive.is-active { border-color: var(--pine-bright); box-shadow: inset 0 -3px var(--pine-bright); }
+.agent__drive:disabled { cursor: not-allowed; opacity: .45; }
+.agent__drive strong { font-size: 1rem; }
+.agent__drive span, .agent__drive small { color: var(--muted); font-size: .72rem; }
+
+.agent__field input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .62rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.agent__check { display: flex; gap: .55rem; align-items: center; color: var(--muted); cursor: pointer; }
+.agent__check input { accent-color: var(--pine-bright); }
+
+.agent__actions { display: flex; gap: .6rem; }
+.agent__stop {
+  min-height: 2.75rem;
+  padding: 0 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: transparent;
+  color: var(--danger);
+  font: 800 .82rem/1 inherit;
+  cursor: pointer;
+}
+.agent__scan-problem { margin: 0; color: var(--danger); line-height: 1.6; }
+
+.agent__scan[data-state="Running"] { border-color: var(--pine-bright); }
+.agent__scan h2 {
+  overflow: hidden;
+  font-size: .95rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+.agent__scan p { margin: 0; color: var(--muted); }
+
+.agent__results > header { display: flex; justify-content: space-between; gap: 1.5rem; align-items: start; }
+.agent__results table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.agent__results th {
+  padding: .5rem .6rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: .7rem;
+  letter-spacing: .08em;
+  text-align: start;
+  text-transform: uppercase;
+}
+.agent__results td { padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.agent__results code {
+  /* Always left to right: a Windows path reordered by RTL layout is unreadable and uncopyable. */
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: .78rem;
+  word-break: break-all;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.agent__results em { margin-inline-start: .4rem; color: var(--danger); font-size: .68rem; font-style: normal; }
+.agent__size { text-align: end; white-space: nowrap; }
+.agent__copy {
+  padding: .3rem .55rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: 700 .7rem/1 inherit;
+  cursor: pointer;
+}
+.agent__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 
 .agent__note, .agent__boundary { margin: 0; color: var(--muted); font-size: .83rem; line-height: 1.6; }
 .agent__boundary { padding-top: .4rem; border-top: 1px solid var(--line); }

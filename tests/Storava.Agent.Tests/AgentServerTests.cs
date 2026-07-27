@@ -15,6 +15,7 @@ namespace Storava.Agent.Tests;
 /// gives away nothing but the fact that an Agent is here.
 /// </para>
 /// </summary>
+[Collection(AgentServerCollection.Name)]
 public sealed class AgentServerTests : IAsyncLifetime
 {
     private const string Origin = "https://storava.example";
@@ -38,7 +39,9 @@ public sealed class AgentServerTests : IAsyncLifetime
                 ChannelSecret = _secret,
                 PairedAtUtc = DateTimeOffset.UtcNow
             },
-            "AAAA BBBB CCCC DDDD");
+            "AAAA BBBB CCCC DDDD",
+            // Never the real agent database, even though nothing here scans.
+            Path.Combine(Path.GetTempPath(), $"storava-agent-channel-{Guid.NewGuid():N}.db"));
 
         _running = _server.RunAsync(_shutdown.Token);
 

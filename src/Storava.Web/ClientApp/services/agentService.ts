@@ -60,6 +60,54 @@ export interface AgentConnection {
   baseAddress: string;
   port: number;
   status: AgentStatus;
+  /** The pass used for this connection. Short-lived, held only in this page's memory. */
+  token: string;
+}
+
+export interface AgentDrive {
+  name: string;
+  volumeLabel: string | null;
+  driveFormat: string;
+  totalBytes: number;
+  freeBytes: number;
+  isReady: boolean;
+}
+
+export type AgentScanState = 'Running' | 'Completed' | 'Cancelled' | 'Failed';
+
+export interface AgentScanProgress {
+  scanId: string;
+  state: AgentScanState;
+  rootPath: string;
+  currentPath: string;
+  files: number;
+  folders: number;
+  bytes: number;
+  errors: number;
+  elapsedSeconds: number;
+  error: string | null;
+}
+
+export interface AgentScanItem {
+  id: string;
+  /** A real operating-system path. The browser edition cannot produce one of these. */
+  path: string;
+  name: string;
+  isFolder: boolean;
+  size: number;
+  fileCount: number;
+  folderCount: number;
+  category: string;
+  technology: string | null;
+  ruleId: string | null;
+  risk: string;
+  isProtected: boolean;
+  isReparsePoint: boolean;
+}
+
+export interface AgentProblem {
+  reason: string;
+  message: string;
 }
 
 export type AgentResult =
@@ -222,5 +270,86 @@ export async function connectToAgent(
   const status = (await response.json()) as AgentStatus;
   if (status.deviceId !== deviceId) return { ok: false, failure: 'other-device' };
 
-  return { ok: true, connection: { baseAddress: base, port: found.port, status } };
+  return { ok: true, connection: { baseAddress: base, port: found.port, status, token: access.token } };
+}
+
+/**
+ * Everything below runs against an Agent this page has already connected to. The pass goes with
+ * every call; the Agent verifies it locally and the account server is not involved.
+ */
+async function agentFetch(
+  connection: AgentConnection,
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  return fetchWithTimeout(
+    `${connection.baseAddress}${path}`,
+    {
+      ...init,
+      headers: {
+        Accept: 'application/json',
+        ...(init.headers ?? {}),
+        Authorization: `Bearer ${connection.token}`,
+      },
+    },
+    REQUEST_TIMEOUT_MS,
+  );
+}
+
+/** The machine's drives — something a browser cannot enumerate at all. */
+export async function listDrives(connection: AgentConnection): Promise<AgentDrive[]> {
+  const response = await agentFetch(connection, '/v1/drives');
+  if (!response.ok) return [];
+  return (await response.json()) as AgentDrive[];
+}
+
+/** Asks the Agent to walk a folder. Returns the first progress report, or why it refused. */
+export async function startScan(
+  connection: AgentConnection,
+  rootPath: string,
+  mode: 'quick' | 'deep' = 'quick',
+): Promise<{ progress: AgentScanProgress } | { problem: AgentProblem }> {
+  const response = await agentFetch(connection, '/v1/scans', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rootPath, mode }),
+  });
+
+  if (response.ok) return { progress: (await response.json()) as AgentScanProgress };
+
+  try {
+    return { problem: (await response.json()) as AgentProblem };
+  } catch {
+    return { problem: { reason: 'failed', message: `The agent replied ${response.status}.` } };
+  }
+}
+
+export async function getScan(
+  connection: AgentConnection,
+  scanId: string,
+): Promise<AgentScanProgress | null> {
+  const response = await agentFetch(connection, `/v1/scans/${encodeURIComponent(scanId)}`);
+  if (!response.ok) return null;
+  return (await response.json()) as AgentScanProgress;
+}
+
+export async function cancelScan(connection: AgentConnection, scanId: string): Promise<void> {
+  await agentFetch(connection, `/v1/scans/${encodeURIComponent(scanId)}/cancel`, { method: 'POST' });
+}
+
+/** The largest items the walk stored, each with its real path. Only after it has finished. */
+export async function getScanItems(
+  connection: AgentConnection,
+  scanId: string,
+  limit = 100,
+  foldersOnly = false,
+): Promise<AgentScanItem[]> {
+  const query = `?limit=${limit}&foldersOnly=${foldersOnly ? 'true' : 'false'}`;
+  const response = await agentFetch(
+    connection,
+    `/v1/scans/${encodeURIComponent(scanId)}/items${query}`,
+  );
+
+  if (!response.ok) return [];
+  return ((await response.json()) as { items: AgentScanItem[] }).items;
 }

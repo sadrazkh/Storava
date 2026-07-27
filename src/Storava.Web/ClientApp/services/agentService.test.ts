@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  cancelScan,
   connectToAgent,
   discoverAgent,
+  getScan,
+  getScanItems,
   listDevices,
+  listDrives,
   readPageCredentials,
   requestAccessToken,
+  startScan,
+  type AgentConnection,
 } from '@/services/agentService';
 
 const DEVICE = '11111111-2222-3333-4444-555555555555';
@@ -224,5 +230,112 @@ describe('connecting end to end', () => {
       const target = addressOf(url);
       expect(target.startsWith('/api/') || target.startsWith('http://127.0.0.1:')).toBe(true);
     }
+  });
+});
+
+describe('using a connected agent', () => {
+  const connection: AgentConnection = {
+    baseAddress: 'http://127.0.0.1:47615',
+    port: 47615,
+    token: 'storava1.payload.signature',
+    status: {
+      deviceId: DEVICE,
+      deviceName: 'Workshop PC',
+      agentVersion: '1.0.0.0',
+      startedAtUtc: '2026-07-27T10:00:00Z',
+    },
+  };
+
+  it('carries the pass on every call to the agent', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse([]));
+
+    await listDrives(connection);
+    await getScan(connection, 'abc');
+    await cancelScan(connection, 'abc');
+    await getScanItems(connection, 'abc');
+
+    expect(fetchSpy.mock.calls).toHaveLength(4);
+    for (const [url, init] of fetchSpy.mock.calls) {
+      expect(addressOf(url).startsWith('http://127.0.0.1:47615')).toBe(true);
+      expect((init?.headers as Record<string, string>).Authorization)
+        .toBe('Bearer storava1.payload.signature');
+    }
+  });
+
+  it('lists the drives the agent reports', async () => {
+    stubFetch(() => jsonResponse([
+      { name: 'C:\\', volumeLabel: 'System', driveFormat: 'NTFS', totalBytes: 1000, freeBytes: 400, isReady: true },
+    ]));
+
+    const drives = await listDrives(connection);
+
+    // Something a browser cannot enumerate at all.
+    expect(drives).toHaveLength(1);
+    expect(drives[0]!.name).toBe('C:\\');
+  });
+
+  it('sends the folder and mode when starting a walk', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({ scanId: 's1', state: 'Running' }));
+
+    const started = await startScan(connection, 'C:\\projects', 'deep');
+
+    expect(started).toHaveProperty('progress');
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(addressOf(url)).toBe('http://127.0.0.1:47615/v1/scans');
+    expect(init?.method).toBe('POST');
+    expect(JSON.parse(init?.body as string)).toEqual({ rootPath: 'C:\\projects', mode: 'deep' });
+  });
+
+  it('surfaces the agent’s reason for refusing a folder', async () => {
+    stubFetch(() => jsonResponse({ reason: 'not_found', message: 'There is no folder at that path.' }, 400));
+
+    const started = await startScan(connection, 'C:\\nope');
+
+    // The page shows the agent's own words rather than inventing a generic failure.
+    expect(started).toEqual({
+      problem: { reason: 'not_found', message: 'There is no folder at that path.' },
+    });
+  });
+
+  it('returns items carrying real operating-system paths', async () => {
+    stubFetch(() => jsonResponse({
+      scanId: 's1',
+      items: [{
+        id: 'i1',
+        path: 'C:\\projects\\app\\node_modules',
+        name: 'node_modules',
+        isFolder: true,
+        size: 5000,
+        fileCount: 20,
+        folderCount: 3,
+        category: 'PackageCache',
+        technology: 'npm',
+        ruleId: 'npm.node_modules',
+        risk: 'Low',
+        isProtected: false,
+        isReparsePoint: false,
+      }],
+    }));
+
+    const items = await getScanItems(connection, 's1');
+
+    expect(items[0]!.path).toBe('C:\\projects\\app\\node_modules');
+    expect(items[0]!.ruleId).toBe('npm.node_modules');
+  });
+
+  it('asks for folders only when told to', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({ scanId: 's1', items: [] }));
+
+    await getScanItems(connection, 's1', 25, true);
+
+    expect(addressOf(fetchSpy.mock.calls[0]![0])).toContain('limit=25&foldersOnly=true');
+  });
+
+  it('reports nothing rather than throwing when the agent has no results yet', async () => {
+    stubFetch(() => new Response(null, { status: 404 }));
+
+    expect(await getScanItems(connection, 's1')).toEqual([]);
+    expect(await getScan(connection, 's1')).toBeNull();
+    expect(await listDrives(connection)).toEqual([]);
   });
 });
