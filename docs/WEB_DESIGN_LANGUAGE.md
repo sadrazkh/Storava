@@ -87,3 +87,35 @@ Borders carry most hierarchy. Shadows are reserved for real elevation.
 - Folder selection verifies permission only and explicitly says no scan starts in Phase 1.
 - Capability indicators are derived from runtime browser APIs.
 - Unsupported and fallback modes explain the limitation before permission is requested.
+
+## Legibility floor
+
+The landing page had drifted below what it could defend. Measured with composited alpha against
+each element's real backdrop, ten pieces of text failed WCAG AA — tracked numerals at 2.39:1,
+workflow indices at 2.86:1, the footer line at 3.69:1 — and thirty-three elements were set below
+12px, the smallest at 9.3px.
+
+None of that was visible as a mistake. Faint, tiny, tracked labels are a deliberate idiom here and
+they look intentional right up until someone has to read one.
+
+Two tokens now hold the line:
+
+- `--label-xs` (0.72rem) and `--label-sm` (0.78rem) — the floor for micro-labels. Twenty
+  declarations scattered between 0.58rem and 0.68rem now reference them. The idiom is unchanged;
+  only the floor moved.
+- `--muted-on-dark` and `--muted-on-deep` — faint text that is still legible, measured to clear
+  4.5:1 on the surfaces they appear on. The failures all came from one-off hex values that bypassed
+  the palette, which is exactly how a design system stops being one.
+
+The result is zero contrast failures in both themes, and a smallest size of 11.2px.
+
+The workspace at `/scan` was audited the same way and had no failures to begin with — worth
+recording, because it means the drift was confined to the marketing surface rather than the tool.
+
+### What measurement cannot settle
+
+Contrast and type size come from computed styles and are reliable. Touch-target size depends on
+layout, and the audit environment reports a zero-width viewport, so the enlarged header hit areas
+are reasoned rather than verified. They are built so the visual design is untouched: the nav links
+grow an invisible 44px band around themselves rather than being padded apart. That still wants a
+look on a real device.

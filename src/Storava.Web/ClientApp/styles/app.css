@@ -37,6 +37,22 @@
   --space-7: 3rem;
   --space-8: 4.5rem;
   --space-9: 7rem;
+
+  /*
+   * The smallest type on the page. Tracked uppercase micro-labels are a deliberate part of this
+   * design, but the landing page had them down at 9.3px, which is a style at the cost of being
+   * read. These are the floor: --label-xs for tracked caps, --label-sm for anything sentence-case.
+   */
+  --label-xs: 0.72rem;
+  --label-sm: 0.78rem;
+
+  /*
+   * Faint text that still has to be legible. The landing page reached for one-off hex values for
+   * this and landed between 2.4:1 and 3.7:1 against their own backgrounds — below AA for text that
+   * small. These are measured to clear 4.5:1 on the surfaces they are used on.
+   */
+  --muted-on-dark: #93a9a4;
+  --muted-on-deep: #8ea5a0;
 }
 
 :root[data-theme='dark'] {
@@ -214,10 +230,12 @@ svg {
   padding: 0.18rem 0.4rem;
   border: 1px solid currentcolor;
   border-radius: 99px;
-  font-size: 0.58rem;
+  font-size: var(--label-xs);
   font-weight: 800;
   letter-spacing: 0.08em;
-  opacity: 0.65;
+  /* Was 0.65, which combined with the small size fell below AA. The border already separates it
+     from the wordmark, so the dimming was doing little except cost legibility. */
+  opacity: 0.85;
   text-transform: uppercase;
 }
 
@@ -233,6 +251,19 @@ svg {
   font-weight: 650;
   text-decoration: none;
   opacity: 0.76;
+}
+
+/*
+ * A 22px-tall link is a 22px target. Rather than pad the links apart — which would change a
+ * deliberately tight header — the touch area is grown invisibly around each one, so the layout is
+ * unchanged and a thumb still lands.
+ */
+.site-nav a::before {
+  position: absolute;
+  inset: 50% 0 auto;
+  min-height: 44px;
+  content: '';
+  transform: translateY(-50%);
 }
 
 .site-nav a::after {
@@ -273,9 +304,15 @@ svg {
   background: var(--paper-deep);
 }
 
+.segmented {
+  min-height: 44px;
+  align-items: center;
+}
+
 .segmented__button {
-  min-width: 36px;
-  padding: 0.32rem 0.6rem;
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0.4rem 0.65rem;
   border: 0;
   border-radius: 99px;
   background: transparent;
@@ -452,7 +489,7 @@ html[dir='rtl'] .folder-picker__arrow {
   gap: 0.7rem;
   margin: 0 0 var(--space-5);
   color: var(--pine);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   font-weight: 850;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -592,7 +629,7 @@ html[dir='rtl'] .hero h1 {
   padding-inline: var(--space-5);
   border-bottom: 1px solid rgb(255 255 255 / 10%);
   color: #79908c;
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -684,8 +721,8 @@ html[dir='rtl'] .hero h1 {
   border: 1px solid rgb(255 255 255 / 13%);
   border-radius: 99px;
   background: #0f3031;
-  color: #9fb4ae;
-  font-size: 0.62rem;
+  color: var(--muted-on-dark);
+  font-size: var(--label-xs);
   white-space: nowrap;
 }
 
@@ -722,8 +759,8 @@ html[dir='rtl'] .hero h1 {
 }
 
 .atlas__core small {
-  color: #73908a;
-  font-size: 0.58rem;
+  color: var(--muted-on-dark);
+  font-size: var(--label-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -902,8 +939,8 @@ html[dir='rtl'] .privacy-page h1 {
 .feature-card__index {
   position: absolute;
   inset: var(--space-5) var(--space-5) auto auto;
-  color: var(--line-strong);
-  font-size: 0.66rem;
+  color: var(--muted-on-dark);
+  font-size: var(--label-xs);
   font-weight: 850;
   letter-spacing: 0.12em;
 }
@@ -1078,7 +1115,7 @@ html[dir='rtl'] .permission-diagram {
 }
 
 .language-sample i {
-  color: var(--line-strong);
+  color: var(--muted-on-deep);
   font-style: normal;
 }
 
@@ -1144,14 +1181,14 @@ html[dir='rtl'] .permission-diagram {
 }
 
 .workflow article p {
-  color: #8fa5a0;
+  color: var(--muted-on-dark);
 }
 
 .workflow__number {
   position: absolute;
   inset: var(--space-5) var(--space-5) auto auto;
-  color: #55716c;
-  font-size: 0.65rem;
+  color: var(--muted-on-dark);
+  font-size: var(--label-xs);
   font-weight: 850;
 }
 
@@ -1345,7 +1382,7 @@ html[dir='rtl'] .workflow__number {
   border-radius: 99px;
   background: var(--lime);
   color: #071a1c;
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   font-weight: 800;
 }
 
@@ -1504,7 +1541,7 @@ html[dir='rtl'] .workflow__number {
 .privacy-points span {
   color: var(--pine);
   font-family: var(--font-latin);
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
   font-weight: 850;
 }
 
@@ -1578,8 +1615,8 @@ html[dir='rtl'] .workflow__number {
 }
 
 .site-footer > .container > span {
-  color: #607672;
-  font-size: 0.68rem;
+  color: var(--muted-on-deep);
+  font-size: var(--label-xs);
   font-weight: 700;
 }
 
@@ -1629,7 +1666,7 @@ html[dir='rtl'] .workflow__number {
 
 .micro-label {
   color: var(--pine);
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
   font-weight: 850;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1677,7 +1714,7 @@ html[dir='rtl'] .micro-label {
   border: 1px solid var(--line);
   border-radius: 50%;
   font-family: var(--font-latin);
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
 }
 
 .stepper li.is-active {
@@ -1939,7 +1976,7 @@ html[dir='rtl'] .micro-label {
 .privacy-flow__track article span {
   color: var(--pine);
   font-family: var(--font-latin);
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
   font-weight: 850;
 }
 
@@ -1975,7 +2012,7 @@ html[dir='rtl'] .privacy-flow__track > i {
 
 .privacy-flow__server small {
   color: var(--danger);
-  font-size: 0.62rem;
+  font-size: var(--label-xs);
   font-weight: 750;
 }
 
@@ -2356,7 +2393,7 @@ html[dir='rtl'] .privacy-flow__track > i {
 .workspace-rail__privacy span {
   margin-block-start: 0.45rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   line-height: 1.55;
 }
 
@@ -2589,7 +2626,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 
 .metric-grid article span {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   font-weight: 700;
 }
 
@@ -2631,7 +2668,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 
 .analysis-panel header span {
   color: var(--muted);
-  font-size: 0.67rem;
+  font-size: var(--label-xs);
   font-weight: 750;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2647,7 +2684,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 .analysis-panel header small {
   max-width: 250px;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   text-align: end;
 }
 
@@ -2806,7 +2843,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 .lazy-tree h2 {
   margin: 0.3rem 0.45rem 0.7rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -2862,7 +2899,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
   padding-inline: 1rem;
   border-block-end: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--label-xs);
   font-weight: 750;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2940,7 +2977,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
   border-radius: 100px;
   background: color-mix(in srgb, var(--amber) 14%, transparent);
   color: color-mix(in srgb, var(--amber) 75%, var(--ink));
-  font-size: 0.61rem;
+  font-size: var(--label-xs);
 }
 
 .risk-pill[data-risk='high'] { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
@@ -2965,7 +3002,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
   inset-block-start: 1rem;
   inset-inline-end: 1rem;
   color: var(--muted);
-  font-size: 0.67rem;
+  font-size: var(--label-xs);
 }
 
 .history-card h2 {
@@ -2996,7 +3033,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 
 .history-card > div span {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
 }
 
 .history-card footer {
@@ -3011,7 +3048,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
   background: none;
   color: var(--pine);
   cursor: pointer;
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
   font-weight: 750;
 }
 
@@ -3050,7 +3087,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 
 .comparison-metrics span {
   color: var(--muted);
-  font-size: 0.67rem;
+  font-size: var(--label-xs);
 }
 
 .detail-drawer {
@@ -3093,7 +3130,7 @@ html[dir='ltr'] .activity-line span { animation-name: scan-activity-ltr; }
 
 .detail-drawer dt {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--label-xs);
 }
 
 .detail-drawer dd {
@@ -3143,7 +3180,7 @@ html[dir='rtl'] .drawer-leave-to { transform: translateX(-100%); }
     border: 1px solid var(--line);
     background: var(--surface);
   }
-  .workspace-rail > button { justify-items: center; grid-template-columns: 1fr; gap: 0; font-size: 0.62rem; }
+  .workspace-rail > button { justify-items: center; grid-template-columns: 1fr; gap: 0; font-size: var(--label-xs); }
   .workspace-rail__privacy { display: none; }
   .workspace-main { padding: 1rem 1rem 6rem; }
   .scan-command,
