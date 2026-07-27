@@ -264,7 +264,41 @@ Decisions worth stating:
 - The Agent keeps its scans in its own database, apart from the desktop's, so the two never
   contend for one file and removing the Agent takes its scans with it.
 
+### Acting (implemented)
+
+`POST /v1/actions/preview` and `POST /v1/actions/execute` are the only endpoints that change the
+disk, and every safeguard behind them already existed. `ExecutionGuard` decides whether a step may
+run, `StepConfirmation` binds the approval to a SHA-256 fingerprint of what the user read, and
+`PlanExecutionService` performs the copy-verify-recycle ordering that makes an interrupted move
+recoverable. A second implementation would be a second place for those rules to drift, so there
+isn't one.
+
+What the Agent adds on top:
+
+- **It only acts on what it measured.** The request names a scan and an item, never a path. A page
+  cannot ask the Agent to delete `C:\Windows`; it can only point at something the Agent walked and
+  the rule catalog already judged.
+- **The rule catalog is the ceiling.** `node_modules` may be deleted but not relocated, a NuGet
+  package cache may be either, an ordinary folder neither — and the page only renders the buttons
+  the rules permit. Nothing downstream can widen them.
+- **Two calls, never one.** The preview re-measures the folder now and states what would happen;
+  it touches nothing. Execution proceeds only if the user typed the folder's own name and echoed
+  back the same fingerprint, so changing the destination in between invalidates the approval.
+- **An approval is spent once.** The prepared step is removed when it succeeds; only a refusal that
+  attempted nothing leaves it retryable.
+- **Removal always means the Recycle Bin.** `IFileSystemActions` has no permanent-delete operation,
+  so nothing reachable from the browser can destroy data outright.
+
+Agent runs land in the same execution log the desktop History page reads — in the Agent's own
+database. Deleting a scan never deletes that log: it records real changes to the disk, which
+outlive the scan that suggested them.
+
+One honest wrinkle: after an action the results table describes the disk as it was during the
+walk. The acted-on subtree is dropped from the list so it cannot invite a second attempt, and the
+remaining figures are labelled as no longer current rather than quietly re-rendered as if they
+were.
+
 ### Not yet built
 
-Acting on what the Agent finds — moving a folder, deleting one — is the remaining stage. Nothing
-in the Agent can change a file today: it has no write path at all, and the panel says so.
+Phase 8 is complete. Undo from within Storava is deliberately absent — the Recycle Bin is the undo,
+and it belongs to the operating system rather than to this application.

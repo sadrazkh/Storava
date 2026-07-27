@@ -6,7 +6,9 @@ import {
   getScan,
   getScanItems,
   listDevices,
+  executeAction,
   listDrives,
+  previewAction,
   readPageCredentials,
   requestAccessToken,
   startScan,
@@ -337,5 +339,116 @@ describe('using a connected agent', () => {
     expect(await getScanItems(connection, 's1')).toEqual([]);
     expect(await getScan(connection, 's1')).toBeNull();
     expect(await listDrives(connection)).toEqual([]);
+  });
+});
+
+describe('acting on what the agent found', () => {
+  const connection: AgentConnection = {
+    baseAddress: 'http://127.0.0.1:47615',
+    port: 47615,
+    token: 'storava1.payload.signature',
+    status: {
+      deviceId: DEVICE,
+      deviceName: 'Workshop PC',
+      agentVersion: '1.0.0.0',
+      startedAtUtc: '2026-07-27T10:00:00Z',
+    },
+  };
+
+  const preview = {
+    stepId: 'step-1',
+    action: 'delete' as const,
+    sourcePath: 'C:\\projects\\app\\node_modules',
+    destinationPath: null,
+    measuredBytes: 4096,
+    confirmationPhrase: 'node_modules',
+    fingerprint: 'abc123',
+    warnings: ['high_risk'],
+  };
+
+  it('asks what would happen without asking for it to happen', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse(preview));
+
+    const asked = await previewAction(connection, 'scan-1', 'item-1', 'delete');
+
+    expect(asked).toEqual({ preview });
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(addressOf(url)).toBe('http://127.0.0.1:47615/v1/actions/preview');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      scanId: 'scan-1',
+      itemId: 'item-1',
+      action: 'delete',
+      destinationPath: null,
+    });
+  });
+
+  it('passes the destination through for a move', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({ ...preview, action: 'move' }));
+
+    await previewAction(connection, 'scan-1', 'item-1', 'move', 'D:\\caches\\nuget');
+
+    const sent = JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string) as { destinationPath: string };
+    expect(sent.destinationPath)
+      .toBe('D:\\caches\\nuget');
+  });
+
+  it('surfaces the agent’s reason for refusing an action', async () => {
+    stubFetch(() => jsonResponse(
+      { reason: 'not_permitted', message: 'The local rules do not permit deleting this item.' },
+      400,
+    ));
+
+    const asked = await previewAction(connection, 'scan-1', 'item-1', 'delete');
+
+    expect(asked).toEqual({
+      problem: { reason: 'not_permitted', message: 'The local rules do not permit deleting this item.' },
+    });
+  });
+
+  it('echoes back the fingerprint it was given, never one of its own', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({
+      succeeded: true,
+      status: 'Completed',
+      bytesFreed: 4096,
+      recycledPath: preview.sourcePath,
+      linkPath: null,
+      errorCode: null,
+      errorMessage: null,
+    }));
+
+    const done = await executeAction(connection, preview, 'node_modules');
+
+    expect(done?.succeeded).toBe(true);
+    // Binding the approval to what was on screen is the whole point; the page must not compute
+    // or alter the fingerprint.
+    expect(JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string)).toEqual({
+      stepId: 'step-1',
+      fingerprint: 'abc123',
+      typedName: 'node_modules',
+    });
+  });
+
+  it('reports a refusal as an outcome rather than a thrown error', async () => {
+    stubFetch(() => jsonResponse({
+      succeeded: false,
+      status: 'Pending',
+      bytesFreed: 0,
+      recycledPath: null,
+      linkPath: null,
+      errorCode: 'exec.not_confirmed',
+      errorMessage: 'This step has not been confirmed.',
+    }, 200));
+
+    const done = await executeAction(connection, preview, 'wrong');
+
+    expect(done?.succeeded).toBe(false);
+    expect(done?.errorCode).toBe('exec.not_confirmed');
+    expect(done?.bytesFreed).toBe(0);
+  });
+
+  it('returns nothing when the step is no longer waiting', async () => {
+    stubFetch(() => new Response(null, { status: 404 }));
+
+    expect(await executeAction(connection, preview, 'node_modules')).toBeNull();
   });
 });

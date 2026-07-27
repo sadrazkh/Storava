@@ -14,6 +14,7 @@ using Storava.Application.Abstractions;
 using Storava.Contracts.Agent;
 using Storava.Infrastructure;
 using Storava.Infrastructure.Persistence;
+using Storava.Migrations;
 using Storava.Platform;
 using Storava.Rules;
 
@@ -107,7 +108,12 @@ public sealed class AgentServer(
         builder.Services.AddStoravaInfrastructure(scanDatabasePath ?? AgentPaths.ScanDatabase);
         builder.Services.AddStoravaPlatform(AgentPaths.SecretsDirectory);
         builder.Services.AddStoravaRules<SqliteScanItemSinkFactory>();
+        // Execution decides whether a step may run; the platform layer above provides the only
+        // implementation of IFileSystemActions that can carry one out — and it has no
+        // permanent-delete operation, so nothing reachable from here can destroy data outright.
+        builder.Services.AddStoravaMigrations();
         builder.Services.AddSingleton<AgentScanService>();
+        builder.Services.AddSingleton<AgentActionService>();
 
         var app = builder.Build();
         // Before CORS, which answers a preflight and stops: a header added afterwards would never
@@ -208,6 +214,43 @@ public sealed class AgentServer(
 
             var items = await scans.ItemsAsync(scanId, limit, foldersOnly, cancellationToken);
             return items is null ? Results.NotFound() : Results.Json(items);
+        });
+
+        // The only two endpoints that can change the disk. Both need a pass like everything else,
+        // and between them sits a confirmation the user has to type by hand.
+
+        app.MapPost(AgentActionPaths.Preview, async (
+            HttpContext context,
+            AgentActionRequest request,
+            AgentActionService actions,
+            CancellationToken cancellationToken) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var prepared = await actions.PrepareAsync(request, cancellationToken);
+            return prepared.Problem is { } problem
+                ? Results.Json(problem, statusCode: StatusCodes.Status400BadRequest)
+                : Results.Json(prepared.Preview);
+        });
+
+        app.MapPost(AgentActionPaths.Execute, async (
+            HttpContext context,
+            AgentActionConfirmation confirmation,
+            AgentActionService actions,
+            CancellationToken cancellationToken) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var outcome = await actions.ExecuteAsync(confirmation, cancellationToken);
+            return outcome is null
+                ? Results.Json(
+                    new AgentProblem("unknown_step", "That step is no longer waiting for approval."),
+                    statusCode: StatusCodes.Status404NotFound)
+                : Results.Json(outcome);
         });
     }
 

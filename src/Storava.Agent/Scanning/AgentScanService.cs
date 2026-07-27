@@ -119,8 +119,19 @@ public sealed class AgentScanService(
             item.KnownRuleId,
             item.RiskLevel.ToString(),
             item.IsProtected,
-            item.IsReparsePoint)).ToList());
+            item.IsReparsePoint,
+            item.CanDelete,
+            item.CanMove)).ToList());
     }
+
+    /// <summary>
+    /// The stored scan behind a finished walk, or null when the page's id names nothing this Agent
+    /// completed. Acting depends on this: the Agent will only touch something it measured itself.
+    /// </summary>
+    public string? ResolveCompletedSession(string scanId) =>
+        _runs.TryGetValue(scanId, out var run) && run.State == AgentScanState.Completed
+            ? run.SessionId
+            : null;
 
     private async Task ExecuteAsync(ScanRun run)
     {

@@ -103,11 +103,41 @@ export interface AgentScanItem {
   risk: string;
   isProtected: boolean;
   isReparsePoint: boolean;
+  /** What the local rule catalog permits. The page offers nothing these deny. */
+  canDelete: boolean;
+  canMove: boolean;
 }
 
 export interface AgentProblem {
   reason: string;
   message: string;
+}
+
+/**
+ * What the Agent would do, measured against the disk as it is now. Reading this is the first of
+ * two steps: nothing happens until the user types {@link confirmationPhrase} back and the same
+ * fingerprint is returned with it.
+ */
+export interface AgentActionPreview {
+  stepId: string;
+  action: 'delete' | 'move';
+  sourcePath: string;
+  destinationPath: string | null;
+  measuredBytes: number;
+  confirmationPhrase: string;
+  fingerprint: string;
+  warnings: string[];
+}
+
+export interface AgentActionOutcome {
+  succeeded: boolean;
+  status: string;
+  bytesFreed: number;
+  /** Where the original went. Removal always means the Recycle Bin. */
+  recycledPath: string | null;
+  linkPath: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
 }
 
 export type AgentResult =
@@ -352,4 +382,61 @@ export async function getScanItems(
 
   if (!response.ok) return [];
   return ((await response.json()) as { items: AgentScanItem[] }).items;
+}
+
+/**
+ * Asks what would happen, without anything happening. The Agent re-measures the folder and hands
+ * back the phrase the user must type; nothing on disk is touched by this call.
+ */
+export async function previewAction(
+  connection: AgentConnection,
+  scanId: string,
+  itemId: string,
+  action: 'delete' | 'move',
+  destinationPath?: string,
+): Promise<{ preview: AgentActionPreview } | { problem: AgentProblem }> {
+  const response = await agentFetch(connection, '/v1/actions/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scanId, itemId, action, destinationPath: destinationPath ?? null }),
+  });
+
+  if (response.ok) return { preview: (await response.json()) as AgentActionPreview };
+
+  try {
+    return { problem: (await response.json()) as AgentProblem };
+  } catch {
+    return { problem: { reason: 'failed', message: `The agent replied ${response.status}.` } };
+  }
+}
+
+/**
+ * Spends the approval. The fingerprint is echoed back exactly as it came, so changing anything
+ * between reading and confirming invalidates it rather than silently carrying over.
+ */
+export async function executeAction(
+  connection: AgentConnection,
+  preview: AgentActionPreview,
+  typedName: string,
+): Promise<AgentActionOutcome | null> {
+  const response = await agentFetch(connection, '/v1/actions/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      stepId: preview.stepId,
+      fingerprint: preview.fingerprint,
+      typedName,
+    }),
+  });
+
+  if (!response.ok && response.status !== 200) {
+    // A refusal still carries an outcome when the step existed; only an unknown step has none.
+    try {
+      return (await response.json()) as AgentActionOutcome;
+    } catch {
+      return null;
+    }
+  }
+
+  return (await response.json()) as AgentActionOutcome;
 }

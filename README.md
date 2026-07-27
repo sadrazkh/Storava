@@ -6,8 +6,7 @@ moved or renamed without your explicit selection and confirmation. The AI adviso
 recommend, but it can never act.
 
 > Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) ·
-> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing, the
-> browser↔Agent channel and Agent-side scanning complete; local actions still to come).
+> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (complete).
 
 ## Tech stack
 
@@ -125,8 +124,17 @@ which is the thing the browser edition can never show you.
 Measured on a real run: 8,392 files and 1,237 folders across 183 MB, walked and classified in 0.6
 seconds, with every path shown in full.
 
-The Agent has no write path at all — acting on what it finds is the next stage, and nothing there
-today can change a file.
+From those results the Agent can act, and only through the same gate the desktop Migration Center
+uses. The rule catalog decides what is even offered — `node_modules` can be deleted but not
+relocated, an ordinary folder neither — and the page renders no button the rules deny. Choosing an
+action re-measures the folder as it is now and shows exactly what would happen; nothing is touched
+until you type the folder's own name back. That approval is bound to a fingerprint of what you
+read, so changing the destination afterwards invalidates it.
+
+Deletion means the Recycle Bin. `IFileSystemActions` has no permanent-delete operation at all, so
+no path through the browser can destroy data outright. A move copies first, verifies the copy
+against a fresh measurement of the original, and only then recycles the original — at no point does
+your data fail to exist in at least one place.
 
 ## Run
 

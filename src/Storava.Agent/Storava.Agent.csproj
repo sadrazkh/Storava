@@ -31,6 +31,8 @@
     <!-- The Agent walks the disk with the desktop scanner, classifies with the desktop rule
          catalog, and stores results in the desktop's SQLite shape. None of it is reimplemented. -->
     <ProjectReference Include="..\Storava.Infrastructure\Storava.Infrastructure.csproj" />
+    <!-- The execution guard and the copy-verify-recycle ordering, reused rather than rebuilt. -->
+    <ProjectReference Include="..\Storava.Migrations\Storava.Migrations.csproj" />
     <ProjectReference Include="..\Storava.Platform\Storava.Platform.csproj" />
     <ProjectReference Include="..\Storava.Rules\Storava.Rules.csproj" />
   </ItemGroup>

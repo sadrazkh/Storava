@@ -73,7 +73,10 @@ public sealed record AgentScanItem(
     string? RuleId,
     string Risk,
     bool IsProtected,
-    bool IsReparsePoint);
+    bool IsReparsePoint,
+    /// <summary>What the local rule catalog permits. The page offers nothing these deny.</summary>
+    bool CanDelete,
+    bool CanMove);
 
 /// <summary>A page of results, largest first.</summary>
 public sealed record AgentScanItems(string ScanId, IReadOnlyList<AgentScanItem> Items);

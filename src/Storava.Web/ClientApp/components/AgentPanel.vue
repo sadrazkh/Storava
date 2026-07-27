@@ -5,12 +5,16 @@ import { getAgentMessages } from '@/localization/agentMessages';
 import {
   cancelScan,
   connectToAgent,
+  executeAction,
   getScan,
   getScanItems,
   listDevices,
   listDrives,
+  previewAction,
   readPageCredentials,
   startScan,
+  type AgentActionOutcome,
+  type AgentActionPreview,
   type AgentConnection,
   type AgentDrive,
   type AgentFailure,
@@ -179,6 +183,8 @@ async function beginScan(): Promise<void> {
 
   scanProblem.value = null;
   results.value = [];
+  outcome.value = null;
+  resultsAreStale.value = false;
 
   const started = await startScan(current, rootPath.value.trim(), deep.value ? 'deep' : 'quick');
   if ('problem' in started) {
@@ -206,6 +212,120 @@ async function loadDrives(): Promise<void> {
 }
 
 onBeforeUnmount(stopPolling);
+
+// --- Acting on what was found ------------------------------------------------
+// Two steps on purpose. The preview measures the folder now and states what would happen; nothing
+// is touched until the user types the folder's own name back.
+
+const pending = ref<AgentActionPreview | null>(null);
+const pendingItem = ref<AgentScanItem | null>(null);
+const typedName = ref('');
+const moveDestination = ref('');
+const actionProblem = ref<string | null>(null);
+const outcome = ref<AgentActionOutcome | null>(null);
+const isActing = ref(false);
+
+/** True once something has been acted on, so the table no longer matches the disk. */
+const resultsAreStale = ref(false);
+
+const confirmationSatisfied = computed(() =>
+  pending.value !== null && typedName.value.trim() === pending.value.confirmationPhrase);
+
+const warningText = computed(() => (pending.value?.warnings ?? []).map((warning) => {
+  switch (warning) {
+    case 'grew_since_scan': return copy.value.warnGrew;
+    case 'shrank_since_scan': return copy.value.warnShrank;
+    case 'high_risk': return copy.value.warnHighRisk;
+    case 'junction_left_behind': return copy.value.warnJunction;
+    default: return warning;
+  }
+}));
+
+function closeConfirmation(): void {
+  pending.value = null;
+  pendingItem.value = null;
+  typedName.value = '';
+  moveDestination.value = '';
+  actionProblem.value = null;
+}
+
+/** Asks what would happen. Repeated whenever the destination changes, so the fingerprint tracks it. */
+async function askPreview(item: AgentScanItem, action: 'delete' | 'move'): Promise<void> {
+  const current = connection.value;
+  const finished = scan.value;
+  if (!current || !finished) return;
+
+  actionProblem.value = null;
+  outcome.value = null;
+  pendingItem.value = item;
+
+  const asked = await previewAction(
+    current,
+    finished.scanId,
+    item.id,
+    action,
+    action === 'move' ? moveDestination.value.trim() : undefined,
+  );
+
+  if ('problem' in asked) {
+    pending.value = null;
+    actionProblem.value = asked.problem.message;
+    return;
+  }
+
+  pending.value = asked.preview;
+  typedName.value = '';
+}
+
+async function refreshPreviewForDestination(): Promise<void> {
+  const item = pendingItem.value;
+  if (item && pending.value?.action === 'move') await askPreview(item, 'move');
+}
+
+async function confirmAction(): Promise<void> {
+  const current = connection.value;
+  const preview = pending.value;
+  if (!current || !preview || !confirmationSatisfied.value || isActing.value) return;
+
+  isActing.value = true;
+  actionProblem.value = null;
+
+  try {
+    const result = await executeAction(current, preview, typedName.value.trim());
+    if (!result) {
+      actionProblem.value = copy.value.actionFailedTitle;
+      return;
+    }
+
+    outcome.value = result;
+    if (result.succeeded) {
+      const acted = preview.sourcePath;
+      closeConfirmation();
+
+      // The stored walk still describes the disk as it was a moment ago. Rather than re-reading
+      // it — which would list the folder that was just removed and invite a second attempt — the
+      // acted-on subtree is dropped and the table is marked as no longer current.
+      const prefix = acted.endsWith('\\') ? acted : `${acted}\\`;
+      results.value = results.value.filter(
+        (item) => item.path !== acted && !item.path.startsWith(prefix),
+      );
+      resultsAreStale.value = true;
+    } else {
+      actionProblem.value = result.errorMessage ?? copy.value.actionFailedTitle;
+    }
+  } finally {
+    isActing.value = false;
+  }
+}
+
+const outcomeText = computed(() => {
+  const done = outcome.value;
+  if (!done?.succeeded) return '';
+  const template = done.linkPath || pending.value?.action === 'move'
+    ? copy.value.actionDoneMove
+    : copy.value.actionDoneDelete;
+  return fill(template, { bytes: formatBytes(done.bytesFreed) });
+});
 
 async function loadDevices(): Promise<void> {
   devices.value = await listDevices(credentials);
@@ -403,14 +523,81 @@ onMounted(loadDevices);
                 </td>
                 <td>{{ describeItem(item) }}</td>
                 <td class="agent__size">{{ formatBytes(item.size) }}</td>
-                <td>
+                <td class="agent__row-actions">
                   <button type="button" class="agent__copy" @click="copyPath(item.path)">
                     {{ copiedPath === item.path ? copy.copied : copy.copyPath }}
+                  </button>
+                  <button
+                    v-if="item.canDelete"
+                    type="button"
+                    class="agent__copy agent__copy--danger"
+                    @click="askPreview(item, 'delete')"
+                  >
+                    {{ copy.actDelete }}
+                  </button>
+                  <button
+                    v-if="item.canMove"
+                    type="button"
+                    class="agent__copy"
+                    @click="askPreview(item, 'move')"
+                  >
+                    {{ copy.actMove }}
                   </button>
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <p v-if="outcome?.succeeded" class="agent__outcome" role="status">
+            <strong>{{ copy.actionDoneTitle }}</strong> {{ outcomeText }}
+          </p>
+          <p v-if="resultsAreStale" class="agent__note">{{ copy.resultsStale }}</p>
+        </section>
+
+        <!-- Nothing above this point has touched the disk. This is where it can. -->
+        <section v-if="pending" class="agent__confirm" role="dialog" aria-modal="false">
+          <h2>{{ copy.confirmTitle }}</h2>
+          <code dir="ltr">{{ pending.sourcePath }}</code>
+
+          <p>{{ fill(copy.confirmMeasured, { bytes: formatBytes(pending.measuredBytes) }) }}</p>
+          <p>{{ pending.action === 'move' ? copy.confirmMoveBody : copy.confirmDeleteBody }}</p>
+
+          <ul v-if="warningText.length > 0" class="agent__warnings">
+            <li v-for="warning in warningText" :key="warning">{{ warning }}</li>
+          </ul>
+
+          <label v-if="pending.action === 'move'" class="agent__field">
+            <span>{{ copy.confirmDestination }}</span>
+            <input
+              v-model="moveDestination"
+              type="text"
+              dir="ltr"
+              :placeholder="copy.folderPlaceholder"
+              @change="refreshPreviewForDestination"
+            >
+            <small>{{ copy.confirmDestinationHint }}</small>
+          </label>
+
+          <label class="agent__field">
+            <span>{{ fill(copy.confirmTypePrompt, { name: pending.confirmationPhrase }) }}</span>
+            <input v-model="typedName" type="text" dir="ltr" autocomplete="off">
+          </label>
+
+          <p v-if="actionProblem" class="agent__scan-problem" role="alert">{{ actionProblem }}</p>
+
+          <div class="agent__actions">
+            <button
+              type="button"
+              class="agent__danger"
+              :disabled="!confirmationSatisfied || isActing"
+              @click="confirmAction"
+            >
+              {{ copy.confirmAction }}
+            </button>
+            <button type="button" class="agent__stop" @click="closeConfirmation">
+              {{ copy.confirmCancel }}
+            </button>
+          </div>
         </section>
       </template>
 
@@ -647,6 +834,48 @@ onMounted(loadDevices);
   font: 700 .7rem/1 inherit;
   cursor: pointer;
 }
+.agent__copy--danger { border-color: color-mix(in srgb, var(--danger) 45%, transparent); color: var(--danger); }
+.agent__row-actions { display: flex; gap: .35rem; white-space: nowrap; }
+
+.agent__outcome { margin: .4rem 0 0; color: var(--muted); line-height: 1.6; }
+.agent__outcome strong { color: var(--ink); }
+
+/* The only surface in the browser edition behind which a file changes. Marked as such. */
+.agent__confirm {
+  display: grid;
+  gap: .7rem;
+  padding: 1.4rem;
+  border: 2px solid var(--danger);
+  background: color-mix(in srgb, var(--danger), transparent 94%);
+}
+.agent__confirm h2 { margin: 0; font-size: 1.2rem; }
+.agent__confirm > code {
+  padding: .5rem .6rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: .8rem;
+  word-break: break-all;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.agent__confirm p { max-width: 68ch; margin: 0; color: var(--muted); line-height: 1.65; }
+.agent__confirm small { color: var(--muted); font-size: .72rem; }
+
+.agent__warnings { margin: 0; padding-inline-start: 1.2rem; color: var(--ink); }
+.agent__warnings li { margin: .2rem 0; line-height: 1.55; }
+
+.agent__danger {
+  min-height: 2.75rem;
+  padding: 0 1.2rem;
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: white;
+  font: 800 .82rem/1 inherit;
+  cursor: pointer;
+}
+.agent__danger:disabled { cursor: not-allowed; opacity: .45; }
+
 .agent__sr {
   position: absolute;
   width: 1px;

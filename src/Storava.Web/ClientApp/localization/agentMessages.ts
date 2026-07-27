@@ -83,7 +83,35 @@ const en = {
   protectedItem: 'protected',
   noResults: 'Nothing was stored for that walk.',
 
-  notYet: 'Acting on what the Agent finds — moving or deleting — is the next stage. Nothing here changes a file.',
+  notYet: 'Reading only. Nothing changes on this computer until you confirm a specific folder by name.',
+
+  actDelete: 'Delete…',
+  actMove: 'Move…',
+  actNotPermitted: 'The local rules do not offer an action for this item.',
+
+  confirmTitle: 'Confirm before anything is touched',
+  confirmMeasured: 'Measured now: {bytes}. This is what the folder holds at this moment, not what the scan recorded.',
+  confirmDeleteBody:
+    'This folder goes to the Recycle Bin. Storava has no way to delete anything permanently — not even a copy it made itself — so you can still get it back.',
+  confirmMoveBody:
+    'The folder is copied first and checked against the original. Only once the copy matches does the original go to the Recycle Bin, so at no point does your data exist in neither place.',
+  confirmDestination: 'Move it to',
+  confirmDestinationHint: 'Must be on a different drive, or nothing is freed.',
+  confirmTypePrompt: 'Type {name} to confirm',
+  confirmAction: 'Do it',
+  confirmCancel: 'Cancel',
+
+  warnGrew: 'This folder is larger now than when it was scanned.',
+  warnShrank: 'This folder is smaller now than when it was scanned.',
+  warnHighRisk: 'This item is marked high risk. Make sure nothing is using it right now.',
+  warnJunction: 'A link will be left at the old location so tools that hard-code it keep working.',
+
+  actionDoneTitle: 'Done',
+  actionDoneDelete: 'Sent to the Recycle Bin, freeing {bytes}. You can restore it from there.',
+  actionDoneMove: 'Moved, freeing {bytes}. The original went to the Recycle Bin.',
+  actionFailedTitle: 'Nothing was changed',
+  resultsStale:
+    'These figures come from the earlier walk and no longer match the disk. Scan again for current numbers.',
 };
 
 export type AgentMessageKey = keyof typeof en;
@@ -171,7 +199,35 @@ const fa: Record<AgentMessageKey, string> = {
   protectedItem: 'محافظت‌شده',
   noResults: 'برای آن پیمایش چیزی ذخیره نشد.',
 
-  notYet: 'اقدام روی چیزی که Agent پیدا می‌کند — جابه‌جایی یا حذف — مرحلهٔ بعدی است. اینجا هیچ فایلی تغییر نمی‌کند.',
+  notYet: 'فقط خواندن. تا وقتی یک پوشهٔ مشخص را با نامش تأیید نکنید، هیچ‌چیز روی این کامپیوتر تغییر نمی‌کند.',
+
+  actDelete: 'حذف…',
+  actMove: 'جابه‌جایی…',
+  actNotPermitted: 'قواعد محلی برای این مورد اقدامی پیشنهاد نمی‌کنند.',
+
+  confirmTitle: 'تأیید کنید تا چیزی دست بخورد',
+  confirmMeasured: 'اندازه‌گیری همین حالا: {bytes}. این چیزی است که پوشه در این لحظه دارد، نه آنچه اسکن ثبت کرده بود.',
+  confirmDeleteBody:
+    'این پوشه به سطل بازیافت می‌رود. Storava هیچ راهی برای حذف دائمی ندارد — حتی برای نسخه‌ای که خودش ساخته — پس همچنان می‌توانید برش گردانید.',
+  confirmMoveBody:
+    'اول از پوشه کپی گرفته می‌شود و با اصل مقایسه می‌شود. تنها وقتی کپی مطابق بود، اصل به سطل بازیافت می‌رود؛ پس در هیچ لحظه‌ای داده‌های شما در هیچ‌کدام نیستند.',
+  confirmDestination: 'جابه‌جایی به',
+  confirmDestinationHint: 'باید روی درایو دیگری باشد، وگرنه چیزی آزاد نمی‌شود.',
+  confirmTypePrompt: 'برای تأیید {name} را بنویسید',
+  confirmAction: 'انجام بده',
+  confirmCancel: 'انصراف',
+
+  warnGrew: 'این پوشه اکنون از زمان اسکن بزرگ‌تر شده است.',
+  warnShrank: 'این پوشه اکنون از زمان اسکن کوچک‌تر شده است.',
+  warnHighRisk: 'این مورد پرخطر علامت خورده است. مطمئن شوید همین حالا چیزی از آن استفاده نمی‌کند.',
+  warnJunction: 'یک لینک در مسیر قبلی می‌ماند تا ابزارهایی که آن مسیر را ثابت نوشته‌اند کار کنند.',
+
+  actionDoneTitle: 'انجام شد',
+  actionDoneDelete: 'به سطل بازیافت فرستاده شد و {bytes} آزاد شد. از همان‌جا می‌توانید بازگردانیدش.',
+  actionDoneMove: 'جابه‌جا شد و {bytes} آزاد شد. نسخهٔ اصلی به سطل بازیافت رفت.',
+  actionFailedTitle: 'هیچ‌چیز تغییر نکرد',
+  resultsStale:
+    'این اعداد از پیمایش قبلی هستند و دیگر با دیسک نمی‌خوانند. برای اعداد فعلی دوباره اسکن کنید.',
 };
 
 export function getAgentMessages(locale: Locale): Record<AgentMessageKey, string> {
