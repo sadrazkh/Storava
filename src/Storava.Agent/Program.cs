@@ -30,6 +30,7 @@ try
     return command.Verb switch
     {
         "pair" => await PairCommand.RunAsync(command, keys, registrations, CancellationToken.None),
+        "serve" => await ServeCommand.RunAsync(keys, registrations, ShutdownSignal()),
         "status" => StatusCommand.Run(keys, registrations),
         "unpair" => UnpairCommand.Run(command, keys, registrations),
         "help" or "--help" or "-h" => HelpCommand.Run(),
@@ -45,6 +46,18 @@ catch (Exception exception)
 finally
 {
     await Log.CloseAndFlushAsync();
+}
+
+/// <summary>Ctrl+C stops the listener cleanly rather than killing it mid-request.</summary>
+static CancellationToken ShutdownSignal()
+{
+    var source = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, eventArgs) =>
+    {
+        eventArgs.Cancel = true;
+        source.Cancel();
+    };
+    return source.Token;
 }
 
 /// <summary>Exit codes, so the Agent can be driven from a script.</summary>

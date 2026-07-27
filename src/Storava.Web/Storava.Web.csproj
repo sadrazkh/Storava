@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The one shared contract: the access-token format the browser, this server and the
+         companion Agent all have to agree on. Nothing desktop-specific comes with it. -->
+    <ProjectReference Include="..\Storava.Contracts\Storava.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>

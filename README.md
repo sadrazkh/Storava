@@ -6,8 +6,8 @@ moved or renamed without your explicit selection and confirmation. The AI adviso
 recommend, but it can never act.
 
 > Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) ·
-> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing complete;
-> loopback channel, scanning and local actions still to come).
+> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing and the
+> browser↔Agent channel complete; scanning and local actions still to come).
 
 ## Tech stack
 
@@ -103,6 +103,21 @@ reach it at all.
 
 Nothing about the machine's contents reaches the server: pairing records that an Agent exists,
 what to call it, and whether it is still allowed.
+
+Then run it, and open **Companion Agent** in the workspace at `/scan`:
+
+```bash
+dotnet run --project src/Storava.Agent/Storava.Agent.csproj -- serve
+```
+
+The Agent listens on `127.0.0.1` only, answers just the one site it is paired with, and requires a
+five-minute pass the page fetches from your account. Since Chrome 142 the browser also asks your
+permission the first time a public site reaches anything on your local network; the panel explains
+that prompt rather than reporting a bare network error. Removing the device on your account page
+destroys the secret those passes are signed with, so no new one can be issued.
+
+Connecting proves the channel and does nothing else yet — reading drives and scanning through the
+Agent are the next stage.
 
 ## Run
 

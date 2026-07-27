@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue';
 import AdvisorPanel from '@/components/AdvisorPanel.vue';
+import AgentPanel from '@/components/AgentPanel.vue';
 import BrandMark from '@/components/BrandMark.vue';
 import PreferenceControls from '@/components/PreferenceControls.vue';
 import TreemapCanvas from '@/components/TreemapCanvas.vue';
 import { usePreferences } from '@/composables/usePreferences';
 import { getAdvisorMessages } from '@/localization/advisorMessages';
+import { getAgentMessages } from '@/localization/agentMessages';
 import { getExplorerMessages } from '@/localization/explorerMessages';
 import type { AdvisorResult, AdvisorReviewTarget } from '@/models/advisor';
 import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
@@ -28,8 +30,9 @@ import { createOfflineReport } from '@/services/reportService';
 
 const { t, locale } = usePreferences();
 const advisorCopy = computed(() => getAdvisorMessages(locale.value));
+const agentCopy = computed(() => getAgentMessages(locale.value));
 const explorerCopy = computed(() => getExplorerMessages(locale.value));
-const activeView = ref<'overview' | 'explorer' | 'advisor' | 'history'>('overview');
+const activeView = ref<'overview' | 'explorer' | 'advisor' | 'agent' | 'history'>('overview');
 const session = ref<ScanSession | null>(null);
 const advisorResult = ref<AdvisorResult | null>(null);
 const sessions = ref<ScanSession[]>([]);
@@ -450,6 +453,9 @@ onBeforeUnmount(() => {
         <button :class="{ 'is-active': activeView === 'advisor' }" type="button" :aria-current="activeView === 'advisor' ? 'page' : undefined" @click="activeView = 'advisor'">
           <span aria-hidden="true">✦</span>{{ advisorCopy.railLabel }}
         </button>
+        <button :class="{ 'is-active': activeView === 'agent' }" type="button" :aria-current="activeView === 'agent' ? 'page' : undefined" @click="activeView = 'agent'">
+          <span aria-hidden="true">⬡</span>{{ agentCopy.railLabel }}
+        </button>
         <div class="workspace-rail__privacy">
           <strong>{{ t('privacyPromise') }}</strong>
           <span>{{ t('browserLimit') }}</span>
@@ -647,6 +653,8 @@ onBeforeUnmount(() => {
           @result="handleAdvisorResult"
           @open-target="openAdvisorTarget"
         />
+
+        <AgentPanel v-else-if="activeView === 'agent'" />
       </main>
     </div>
 

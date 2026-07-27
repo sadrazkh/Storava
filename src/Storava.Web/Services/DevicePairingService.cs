@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Storava.Contracts.Agent;
 using Storava.Web.Data;
 
 namespace Storava.Web.Services;
@@ -46,7 +47,19 @@ public interface IDevicePairingService
     Task<IReadOnlyList<UserDevice>> ListAsync(Guid userId, CancellationToken cancellationToken);
 
     Task<bool> RevokeAsync(Guid userId, Guid deviceId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Mints the short-lived pass the browser presents to one of this account's Agents. Returns
+    /// null when the device is unknown to this account, revoked, or has no readable secret left.
+    /// </summary>
+    Task<IssuedAccessToken?> IssueAccessTokenAsync(
+        Guid userId,
+        Guid deviceId,
+        string origin,
+        CancellationToken cancellationToken);
 }
+
+public sealed record IssuedAccessToken(string Token, DateTimeOffset ExpiresAtUtc);
 
 /// <summary>
 /// Issues and redeems the codes that attach a companion Agent to an account.
@@ -206,6 +219,46 @@ public sealed class DevicePairingService(
         await database.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Device {DeviceId} was revoked.", deviceId);
         return true;
+    }
+
+    public async Task<IssuedAccessToken?> IssueAccessTokenAsync(
+        Guid userId,
+        Guid deviceId,
+        string origin,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(origin))
+            return null;
+
+        var device = await database.UserDevices.SingleOrDefaultAsync(
+            candidate => candidate.Id == deviceId && candidate.UserId == userId,
+            cancellationToken);
+
+        // Revocation destroys the secret, so a removed device fails here with nothing to sign.
+        if (device is null || device.RevokedAtUtc is not null || device.ChannelSecretProtected.Length == 0)
+            return null;
+
+        string secret;
+        try
+        {
+            secret = Protector().Unprotect(device.ChannelSecretProtected);
+        }
+        catch (CryptographicException exception)
+        {
+            // The data-protection keys changed under us; the pairing cannot be honoured any more.
+            logger.LogWarning(exception, "Device {DeviceId} has a channel secret this server can no longer read.", deviceId);
+            return null;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        string token = AgentAccessToken.Issue(secret, device.Id, origin, now);
+
+        // "Last active" is the last time the browser asked to reach this Agent. The server never
+        // hears from the Agent itself after pairing, so this is the only honest signal it has.
+        device.LastSeenAtUtc = now;
+        await database.SaveChangesAsync(cancellationToken);
+
+        return new IssuedAccessToken(token, now.Add(AgentAccessToken.DefaultLifetime));
     }
 
     private IDataProtector Protector() => dataProtection.CreateProtector(ProtectorPurpose);

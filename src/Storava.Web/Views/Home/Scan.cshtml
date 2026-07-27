@@ -1,12 +1,22 @@
 @inject IStringLocalizer<SharedResource> Localizer
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = Localizer["ProductName"];
     ViewData["Description"] = Localizer["MetaDescription"];
+
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    // Only issued to a signed-in visitor: the island uses it for the one call it makes to this
+    // server, asking for a pass to the user's own companion Agent. An anonymous page has nothing
+    // to ask for and gets no token.
+    var antiforgeryToken = signedIn ? Antiforgery.GetAndStoreTokens(Context).RequestToken : null;
 }
 
 <div id="scan-page"
      data-vue-island="scan"
-     data-initial-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name"></div>
+     data-initial-culture="@System.Globalization.CultureInfo.CurrentUICulture.Name"
+     data-signed-in="@(signedIn ? "true" : "false")"
+     data-antiforgery-header="X-Storava-Antiforgery"
+     data-antiforgery-token="@antiforgeryToken"></div>
 
 <noscript>
     <section class="noscript-state">

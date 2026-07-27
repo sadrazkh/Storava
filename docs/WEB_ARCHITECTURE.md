@@ -203,8 +203,39 @@ necessity — a native process holds no antiforgery cookie — so it is rate lim
 the code itself. No path, no drive, no scan and no file crosses it in either direction. The device
 row records that an Agent exists, what to call it, and whether it is still allowed.
 
+### The channel (implemented)
+
+`storava-agent serve` binds Kestrel to `127.0.0.1` on the first free port of a fixed list of four.
+The page cannot be told which one — a browser cannot read a file — so both sides walk the same list
+in the same order, which also lets several Windows accounts each run one.
+
+Three things guard that port, and none is sufficient alone:
+
+- **Loopback only.** Nothing off this machine can reach it.
+- **One origin.** CORS names exactly the account server this Agent is paired with. Another site's
+  request still arrives, but the browser discards the response, so it learns nothing — not even
+  that an Agent answered.
+- **A signed pass.** Every endpoint that says anything real requires a token the account server
+  minted with that device's channel secret.
+
+`GET /v1/hello` is the exception and has to be: the page cannot present a token to a port until
+something has answered. It says only that an Agent is here and which device, and CORS keeps even
+that from any other origin.
+
+The token itself is deliberately not a general-purpose JWT — one algorithm, no algorithm field to
+confuse, no key lookup. It carries a device id, an origin and a five-minute window, is compared in
+constant time, and its payload is not read until the signature verifies. Binding it to the origin
+means a token leaked from one deployment cannot drive an Agent paired to another.
+
+Revocation destroys the server's copy of the channel secret, so no further pass can be signed. An
+already-issued pass keeps working until it expires; five minutes is that exposure, stated rather
+than papered over.
+
+`connect-src` had to be widened for any of this to work, and was widened as narrowly as possible:
+four literal loopback addresses, no wildcard port, no `localhost` alias.
+
 ### Not yet built
 
-The loopback listener, the browser-issued access token, drive and scan endpoints, and local
-actions are the remaining stages. Until they land, a paired Agent does nothing but exist and can
-be removed; the page still says browser-relative, because that is still all it can offer.
+Drive and scan endpoints, operating-system absolute paths, and local actions are the remaining
+stages. Connecting today proves the channel and does nothing else — the panel says so, and the
+Explorer still calls its addresses browser-relative, because that is still all it can offer.

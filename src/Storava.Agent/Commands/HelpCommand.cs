@@ -19,6 +19,11 @@ internal static class HelpCommand
                     Connect this computer. Generate the code on your account page.
                     Leave --code out and the agent asks for it, keeping it out of your shell history.
 
+              serve
+                    Run the agent so the Storava page in your browser can reach it. It listens on
+                    127.0.0.1 only, answers just the one site it is paired with, and requires a
+                    short-lived token that site gets from your account.
+
               status
                     Show this installation's key fingerprint and whether it is paired.
 

@@ -32,3 +32,16 @@ public sealed record AgentPairResponse(
 
 /// <summary>A refused pairing, with a reason the Agent can print in plain words.</summary>
 public sealed record AgentPairProblem(string Reason, string Message);
+
+/// <summary>One of the user's Agents, as the page needs to know it.</summary>
+public sealed record BrowserDeviceViewModel(Guid Id, string DisplayName, DateTimeOffset LastSeenAtUtc);
+
+/// <summary>
+/// The pass the page presents to an Agent, plus where to look for one. The ports travel with the
+/// token so the page never has to hard-code them alongside the server.
+/// </summary>
+public sealed record AgentAccessTokenViewModel(
+    string Token,
+    DateTimeOffset ExpiresAtUtc,
+    IReadOnlyList<int> Ports,
+    int Protocol);
