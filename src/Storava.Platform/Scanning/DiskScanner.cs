@@ -15,6 +15,11 @@ namespace Storava.Platform.Scanning;
 /// folder sizes aggregate), writes every item to the sink as it is finalized, and keeps only
 /// the current path stack plus running counters in memory. Robust to access errors and
 /// reparse-point loops.
+/// <para>
+/// Because the stack is explicit, it is also what an interrupted scan needs to carry on: the
+/// frames still on it when the walk stops are handed back through the resume point, and a later
+/// run pushes them again instead of starting at the root.
+/// </para>
 /// </summary>
 public sealed class DiskScanner : IDiskScanner
 {
@@ -35,6 +40,7 @@ public sealed class DiskScanner : IDiskScanner
         IScanItemSink sink,
         IProgress<ScanProgress>? progress,
         PauseToken pauseToken,
+        ScanResumePoint? resumePoint,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -52,124 +58,190 @@ public sealed class DiskScanner : IDiskScanner
         bool deep = request.Mode == ScanMode.Deep;
 
         var stopwatch = Stopwatch.StartNew();
-        long files = 0, folders = 0, bytes = 0;
-        int errors = 0;
+        var resume = resumePoint?.Resume;
+        long files = resume?.FilesScanned ?? 0;
+        long folders = resume?.FoldersScanned ?? 0;
+        long bytes = resume?.BytesScanned ?? 0;
+        int errors = resume?.ErrorCount ?? 0;
         long lastReportMs = -ProgressIntervalMs;
         string currentPath = rootDir.FullName;
 
         var stack = new Stack<Frame>();
-        stack.Push(new Frame(rootDir, NewId(), parentId: null, depth: 0));
-
-        while (stack.Count > 0)
+        if (resume is { Pending.Count: > 0 })
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (pauseToken.IsPaused)
-                await pauseToken.WaitWhilePausedAsync().ConfigureAwait(false);
+            // Outermost first, so the deepest folder ends up on top and is finished first — the
+            // same order the walk had reached when it stopped.
+            foreach (var folder in resume.Pending)
+                stack.Push(Frame.Restored(folder));
+        }
+        else
+        {
+            stack.Push(new Frame(rootDir, NewId(), parentId: null, depth: 0));
+        }
 
-            var frame = stack.Peek();
-
-            if (frame.Enumerator is null)
+        try
+        {
+            while (stack.Count > 0)
             {
-                currentPath = frame.Dir.FullName;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (pauseToken.IsPaused)
+                    await pauseToken.WaitWhilePausedAsync().ConfigureAwait(false);
+
+                var frame = stack.Peek();
+
+                if (frame.Enumerator is null)
+                {
+                    currentPath = frame.Dir.FullName;
+                    try
+                    {
+                        frame.Enumerator = frame.Dir.EnumerateFileSystemInfos().GetEnumerator();
+                    }
+                    catch (Exception ex) when (IsRecoverable(ex))
+                    {
+                        errors++;
+                        _logger.LogDebug(ex, "Cannot enumerate {Path}.", frame.Dir.FullName);
+                        frame.Enumerator = EmptyEnumerator;
+                    }
+                }
+
+                FileSystemInfo? entry = null;
+                bool moved;
                 try
                 {
-                    frame.Enumerator = frame.Dir.EnumerateFileSystemInfos().GetEnumerator();
+                    moved = frame.Enumerator!.MoveNext();
+                    if (moved)
+                        entry = frame.Enumerator.Current;
                 }
                 catch (Exception ex) when (IsRecoverable(ex))
                 {
                     errors++;
-                    _logger.LogDebug(ex, "Cannot enumerate {Path}.", frame.Dir.FullName);
-                    frame.Enumerator = EmptyEnumerator;
+                    _logger.LogDebug(ex, "Enumeration error under {Path}.", frame.Dir.FullName);
+                    moved = false;
                 }
-            }
 
-            FileSystemInfo? entry = null;
-            bool moved;
-            try
-            {
-                moved = frame.Enumerator!.MoveNext();
-                if (moved)
-                    entry = frame.Enumerator.Current;
-            }
-            catch (Exception ex) when (IsRecoverable(ex))
-            {
-                errors++;
-                _logger.LogDebug(ex, "Enumeration error under {Path}.", frame.Dir.FullName);
-                moved = false;
-            }
-
-            if (moved && entry is not null)
-            {
-                if ((entry.Attributes & FileAttributes.Directory) != 0)
+                if (moved && entry is not null)
                 {
-                    var di = (DirectoryInfo)entry;
-                    if (excludedPaths.Contains(NormalizePath(di.FullName)))
+                    // A restored folder is walked from the beginning again, because an enumerator
+                    // cannot be saved. Anything already written for it is skipped here instead, so
+                    // the earlier run's work is neither repeated nor counted twice.
+                    if (frame.AlreadyStored(entry.Name))
                         continue;
 
-                    if ((entry.Attributes & FileAttributes.ReparsePoint) != 0)
+                    if ((entry.Attributes & FileAttributes.Directory) != 0)
                     {
-                        // Reparse point (junction/symlink): record it but never descend — avoids loops.
-                        var reparseItem = BuildItem(di, NewId(), frame.Id, frame.Depth + 1, sessionId,
-                            ItemType.Folder, 0, 0, 0, 0, isReparse: true);
-                        await sink.AddAsync(reparseItem, cancellationToken).ConfigureAwait(false);
-                        folders++;
-                        frame.FolderCount++;
+                        var di = (DirectoryInfo)entry;
+                        if (excludedPaths.Contains(NormalizePath(di.FullName)))
+                            continue;
+
+                        if ((entry.Attributes & FileAttributes.ReparsePoint) != 0)
+                        {
+                            // Reparse point (junction/symlink): record it but never descend — avoids loops.
+                            var reparseItem = BuildItem(di, NewId(), frame.Id, frame.Depth + 1, sessionId,
+                                ItemType.Folder, 0, 0, 0, 0, isReparse: true);
+                            await sink.AddAsync(reparseItem, cancellationToken).ConfigureAwait(false);
+                            folders++;
+                            frame.FolderCount++;
+                        }
+                        else
+                        {
+                            stack.Push(new Frame(di, NewId(), frame.Id, frame.Depth + 1));
+                        }
                     }
                     else
                     {
-                        stack.Push(new Frame(di, NewId(), frame.Id, frame.Depth + 1));
+                        var fi = (FileInfo)entry;
+                        if (fi.Extension.Length > 0 && excludedExtensions.Contains(fi.Extension))
+                            continue;
+
+                        long length = 0;
+                        try { length = fi.Length; }
+                        catch (Exception ex) when (IsRecoverable(ex)) { errors++; _logger.LogDebug(ex, "Cannot read length of {Path}.", fi.FullName); }
+
+                        long allocated = deep ? GetOnDiskSize(fi.FullName, length) : length;
+
+                        var fileItem = BuildItem(fi, NewId(), frame.Id, frame.Depth + 1, sessionId,
+                            ItemType.File, length, allocated, 0, 0, isReparse: false);
+                        await sink.AddAsync(fileItem, cancellationToken).ConfigureAwait(false);
+
+                        files++;
+                        bytes += length;
+                        frame.Size += length;
+                        frame.Allocated += allocated;
+                        frame.FileCount++;
                     }
+
+                    lastReportMs = MaybeReport(progress, ref lastReportMs, stopwatch, currentPath, files, folders, bytes, errors, force: false);
                 }
                 else
                 {
-                    var fi = (FileInfo)entry;
-                    if (fi.Extension.Length > 0 && excludedExtensions.Contains(fi.Extension))
-                        continue;
+                    stack.Pop();
+                    frame.Enumerator?.Dispose();
 
-                    long length = 0;
-                    try { length = fi.Length; }
-                    catch (Exception ex) when (IsRecoverable(ex)) { errors++; _logger.LogDebug(ex, "Cannot read length of {Path}.", fi.FullName); }
+                    var folderItem = BuildItem(frame.Dir, frame.Id, frame.ParentId, frame.Depth, sessionId,
+                        ItemType.Folder, frame.Size, frame.Allocated, frame.FileCount, frame.FolderCount, isReparse: false);
+                    await sink.AddAsync(folderItem, cancellationToken).ConfigureAwait(false);
+                    folders++;
 
-                    long allocated = deep ? GetOnDiskSize(fi.FullName, length) : length;
+                    if (stack.Count > 0)
+                    {
+                        var parent = stack.Peek();
+                        parent.Size += frame.Size;
+                        parent.Allocated += frame.Allocated;
+                        parent.FileCount += frame.FileCount;
+                        parent.FolderCount += frame.FolderCount + 1;
+                        parent.MarkStored(frame.Dir.Name);
+                    }
 
-                    var fileItem = BuildItem(fi, NewId(), frame.Id, frame.Depth + 1, sessionId,
-                        ItemType.File, length, allocated, 0, 0, isReparse: false);
-                    await sink.AddAsync(fileItem, cancellationToken).ConfigureAwait(false);
-
-                    files++;
-                    bytes += length;
-                    frame.Size += length;
-                    frame.Allocated += allocated;
-                    frame.FileCount++;
+                    lastReportMs = MaybeReport(progress, ref lastReportMs, stopwatch, currentPath, files, folders, bytes, errors, force: false);
                 }
-
-                lastReportMs = MaybeReport(progress, ref lastReportMs, stopwatch, currentPath, files, folders, bytes, errors, force: false);
             }
-            else
-            {
-                stack.Pop();
-                frame.Enumerator?.Dispose();
-
-                var folderItem = BuildItem(frame.Dir, frame.Id, frame.ParentId, frame.Depth, sessionId,
-                    ItemType.Folder, frame.Size, frame.Allocated, frame.FileCount, frame.FolderCount, isReparse: false);
-                await sink.AddAsync(folderItem, cancellationToken).ConfigureAwait(false);
-                folders++;
-
-                if (stack.Count > 0)
-                {
-                    var parent = stack.Peek();
-                    parent.Size += frame.Size;
-                    parent.Allocated += frame.Allocated;
-                    parent.FileCount += frame.FileCount;
-                    parent.FolderCount += frame.FolderCount + 1;
-                }
-
-                lastReportMs = MaybeReport(progress, ref lastReportMs, stopwatch, currentPath, files, folders, bytes, errors, force: false);
-            }
+        }
+        finally
+        {
+            // Runs whether the walk finished, was cancelled, or threw. An empty stack means there
+            // is nothing left to come back to, and the caller clears any stored state.
+            if (resumePoint is not null)
+                resumePoint.Pending = Capture(stack, request, files, folders, bytes, errors);
         }
 
         MaybeReport(progress, ref lastReportMs, stopwatch, currentPath, files, folders, bytes, errors, force: true);
         return new ScanOutcome(bytes, files, folders, errors);
+    }
+
+    /// <summary>
+    /// The folders still on the stack, outermost first, with the totals each had reached. Returns
+    /// null once the walk is done, which is what tells the caller the scan is not resumable.
+    /// </summary>
+    private static ScanResumeState? Capture(
+        Stack<Frame> stack, ScanRequest request, long files, long folders, long bytes, int errors)
+    {
+        if (stack.Count == 0)
+            return null;
+
+        // A Stack enumerates top-down; the resume order is bottom-up.
+        var frames = stack.ToArray();
+        Array.Reverse(frames);
+
+        return new ScanResumeState
+        {
+            FilesScanned = files,
+            FoldersScanned = folders,
+            BytesScanned = bytes,
+            ErrorCount = errors,
+            ExcludedPaths = [.. request.ExcludedPaths],
+            ExcludedExtensions = [.. request.ExcludedExtensions],
+            Pending = [.. frames.Select(f => new ResumeFolder
+            {
+                Path = f.Dir.FullName,
+                Id = f.Id,
+                ParentId = f.ParentId,
+                Depth = f.Depth,
+                Size = f.Size,
+                Allocated = f.Allocated,
+                FileCount = f.FileCount,
+                FolderCount = f.FolderCount
+            })]
+        };
     }
 
     private ScanItem BuildItem(
@@ -266,6 +338,23 @@ public sealed class DiskScanner : IDiskScanner
             Depth = depth;
         }
 
+        /// <summary>
+        /// A folder an earlier run left unfinished. It keeps that run's id so the children already
+        /// stored under it still belong to it, and the totals it had reached so the finished
+        /// subtrees below it are not measured again.
+        /// </summary>
+        public static Frame Restored(ResumeFolder folder) =>
+            new(new DirectoryInfo(folder.Path), folder.Id, folder.ParentId, folder.Depth)
+            {
+                Size = folder.Size,
+                Allocated = folder.Allocated,
+                FileCount = folder.FileCount,
+                FolderCount = folder.FolderCount,
+                _completedChildren = folder.CompletedChildren
+            };
+
+        private HashSet<string>? _completedChildren;
+
         public DirectoryInfo Dir { get; }
         public string Id { get; }
         public string? ParentId { get; }
@@ -275,5 +364,18 @@ public sealed class DiskScanner : IDiskScanner
         public long Allocated { get; set; }
         public int FileCount { get; set; }
         public int FolderCount { get; set; }
+
+        /// <summary>
+        /// True when this entry was already written for this folder. Only a restored frame can
+        /// answer yes, so a fresh folder pays nothing for the check.
+        /// </summary>
+        public bool AlreadyStored(string name) => _completedChildren?.Contains(name) == true;
+
+        /// <summary>
+        /// Records a child this run has just finished. It matters for the one folder a restored
+        /// frame was in the middle of: that folder completes before its parent starts enumerating
+        /// again, and without this the parent would meet it a second time and walk it twice.
+        /// </summary>
+        public void MarkStored(string name) => _completedChildren?.Add(name);
     }
 }

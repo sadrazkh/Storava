@@ -111,14 +111,22 @@ public sealed partial class StoragePlanViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// The scan a plan may be drafted from. An imported scan is skipped: the plan it produced would
+    /// name folders on the machine the scan was taken on, and the Migration Center reads the plan
+    /// this page writes.
+    /// </summary>
     private async Task<string?> ResolveSessionIdAsync()
     {
         if (!string.IsNullOrEmpty(_controller.CurrentSessionId))
             return _controller.CurrentSessionId;
 
-        var recent = await _sessions.GetRecentAsync(1).ConfigureAwait(true);
-        return recent.Count > 0 ? recent[0].Id : null;
+        var recent = await _sessions.GetRecentAsync(RecentLookback).ConfigureAwait(true);
+        return recent.FirstOrDefault(session => !session.IsImported)?.Id;
     }
+
+    /// <summary>How far back to look for a scan measured here before giving up.</summary>
+    private const int RecentLookback = 20;
 
     private void BuildCandidates(IReadOnlyList<Recommendation> recommendations)
     {

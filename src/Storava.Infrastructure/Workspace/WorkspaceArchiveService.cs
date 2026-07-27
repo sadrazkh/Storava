@@ -86,6 +86,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
             int itemCount;
             int recommendationCount;
+            StoravaArchiveManifest manifest;
 
             // Write to a temporary file first so an interrupted export cannot leave behind a
             // half-written archive under the name the user chose.
@@ -113,7 +114,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
                 hashes[StoravaArchiveEntries.Recommendations] = await WriteJsonEntryAsync(
                     archive, StoravaArchiveEntries.Recommendations, stored, cancellationToken).ConfigureAwait(false);
 
-                var manifest = new StoravaArchiveManifest
+                manifest = new StoravaArchiveManifest
                 {
                     AppVersion = AppVersion(),
                     CreatedAt = DateTimeOffset.Now,
@@ -130,15 +131,17 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
                 // The manifest goes in last: it describes everything written before it.
                 await WriteJsonEntryAsync(archive, StoravaArchiveEntries.Manifest, manifest, cancellationToken)
                     .ConfigureAwait(false);
-
-                File.Move(tempPath, filePath, overwrite: true);
-
-                _logger.LogInformation(
-                    "Exported scan {SessionId}: {Items} items, {Recommendations} recommendations.",
-                    sessionId, itemCount, recommendationCount);
-
-                return Result.Success(manifest);
             }
+
+            // Only now: closing the ZipArchive is what writes its central directory, and the file
+            // handle has to be released before the temporary file can take the chosen name.
+            File.Move(tempPath, filePath, overwrite: true);
+
+            _logger.LogInformation(
+                "Exported scan {SessionId}: {Items} items, {Recommendations} recommendations.",
+                sessionId, itemCount, recommendationCount);
+
+            return Result.Success(manifest);
         }
         catch (OperationCanceledException)
         {
@@ -166,7 +169,10 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         await using var entryStream = entry.Open();
         // Hash as we write, so the payload is never read back or buffered just to digest it.
         using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        await using var writer = new StreamWriter(entryStream, new UTF8Encoding(false));
+        // JSON Lines separates records with "\n". Leaving the platform default here would write
+        // "\r\n" on Windows while the hash below is taken over "\n", so every import would then
+        // fail its own integrity check — and an archive would not survive crossing platforms.
+        await using var writer = new StreamWriter(entryStream, new UTF8Encoding(false)) { NewLine = "\n" };
 
         await foreach (var item in store.StreamAsync(sessionId, cancellationToken).ConfigureAwait(false))
         {

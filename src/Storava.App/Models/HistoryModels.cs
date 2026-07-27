@@ -35,6 +35,19 @@ public sealed class ScanHistoryModel
 
         HasErrors = session.ErrorCount > 0;
         ErrorsText = session.ErrorCount.ToString("N0", culture);
+
+        // A scan that stopped early and recorded where it got to can be carried on.
+        CanResume = session.CanResume;
+
+        // An imported scan describes a disk that may not be this one, so the list says where it
+        // came from rather than presenting it as something Storava measured here.
+        IsImported = session.IsImported;
+        SourceText = session.IsImported
+            ? string.Format(
+                culture,
+                localization["Str.Archive.From"],
+                session.SourceLabel ?? localization["Str.Archive.UnknownSource"])
+            : string.Empty;
     }
 
     public ScanSession Session { get; }
@@ -52,6 +65,15 @@ public sealed class ScanHistoryModel
     public string DurationText { get; }
     public bool HasErrors { get; }
     public string ErrorsText { get; }
+
+    /// <summary>This scan stopped early and recorded enough to be carried on.</summary>
+    public bool CanResume { get; }
+
+    /// <summary>This scan arrived in a <c>.storava</c> file rather than being measured here.</summary>
+    public bool IsImported { get; }
+
+    /// <summary>The archive an imported scan came from; empty for a local scan.</summary>
+    public string SourceText { get; }
 
     /// <summary>Shown in the two comparison pickers, where the date is what tells them apart.</summary>
     public string PickerText => $"{StartedText} — {SizeText}";

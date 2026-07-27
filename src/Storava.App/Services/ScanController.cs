@@ -46,7 +46,21 @@ public sealed partial class ScanController : ObservableObject
     /// <summary>Raised on the UI thread when a scan run finishes (completed, cancelled or failed).</summary>
     public event EventHandler<ScanResult>? Completed;
 
-    public async Task StartAsync(ScanRequest request)
+    public Task StartAsync(ScanRequest request) =>
+        RunAsync(async (coordinator, progress, pause, token) =>
+            await coordinator.RunAsync(request, progress, pause, token).ConfigureAwait(false));
+
+    /// <summary>
+    /// Carries on the scan that stopped partway, into the session it already has. Does nothing when
+    /// that scan turns out not to be resumable after all — it may have been finished or removed
+    /// since the page offering the button was drawn.
+    /// </summary>
+    public Task ResumeAsync(string sessionId) =>
+        RunAsync((coordinator, progress, pause, token) =>
+            coordinator.ResumeAsync(sessionId, progress, pause, token));
+
+    private async Task RunAsync(
+        Func<ScanCoordinator, IProgress<ScanProgress>, PauseToken, CancellationToken, Task<ScanResult?>> run)
     {
         if (IsRunning)
             return;
@@ -68,8 +82,11 @@ public sealed partial class ScanController : ObservableObject
         try
         {
             var result = await Task
-                .Run(() => _coordinator.RunAsync(request, progress, _pauseSource.Token, _cts.Token))
+                .Run(() => run(_coordinator, progress, _pauseSource.Token, _cts.Token))
                 .ConfigureAwait(true);
+
+            if (result is null)
+                return;
 
             CurrentSessionId = result.SessionId;
             LastResult = result;

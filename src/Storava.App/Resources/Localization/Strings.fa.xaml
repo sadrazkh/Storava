@@ -402,6 +402,9 @@
     <sys:String x:Key="Str.History.RunSkipped"> رد‌شده</sys:String>
     <sys:String x:Key="Str.History.Run.Finished">تمام‌شده</sys:String>
     <sys:String x:Key="Str.History.Run.Unfinished">ناتمام</sys:String>
+    <sys:String x:Key="Str.History.Resume">ادامه‌ی این اسکن</sys:String>
+    <sys:String x:Key="Str.History.Resume.Tooltip">از همان‌جایی که این اسکن متوقف شد ادامه بده. پوشه‌هایی که قبلاً تمام شده‌اند نگه داشته می‌شوند، پس فقط بخشی پیمایش می‌شود که اصلاً به آن نرسیده بود.</sys:String>
+    <sys:String x:Key="Str.History.ResumableBadge">ناتمام</sys:String>
     <sys:String x:Key="Str.History.Delete">حذف این اسکن</sys:String>
     <sys:String x:Key="Str.History.Delete.Title">حذف یک اسکن ذخیره‌شده</sys:String>
     <sys:String x:Key="Str.History.Delete.Message">نتایج ذخیره‌شده‌ی «{0}» حذف شود؟ این کار اسکن و توصیه‌هایش را از پایگاه‌داده‌ی Storava پاک می‌کند. فایل‌های شما دست نمی‌خورند و سابقه‌ی تغییراتی که Storava قبلاً انجام داده نگه داشته می‌شود.</sys:String>
@@ -418,6 +421,38 @@
     <sys:String x:Key="Str.History.Error.DifferentRoots">این دو اسکن پوشه‌های متفاوتی را پوشش داده‌اند، پس مقایسه‌ی معناداری ممکن نیست.</sys:String>
     <sys:String x:Key="Str.History.Error.SessionMissing">این اسکن دیگر ذخیره نیست.</sys:String>
     <sys:String x:Key="Str.History.Error.Delete">اسکن ذخیره‌شده حذف نشد.</sys:String>
+
+    <!-- آرشیوهای storava. -->
+    <sys:String x:Key="Str.Archive.Export">ذخیره‌ی این اسکن در یک فایل storava.</sys:String>
+    <sys:String x:Key="Str.Archive.Import">باز کردن یک آرشیو</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Tooltip">خواندن یک اسکن از فایل storava.‌ — حتی اسکنی که روی دستگاه دیگری گرفته شده است.</sys:String>
+    <sys:String x:Key="Str.Archive.ImportedBadge">وارد‌شده</sys:String>
+    <sys:String x:Key="Str.Archive.From">از {0}</sys:String>
+    <sys:String x:Key="Str.Archive.UnknownSource">یک آرشیو</sys:String>
+    <sys:String x:Key="Str.Archive.Working">در حال کار روی آرشیو</sys:String>
+    <sys:String x:Key="Str.Archive.Exported">در {0} ذخیره شد — {1:N0} مورد. این فایل اسکن و توصیه‌هایش را دارد؛ نه تنظیمات در آن هست و نه کلید API.</sys:String>
+    <sys:String x:Key="Str.Archive.Imported">{0:N0} مورد اسکن‌شده در {1} وارد شد. مسیرهای یک اسکن وارد‌شده مربوط به همان دستگاهی است که اندازه‌گیری در آن انجام شده، پس Storava اینجا روی آن‌ها کاری انجام نمی‌دهد.</sys:String>
+
+    <sys:String x:Key="Str.Archive.Import.Title">باز کردن یک آرشیو Storava</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Action">وارد کردن</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Message">این آرشیو یک اسکن از {0} در تاریخ {1} دارد: {2} مورد و {3} توصیه. چیزی به جایی فرستاده نمی‌شود و هیچ فایلی روی این دستگاه جز خودِ آرشیو خوانده نمی‌شود.</sys:String>
+    <sys:String x:Key="Str.Archive.Import.ReplacesImport">یک نسخه از این اسکن از قبل ذخیره شده است. وارد کردن دوباره جای آن را می‌گیرد و نسخه‌ی دومی نمی‌سازد.</sys:String>
+    <sys:String x:Key="Str.Archive.Import.ReplacesLocal">هشدار: یک اسکن که روی همین دستگاه گرفته شده همین شناسه را دارد و با نسخه‌ی وارد‌شده جایگزین می‌شود. فایل‌های شما دست نمی‌خورند، ولی آن اسکن ذخیره‌شده و توصیه‌هایش بازنویسی می‌شوند.</sys:String>
+
+    <sys:String x:Key="Str.Archive.Progress.Items">{0} · {1}</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Scan">خواندن اسکن</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Items">موردها</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Categories">دسته‌ها</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Recommendations">توصیه‌ها</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Working">در حال کار</sys:String>
+
+    <sys:String x:Key="Str.Archive.Error.NotFound">آن آرشیو پیدا نشد.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.NotAnArchive">این فایل یک آرشیو Storava نیست.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Incomplete">این آرشیو بخشی از داده‌های لازم را ندارد، پس چیزی وارد نشد.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Tampered">این آرشیو در بررسی صحت رد شد — بعد از نوشته‌شدن، ناقص یا دستکاری شده است. چیزی وارد نشد.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.UnsupportedVersion">این آرشیو با نسخه‌ای از Storava نوشته شده که جدیدتر از نسخه‌ی فعلی است.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Write">آرشیو نوشته نشد.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Read">آرشیو خوانده نشد.</sys:String>
 
     <sys:String x:Key="Str.ScanMode.Quick">سریع</sys:String>
     <sys:String x:Key="Str.ScanMode.Deep">عمیق</sys:String>

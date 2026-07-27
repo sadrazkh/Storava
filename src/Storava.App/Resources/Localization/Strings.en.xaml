@@ -402,6 +402,9 @@
     <sys:String x:Key="Str.History.RunSkipped"> skipped</sys:String>
     <sys:String x:Key="Str.History.Run.Finished">Finished</sys:String>
     <sys:String x:Key="Str.History.Run.Unfinished">Not finished</sys:String>
+    <sys:String x:Key="Str.History.Resume">Carry on with this scan</sys:String>
+    <sys:String x:Key="Str.History.Resume.Tooltip">Carry on from where this scan stopped. The folders it already finished are kept, so only what it never reached is walked.</sys:String>
+    <sys:String x:Key="Str.History.ResumableBadge">unfinished</sys:String>
     <sys:String x:Key="Str.History.Delete">Delete this scan</sys:String>
     <sys:String x:Key="Str.History.Delete.Title">Delete a stored scan</sys:String>
     <sys:String x:Key="Str.History.Delete.Message">Delete the stored results of "{0}"? This removes the scan and its advice from Storava's database. Your files are not touched, and the record of changes Storava has already made is kept.</sys:String>
@@ -418,6 +421,38 @@
     <sys:String x:Key="Str.History.Error.DifferentRoots">Those two scans covered different folders, so there is nothing meaningful to compare.</sys:String>
     <sys:String x:Key="Str.History.Error.SessionMissing">That scan is no longer stored.</sys:String>
     <sys:String x:Key="Str.History.Error.Delete">The stored scan could not be deleted.</sys:String>
+
+    <!-- .storava archives -->
+    <sys:String x:Key="Str.Archive.Export">Save this scan as a .storava file</sys:String>
+    <sys:String x:Key="Str.Archive.Import">Open an archive</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Tooltip">Read a scan out of a .storava file, including one produced on another machine.</sys:String>
+    <sys:String x:Key="Str.Archive.ImportedBadge">imported</sys:String>
+    <sys:String x:Key="Str.Archive.From">from {0}</sys:String>
+    <sys:String x:Key="Str.Archive.UnknownSource">an archive</sys:String>
+    <sys:String x:Key="Str.Archive.Working">Working on the archive</sys:String>
+    <sys:String x:Key="Str.Archive.Exported">Saved as {0} — {1:N0} items. The file holds the scan and its advice; it carries no settings and no API key.</sys:String>
+    <sys:String x:Key="Str.Archive.Imported">Imported {0:N0} items scanned under {1}. The paths in an imported scan describe the machine it was measured on, so Storava will not act on them here.</sys:String>
+
+    <sys:String x:Key="Str.Archive.Import.Title">Open a Storava archive</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Action">Import</sys:String>
+    <sys:String x:Key="Str.Archive.Import.Message">This archive holds a scan of {0} taken on {1}: {2} items and {3} recommendations. Nothing is sent anywhere and no file on this machine is read except the archive itself.</sys:String>
+    <sys:String x:Key="Str.Archive.Import.ReplacesImport">A copy of this scan is already stored. Importing again replaces it rather than adding a second copy.</sys:String>
+    <sys:String x:Key="Str.Archive.Import.ReplacesLocal">Warning: a scan measured on this machine has the same id and will be replaced by the imported copy. Your files are not touched, but that stored scan and its advice will be overwritten.</sys:String>
+
+    <sys:String x:Key="Str.Archive.Progress.Items">{0} · {1}</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Scan">reading the scan</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Items">items</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Categories">categories</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Recommendations">recommendations</sys:String>
+    <sys:String x:Key="Str.Archive.Stage.Working">working</sys:String>
+
+    <sys:String x:Key="Str.Archive.Error.NotFound">That archive could not be found.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.NotAnArchive">That file is not a Storava archive.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Incomplete">That archive is missing data it needs, so nothing was imported.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Tampered">That archive failed its integrity check — it was truncated or edited after it was written. Nothing was imported.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.UnsupportedVersion">That archive was written by a newer version of Storava than this one can read.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Write">The archive could not be written.</sys:String>
+    <sys:String x:Key="Str.Archive.Error.Read">The archive could not be read.</sys:String>
 
     <sys:String x:Key="Str.ScanMode.Quick">Quick</sys:String>
     <sys:String x:Key="Str.ScanMode.Deep">Deep</sys:String>

@@ -54,6 +54,7 @@ public static class AppComposition
         services.AddSingleton<ScanController>();
         services.AddSingleton<IFolderPicker, FolderPicker>();
         services.AddSingleton<IFileSaver, FileSaver>();
+        services.AddSingleton<IFileOpener, FileOpener>();
 
         // ViewModels
         services.AddSingleton<ShellViewModel>();

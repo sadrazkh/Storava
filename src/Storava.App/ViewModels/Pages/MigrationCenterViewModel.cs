@@ -192,14 +192,22 @@ public sealed partial class MigrationCenterViewModel : ViewModelBase, IDisposabl
         }];
     }
 
+    /// <summary>
+    /// The scan this page may act on. An imported scan is skipped on purpose: its paths were
+    /// measured on another machine, and a path that happens to exist here too would name a folder
+    /// this scan never looked at. Only a scan taken on this machine can drive a real move.
+    /// </summary>
     private async Task<string?> ResolveSessionIdAsync()
     {
         if (!string.IsNullOrEmpty(_controller.CurrentSessionId))
             return _controller.CurrentSessionId;
 
-        var recent = await _sessions.GetRecentAsync(1).ConfigureAwait(true);
-        return recent.Count > 0 ? recent[0].Id : null;
+        var recent = await _sessions.GetRecentAsync(RecentLookback).ConfigureAwait(true);
+        return recent.FirstOrDefault(session => !session.IsImported)?.Id;
     }
+
+    /// <summary>How far back to look for a scan measured here before giving up.</summary>
+    private const int RecentLookback = 20;
 
     [RelayCommand]
     private async Task PreflightAsync()

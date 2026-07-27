@@ -11,14 +11,6 @@ public interface IFileSaver
 
 public sealed class FileSaver : IFileSaver
 {
-    // Report formats Storava can write. Anything else falls back to "all files".
-    private static readonly Dictionary<string, string> Filters = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["html"] = "HTML report (*.html)|*.html",
-        ["json"] = "JSON report (*.json)|*.json",
-        ["csv"] = "CSV report (*.csv)|*.csv"
-    };
-
     public string? Save(string suggestedFileName, string extension)
     {
         var dialog = new SaveFileDialog
@@ -28,9 +20,25 @@ public sealed class FileSaver : IFileSaver
             DefaultExt = extension,
             AddExtension = true,
             OverwritePrompt = true,
-            Filter = Filters.TryGetValue(extension, out var filter) ? filter : "All files (*.*)|*.*"
+            Filter = FileDialogFilters.For(extension)
         };
 
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
+}
+
+/// <summary>File types Storava reads or writes, shared by the save and open dialogs.</summary>
+internal static class FileDialogFilters
+{
+    private static readonly Dictionary<string, string> Filters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["html"] = "HTML report (*.html)|*.html",
+        ["json"] = "JSON report (*.json)|*.json",
+        ["csv"] = "CSV report (*.csv)|*.csv",
+        ["storava"] = "Storava archive (*.storava)|*.storava"
+    };
+
+    /// <summary>The dialog filter for an extension, falling back to "all files".</summary>
+    public static string For(string extension) =>
+        Filters.TryGetValue(extension, out var filter) ? filter : "All files (*.*)|*.*";
 }

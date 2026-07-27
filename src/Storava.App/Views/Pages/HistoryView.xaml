@@ -26,25 +26,65 @@
                            TextWrapping="Wrap" MaxWidth="760" Margin="0,4,0,0" />
             </StackPanel>
 
-            <Button Grid.Column="1" Command="{Binding RefreshCommand}"
-                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Height="38" Padding="16,0" VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0" />
-                    <TextBlock Text="{DynamicResource Str.History.Refresh}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Command="{Binding ImportArchiveCommand}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="38" Padding="16,0" Margin="0,0,10,0"
+                        ToolTip="{DynamicResource Str.Archive.Import.Tooltip}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FolderZipOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource Str.Archive.Import}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding RefreshCommand}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="38" Padding="16,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource Str.History.Refresh}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <Border Grid.Row="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,12" Background="#22EF4444"
-                Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
-                                         Foreground="{StaticResource Storava.Brush.Danger}" />
-                <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
-                           TextWrapping="Wrap" MaxWidth="920" />
-            </StackPanel>
-        </Border>
+        <StackPanel Grid.Row="1">
+            <Border CornerRadius="10" Padding="14,12" Margin="0,0,0,12" Background="#22EF4444"
+                    Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
+                                             Foreground="{StaticResource Storava.Brush.Danger}" />
+                    <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
+                               TextWrapping="Wrap" MaxWidth="920" />
+                </StackPanel>
+            </Border>
+
+            <!-- Writing or reading a .storava file. An archive of a large scan streams for a while,
+                 so the stage and the item count are shown rather than a spinner on its own. -->
+            <Border CornerRadius="10" Padding="14,12" Margin="0,0,0,12"
+                    Background="{DynamicResource MaterialDesignChipBackground}"
+                    Visibility="{Binding IsArchiveBusy, Converter={StaticResource Conv.BoolVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 Value="0" IsIndeterminate="True" Width="18" Height="18"
+                                 VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <TextBlock Text="{DynamicResource Str.Archive.Working}" Style="{StaticResource Storava.Text.Body}"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ArchiveProgressText}" Style="{StaticResource Storava.Text.Caption}"
+                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                </StackPanel>
+            </Border>
+
+            <Border CornerRadius="10" Padding="14,12" Margin="0,0,0,12" Background="#2222C55E"
+                    Visibility="{Binding ArchiveStatus, Converter={StaticResource Conv.NullVis}}">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="CheckCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
+                                             Foreground="{StaticResource Storava.Brush.Success}" />
+                    <TextBlock Text="{Binding ArchiveStatus}" Style="{StaticResource Storava.Text.Body}"
+                               TextWrapping="Wrap" MaxWidth="920" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
 
         <!-- Nothing scanned yet -->
         <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440"
@@ -371,6 +411,18 @@
                                                         Visibility="{Binding IsCompleted, Converter={StaticResource Conv.InvBoolVis}}">
                                                     <TextBlock Text="{Binding StatusText}" FontSize="11" />
                                                 </Border>
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                        Background="{DynamicResource PrimaryHueMidBrush}"
+                                                        Visibility="{Binding CanResume, Converter={StaticResource Conv.BoolVis}}">
+                                                    <TextBlock Text="{DynamicResource Str.History.ResumableBadge}"
+                                                               Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                                </Border>
+                                                <!-- Measured elsewhere: the paths in it describe another machine's disk -->
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
+                                                        Background="{DynamicResource MaterialDesignChipBackground}"
+                                                        Visibility="{Binding IsImported, Converter={StaticResource Conv.BoolVis}}">
+                                                    <TextBlock Text="{DynamicResource Str.Archive.ImportedBadge}" FontSize="11" />
+                                                </Border>
                                             </StackPanel>
 
                                             <TextBlock Text="{Binding RootPath}" Style="{StaticResource Storava.Text.Caption}"
@@ -381,18 +433,45 @@
                                                 <TextBlock Text="{Binding FilesText}" Style="{StaticResource Storava.Text.Caption}" />
                                                 <TextBlock Text="{DynamicResource Str.History.Files}" Style="{StaticResource Storava.Text.Caption}" />
                                             </StackPanel>
+                                            <TextBlock Text="{Binding SourceText}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextTrimming="CharacterEllipsis" Opacity="0.75" Margin="0,2,0,0"
+                                                       Visibility="{Binding IsImported, Converter={StaticResource Conv.BoolVis}}" />
                                         </StackPanel>
 
-                                        <Button Grid.Column="1" VerticalAlignment="Top"
-                                                Style="{StaticResource MaterialDesignIconButton}"
-                                                Height="32" Width="32"
-                                                ToolTip="{DynamicResource Str.History.Delete}"
-                                                AutomationProperties.Name="{DynamicResource Str.History.Delete}"
-                                                Command="{Binding DataContext.DeleteSessionCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" />
-                                        </Button>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                            <!-- Only for a run that stopped partway and recorded where it got to -->
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Height="32" Width="32"
+                                                    Visibility="{Binding CanResume, Converter={StaticResource Conv.BoolVis}}"
+                                                    ToolTip="{DynamicResource Str.History.Resume.Tooltip}"
+                                                    AutomationProperties.Name="{DynamicResource Str.History.Resume}"
+                                                    Command="{Binding DataContext.ResumeSessionCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
+                                                                         Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                            </Button>
+
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Height="32" Width="32"
+                                                    ToolTip="{DynamicResource Str.Archive.Export}"
+                                                    AutomationProperties.Name="{DynamicResource Str.Archive.Export}"
+                                                    Command="{Binding DataContext.ExportSessionCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="PackageDown" Width="18" Height="18" />
+                                            </Button>
+
+                                            <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                    Height="32" Width="32"
+                                                    ToolTip="{DynamicResource Str.History.Delete}"
+                                                    AutomationProperties.Name="{DynamicResource Str.History.Delete}"
+                                                    Command="{Binding DataContext.DeleteSessionCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" />
+                                            </Button>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

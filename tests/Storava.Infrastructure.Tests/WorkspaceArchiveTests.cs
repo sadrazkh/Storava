@@ -369,6 +369,32 @@ public sealed class WorkspaceArchiveTests : IDisposable
         Assert.False(File.Exists(path + ".partial"));
     }
 
+    /// <summary>
+    /// The item payload is JSON Lines, separated by "\n". Writing the platform newline instead
+    /// would still round-trip on the machine that produced the file — the reader accepts both —
+    /// but the entry hash is taken over "\n", so an archive written on Windows would be refused
+    /// by its own integrity check and one written elsewhere would not match.
+    /// </summary>
+    [Fact]
+    public async Task Items_AreSeparatedByLineFeedsOnly()
+    {
+        using var tree = new TestTree();
+        tree.AddFile(@"a\one.bin", 1024);
+        tree.AddFile(@"a\two.bin", 2048);
+        string path = ArchivePath();
+
+        using var host = new TestHost(withRules: true);
+        var scan = await ScanAsync(host, tree.Root);
+        await host.Get<IWorkspaceArchiveService>().ExportAsync(scan.SessionId, path, "en-US");
+
+        using var archive = ZipFile.OpenRead(path);
+        using var reader = new StreamReader(archive.GetEntry(StoravaArchiveEntries.Items)!.Open());
+        string content = await reader.ReadToEndAsync();
+
+        Assert.DoesNotContain('\r', content);
+        Assert.Contains('\n', content);
+    }
+
     public void Dispose()
     {
         try

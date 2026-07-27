@@ -5,7 +5,7 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Desktop Phase 6 — History & Comparison** (complete) · **Storava Web / Phase 7** (complete).
+> Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) · **Storava Web / Phase 7** (complete).
 
 ## Tech stack
 
@@ -220,3 +220,36 @@ The first and only page that changes your files. Everything before it produced d
 - **Pruning is honest about what it keeps.** Deleting a stored scan removes its items and its
   advice, and leaves your files alone. The execution log is deliberately kept: it records real
   changes to your disk, which outlive the scan that suggested them.
+
+**Phase 7 — portable archives and resumable scans**
+
+- **A scan can leave the machine it was taken on.** Any stored scan exports to a `.storava` file
+  from the History page: a ZIP holding the scan, its items as streamed JSON Lines, its category
+  totals and its advice, plus a manifest with a SHA-256 per entry. Exporting a scan of any size
+  never holds the tree in memory, and the file is written under a temporary name so an interrupted
+  export cannot leave a half-written archive under the name you chose.
+- **The archive cannot carry a secret, by construction rather than by filtering.** The service
+  reads only the scan tables, so there is nothing for settings or an API key to travel in — the
+  manifest says so, and a test asserts it.
+- **Import describes the file before it touches anything.** The manifest is read first and shown:
+  which folder, when it was scanned, how many items and how much advice. An archive that was
+  truncated or edited fails its hash check and nothing is imported. Re-importing replaces the
+  earlier copy rather than adding a second one, and when the id belongs to a scan measured *here*,
+  the confirmation says plainly that a local scan will be overwritten.
+- **An imported scan is labelled as somebody else's disk.** It is fully browsable, comparable and
+  reportable, but the Storage Plan and Migration Center will not fall back to it — a path from
+  another machine that happens to exist here too would name a folder the scan never looked at.
+- **A scan that stopped partway can be carried on.** Cancel a scan, close the app, come back: the
+  History page offers to continue it. Because the walk keeps an explicit stack, what is outstanding
+  is exactly the chain of folders still on it, and that is what gets stored — with the totals each
+  had reached, so the subtrees already finished are never measured again.
+- **Resuming does not double-count and does not skip.** The list of entries already consumed is not
+  stored — it can run to hundreds of thousands of names, and the database already holds them. Each
+  unfinished folder is re-enumerated and the children already written under it are skipped, which
+  is one query per level of depth rather than one per folder. The tests assert the property that
+  matters: a resumed scan reports the same bytes, files and folders as one uninterrupted walk of
+  the same tree, and stores every item exactly once — including when the resumed run is itself
+  interrupted.
+- Resume state is kept only while there is genuinely something left to walk, is dropped when the
+  scan completes, and is discarded rather than guessed at if it cannot be read. An imported scan
+  never carries one: pending work belongs to the machine that produced it.
