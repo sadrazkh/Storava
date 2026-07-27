@@ -44,6 +44,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
     private readonly IScanQueryService _query;
     private readonly IRecommendationRepository _recommendations;
     private readonly ILogger<WorkspaceArchiveService> _logger;
+    private readonly ArchiveIdentity _identity;
 
     public WorkspaceArchiveService(
         StoravaDbOptions options,
@@ -51,8 +52,10 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         IScanSessionRepository sessions,
         IScanQueryService query,
         IRecommendationRepository recommendations,
+        ArchiveIdentity identity,
         ILogger<WorkspaceArchiveService> logger)
     {
+        _identity = identity;
         _options = options;
         _initializer = initializer;
         _sessions = sessions;
@@ -126,7 +129,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
                     // This edition walks the file system, so its paths are real locations. The
                     // browser's are not, and a reader has to be told which it is holding.
                     PathKind = ArchivePathKind.Absolute,
-                    ProducedBy = ArchiveProducer.Desktop,
+                    ProducedBy = _identity.Producer,
                     ItemCount = itemCount,
                     RecommendationCount = recommendationCount,
                     Hashes = hashes

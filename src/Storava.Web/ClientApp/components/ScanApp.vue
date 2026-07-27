@@ -363,10 +363,12 @@ function exportReport(target: ScanSession): void {
   downloadExport(report.blob, report.fileName);
 }
 
-async function importFile(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+/**
+ * Reads one file into the workspace and shows it. Shared by the file picker and by the Agent
+ * panel, which hands up an archive of a walk it just ran: to this function they are the same
+ * thing, and a scan of a real drive should behave no differently from one that was opened.
+ */
+async function absorb(file: File, done: string): Promise<void> {
   importPercent.value = 0;
   notice.value = t('importProgress');
   try {
@@ -380,15 +382,36 @@ async function importFile(event: Event): Promise<void> {
     session.value = importedSession;
     advisorResult.value = null;
     resetRecommendationFilter();
-    notice.value = t('importComplete');
+    notice.value = done;
     await refreshHistory();
     await loadItems();
   } catch (error) {
     notice.value = `${t('importFailed')}: ${error instanceof Error ? error.message : ''}`;
   } finally {
     importPercent.value = null;
+  }
+}
+
+async function importFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  try {
+    await absorb(file, t('importComplete'));
+  } finally {
     input.value = '';
   }
+}
+
+/**
+ * A walk the Agent ran, brought into this workspace. It lands in the overview rather than staying
+ * on the Agent panel, because from here on it is an ordinary scan — history, the advisor and the
+ * explorer all work on it without knowing where it came from.
+ */
+async function absorbAgentArchive(file: File): Promise<void> {
+  await absorb(file, agentCopy.value.archiveImported);
+  if (session.value) activeView.value = 'overview';
 }
 
 async function removeSession(id: string): Promise<void> {
@@ -660,7 +683,7 @@ onBeforeUnmount(() => {
           @open-target="openAdvisorTarget"
         />
 
-        <AgentPanel v-else-if="activeView === 'agent'" />
+        <AgentPanel v-else-if="activeView === 'agent'" @open-archive="absorbAgentArchive" />
       </main>
     </div>
 

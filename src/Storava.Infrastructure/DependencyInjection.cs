@@ -5,6 +5,7 @@ using Storava.Application.Abstractions;
 using Storava.Application.History;
 using Storava.Application.Planning;
 using Storava.Application.Services;
+using Storava.Contracts.Workspace;
 using Storava.Infrastructure.Persistence;
 using Storava.Infrastructure.Settings;
 using Storava.Infrastructure.Workspace;
@@ -17,9 +18,19 @@ public static class DependencyInjection
     /// Registers persistence, settings and scan storage. <paramref name="databasePath"/> is the
     /// full path to the local SQLite file (created on first use).
     /// </summary>
-    public static IServiceCollection AddStoravaInfrastructure(this IServiceCollection services, string databasePath)
+    /// <param name="identity">
+    /// Which edition is doing the writing. The Agent shares this whole stack with the desktop
+    /// application, so without being told it would stamp its archives as desktop-written and the
+    /// manifest's one job — saying where a file came from — would be a lie.
+    /// </param>
+    public static IServiceCollection AddStoravaInfrastructure(
+        this IServiceCollection services,
+        string databasePath,
+        ArchiveIdentity? identity = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
+
+        services.AddSingleton(identity ?? ArchiveIdentity.Desktop);
 
         var directory = Path.GetDirectoryName(databasePath);
         if (!string.IsNullOrEmpty(directory))

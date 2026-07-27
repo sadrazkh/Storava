@@ -240,6 +240,22 @@ Behind the pass, the Agent exposes what a browser cannot reach: `GET /v1/drives`
 volumes, `POST /v1/scans` walks a folder, `GET /v1/scans/{id}` reports progress, and
 `GET /v1/scans/{id}/items` returns the largest items **with operating-system absolute paths**.
 
+`GET /v1/scans/{id}/archive` returns the whole walk as a `.storava` file. Without it the Agent is
+a dead end: it can measure a machine no browser can reach, and then nothing can leave the process.
+The items endpoint is a live window onto the top hundred rows; the archive is the entire tree in
+the format all three editions read, so a walk can be opened in the page's workspace, kept, or
+carried to another computer. It streams from a temporary file opened `DeleteOnClose` — a
+drive-sized walk is millions of rows and is never held in memory, and an abandoned download leaves
+nothing behind. Because the response names itself, the Agent's CORS policy exposes
+`Content-Disposition`; without that the page could read the bytes but not what to call them.
+
+The manifest says which edition wrote a file, and the Agent had to be taught to say `Agent`. It
+runs the desktop application's entire archive stack, so left to that stack's default it would have
+signed its own exports as desktop-written — the one thing the manifest exists to record. The
+producer is now injected at composition (`ArchiveIdentity`) rather than being a constant, and the
+Agent's test suite writes the `agent-v2.storava` fixture that the browser suite reads, alongside
+the desktop's.
+
 None of that is a second implementation. The Agent references `Storava.Platform`,
 `Storava.Rules` and `Storava.Infrastructure` and gets the desktop edition's scanner, its ~35-rule
 catalog and its SQLite storage as they are. A walk through the Agent classifies `node_modules` as

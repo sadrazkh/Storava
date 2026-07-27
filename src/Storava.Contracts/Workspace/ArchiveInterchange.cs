@@ -21,6 +21,21 @@ public enum ArchivePathKind
     RootRelative
 }
 
+/// <summary>
+/// Which edition is writing archives in this process.
+/// <para>
+/// A registered value rather than a constant, because the Agent shares the desktop application's
+/// entire archive stack. Left as a constant it would stamp its own exports as desktop-written, and
+/// saying where a file came from is the manifest's one job.
+/// </para>
+/// </summary>
+public sealed record ArchiveIdentity(ArchiveProducer Producer)
+{
+    public static readonly ArchiveIdentity Desktop = new(ArchiveProducer.Desktop);
+    public static readonly ArchiveIdentity Agent = new(ArchiveProducer.Agent);
+    public static readonly ArchiveIdentity Browser = new(ArchiveProducer.Browser);
+}
+
 /// <summary>Which edition wrote an archive. Shown to the user, never used to gate a feature.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<ArchiveProducer>))]
 public enum ArchiveProducer

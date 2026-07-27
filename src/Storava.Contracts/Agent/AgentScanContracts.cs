@@ -93,4 +93,7 @@ public static class AgentScanPaths
     public static string Scan(string scanId) => $"{Scans}/{scanId}";
     public static string Cancel(string scanId) => $"{Scans}/{scanId}/cancel";
     public static string Items(string scanId) => $"{Scans}/{scanId}/items";
+
+    /// <summary>Downloads the whole walk as a portable <c>.storava</c> archive.</summary>
+    public static string Archive(string scanId) => $"{Scans}/{scanId}/archive";
 }

@@ -154,6 +154,9 @@ interface PageCredentials {
 const PROBE_TIMEOUT_MS = 1500;
 const REQUEST_TIMEOUT_MS = 10000;
 
+/** Writing an archive of a whole drive is work, not a lookup, and gets a budget to match. */
+const ARCHIVE_TIMEOUT_MS = 300000;
+
 export function readPageCredentials(root: HTMLElement | null): PageCredentials {
   return {
     signedIn: root?.dataset.signedIn === 'true',
@@ -382,6 +385,52 @@ export async function getScanItems(
 
   if (!response.ok) return [];
   return ((await response.json()) as { items: AgentScanItem[] }).items;
+}
+
+/**
+ * Downloads a finished walk as a portable `.storava` file.
+ *
+ * This is what stops an agent scan from being trapped on the machine that ran it: the archive is
+ * the one format the desktop application, this page and the Agent all read, so a walk of a real
+ * drive can be opened in this workspace, kept, or carried to another computer.
+ *
+ * Deliberately not on the ten-second budget the other calls use. Those answer from memory; this
+ * one writes the whole tree, and a drive-sized walk takes longer than any of them.
+ */
+export async function downloadScanArchive(
+  connection: AgentConnection,
+  scanId: string,
+): Promise<{ blob: Blob; fileName: string } | null> {
+  const response = await fetchWithTimeout(
+    `${connection.baseAddress}/v1/scans/${encodeURIComponent(scanId)}/archive`,
+    { headers: { Authorization: `Bearer ${connection.token}` } },
+    ARCHIVE_TIMEOUT_MS,
+  );
+
+  if (!response.ok) return null;
+
+  return {
+    blob: await response.blob(),
+    // Exposed by the Agent's CORS policy; falling back rather than failing, because a name is a
+    // convenience and the archive itself is the point.
+    fileName: fileNameFrom(response.headers.get('Content-Disposition')) ?? 'storava-scan.storava',
+  };
+}
+
+/** Pulls the filename out of a Content-Disposition header, preferring the encoded form. */
+function fileNameFrom(header: string | null): string | null {
+  if (!header) return null;
+
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      // A malformed header is not worth failing a download over.
+    }
+  }
+
+  return /filename="?([^";]+)"?/i.exec(header)?.[1] ?? null;
 }
 
 /**

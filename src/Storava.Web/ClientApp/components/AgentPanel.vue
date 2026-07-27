@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { usePreferences } from '@/composables/usePreferences';
 import { getAgentMessages } from '@/localization/agentMessages';
+import { downloadExport } from '@/services/exportImportService';
 import {
   cancelScan,
   connectToAgent,
+  downloadScanArchive,
   executeAction,
   getScan,
   getScanItems,
@@ -22,6 +24,8 @@ import {
   type AgentScanProgress,
   type BrowserDevice,
 } from '@/services/agentService';
+
+const emit = defineEmits<{ (event: 'open-archive', file: File): void }>();
 
 const { locale } = usePreferences();
 const copy = computed(() => getAgentMessages(locale.value));
@@ -169,6 +173,45 @@ async function tick(): Promise<void> {
   }
 }
 
+/**
+ * The walk as a portable file. Everything above shows the top hundred rows over a live connection;
+ * this is the whole tree, in the format the desktop application and this page both read — so an
+ * agent scan can be kept, opened here, or carried to another machine rather than living only for
+ * as long as the Agent is running.
+ */
+const archiveState = ref<'idle' | 'writing'>('idle');
+const archiveProblem = ref<string | null>(null);
+
+async function takeArchive(then: 'save' | 'open'): Promise<void> {
+  const current = connection.value;
+  const finished = scan.value;
+  if (!current || finished?.state !== 'Completed' || archiveState.value === 'writing') return;
+
+  archiveState.value = 'writing';
+  archiveProblem.value = null;
+
+  try {
+    const archive = await downloadScanArchive(current, finished.scanId);
+    if (!archive) {
+      archiveProblem.value = copy.value.archiveFailed;
+      return;
+    }
+
+    if (then === 'save') {
+      downloadExport(archive.blob, archive.fileName);
+      return;
+    }
+
+    // Handed up as a File rather than imported here: this panel talks to the Agent, and the
+    // workspace that holds imported scans belongs to the page around it.
+    emit('open-archive', new File([archive.blob], archive.fileName));
+  } catch {
+    archiveProblem.value = copy.value.archiveFailed;
+  } finally {
+    archiveState.value = 'idle';
+  }
+}
+
 async function loadResults(): Promise<void> {
   const current = connection.value;
   const finished = scan.value;
@@ -182,6 +225,7 @@ async function beginScan(): Promise<void> {
   if (!current || !canScan.value) return;
 
   scanProblem.value = null;
+  archiveProblem.value = null;
   results.value = [];
   outcome.value = null;
   resultsAreStale.value = false;
@@ -498,11 +542,24 @@ onMounted(loadDevices);
               <h2>{{ copy.resultsTitle }}</h2>
               <p>{{ copy.resultsBody }}</p>
             </div>
-            <label class="agent__check">
-              <input v-model="foldersOnly" type="checkbox" @change="loadResults">
-              <span>{{ copy.foldersOnly }}</span>
-            </label>
+            <div class="agent__results-tools">
+              <label class="agent__check">
+                <input v-model="foldersOnly" type="checkbox" @change="loadResults">
+                <span>{{ copy.foldersOnly }}</span>
+              </label>
+              <div class="agent__archive">
+                <button type="button" class="agent__copy" :disabled="archiveState === 'writing'" @click="takeArchive('open')">
+                  {{ archiveState === 'writing' ? copy.archiveWriting : copy.archiveOpen }}
+                </button>
+                <button type="button" class="agent__copy" :disabled="archiveState === 'writing'" @click="takeArchive('save')">
+                  {{ copy.archiveSave }}
+                </button>
+              </div>
+            </div>
           </header>
+
+          <p class="agent__note">{{ copy.archiveBody }}</p>
+          <p v-if="archiveProblem" class="agent__scan-problem" role="alert">{{ archiveProblem }}</p>
 
           <p v-if="results.length === 0">{{ copy.noResults }}</p>
 
@@ -835,6 +892,23 @@ onMounted(loadDevices);
   cursor: pointer;
 }
 .agent__copy--danger { border-color: color-mix(in srgb, var(--danger) 45%, transparent); color: var(--danger); }
+.agent__copy:disabled { opacity: .55; cursor: progress; }
+
+/* Header controls stack on narrow screens rather than crowding the heading beside them. */
+.agent__results-tools { display: flex; flex-direction: column; gap: .7rem; align-items: end; }
+.agent__archive { display: flex; gap: .45rem; flex-wrap: wrap; justify-content: end; }
+/* Larger than the per-row buttons: these act on the whole walk, not on one line of it. */
+.agent__archive .agent__copy { padding: .45rem .8rem; font-size: var(--label-sm); }
+.agent__archive .agent__copy:first-child {
+  border-color: color-mix(in srgb, var(--pine-bright) 55%, transparent);
+  color: var(--pine-bright);
+}
+
+@media (max-width: 640px) {
+  .agent__results > header { flex-direction: column; }
+  .agent__results-tools { align-items: start; width: 100%; }
+  .agent__archive { justify-content: start; }
+}
 .agent__row-actions { display: flex; gap: .35rem; white-space: nowrap; }
 
 .agent__outcome { margin: .4rem 0 0; color: var(--muted); line-height: 1.6; }

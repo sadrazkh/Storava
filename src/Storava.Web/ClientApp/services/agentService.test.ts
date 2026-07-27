@@ -3,6 +3,7 @@ import {
   cancelScan,
   connectToAgent,
   discoverAgent,
+  downloadScanArchive,
   getScan,
   getScanItems,
   listDevices,
@@ -339,6 +340,56 @@ describe('using a connected agent', () => {
     expect(await getScanItems(connection, 's1')).toEqual([]);
     expect(await getScan(connection, 's1')).toBeNull();
     expect(await listDrives(connection)).toEqual([]);
+  });
+
+  // The archive is what stops a walk from living only as long as the connection that ran it.
+
+  it('fetches the whole walk as a file, with the pass and the name the agent chose', async () => {
+    const fetchSpy = stubFetch(() => new Response(new Blob(['PKarchive-bytes']), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': 'attachment; filename="storava-project.storava"',
+      },
+    }));
+
+    const archive = await downloadScanArchive(connection, 's1');
+
+    expect(archive?.fileName).toBe('storava-project.storava');
+    expect(await archive?.blob.text()).toContain('archive-bytes');
+
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(addressOf(url)).toBe('http://127.0.0.1:47615/v1/scans/s1/archive');
+    expect((init?.headers as Record<string, string>).Authorization)
+      .toBe('Bearer storava1.payload.signature');
+  });
+
+  it('reads a name that had to be encoded', async () => {
+    stubFetch(() => new Response(new Blob(['x']), {
+      status: 200,
+      headers: {
+        // What the agent sends when the folder's name is not plain ASCII — a Persian folder name
+        // is the ordinary case here, not an exotic one.
+        'Content-Disposition':
+          "attachment; filename=\"storava-scan.storava\"; filename*=UTF-8''storava-%D9%BE%D8%B1%D9%88%DA%98%D9%87.storava",
+      },
+    }));
+
+    const archive = await downloadScanArchive(connection, 's1');
+
+    expect(archive?.fileName).toBe('storava-پروژه.storava');
+  });
+
+  it('still produces a usable name when the agent sends none', async () => {
+    stubFetch(() => new Response(new Blob(['x']), { status: 200 }));
+
+    expect((await downloadScanArchive(connection, 's1'))?.fileName).toBe('storava-scan.storava');
+  });
+
+  it('returns nothing rather than an empty file when the walk has no archive', async () => {
+    stubFetch(() => new Response(null, { status: 404 }));
+
+    expect(await downloadScanArchive(connection, 's1')).toBeNull();
   });
 });
 

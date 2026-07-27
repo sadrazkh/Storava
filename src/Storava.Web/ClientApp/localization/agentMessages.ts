@@ -83,6 +83,14 @@ const en = {
   protectedItem: 'protected',
   noResults: 'Nothing was stored for that walk.',
 
+  archiveBody:
+    'The table shows the largest hundred over a live connection. The archive is the whole walk in a single file — open it here to keep it, or save it to carry to another computer.',
+  archiveOpen: 'Open in this workspace',
+  archiveSave: 'Save the archive',
+  archiveWriting: 'Writing…',
+  archiveFailed: 'The archive could not be written. The agent may have stopped since the walk finished.',
+  archiveImported: 'The walk is now in this workspace.',
+
   notYet: 'Reading only. Nothing changes on this computer until you confirm a specific folder by name.',
 
   actDelete: 'Delete…',
@@ -198,6 +206,14 @@ const fa: Record<AgentMessageKey, string> = {
   copied: 'کپی شد',
   protectedItem: 'محافظت‌شده',
   noResults: 'برای آن پیمایش چیزی ذخیره نشد.',
+
+  archiveBody:
+    'جدول، صد مورد بزرگ را روی یک اتصال زنده نشان می‌دهد. آرشیو، تمام پیمایش در یک فایل است — همین‌جا بازش کنید تا بماند، یا ذخیره‌اش کنید تا به کامپیوتر دیگری ببرید.',
+  archiveOpen: 'باز کردن در این فضای کاری',
+  archiveSave: 'ذخیرهٔ آرشیو',
+  archiveWriting: 'در حال نوشتن…',
+  archiveFailed: 'آرشیو نوشته نشد. ممکن است Agent بعد از پایان پیمایش متوقف شده باشد.',
+  archiveImported: 'پیمایش اکنون در این فضای کاری است.',
 
   notYet: 'فقط خواندن. تا وقتی یک پوشهٔ مشخص را با نامش تأیید نکنید، هیچ‌چیز روی این کامپیوتر تغییر نمی‌کند.',
 

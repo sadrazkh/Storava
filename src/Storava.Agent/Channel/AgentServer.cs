@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +13,7 @@ using Storava.Agent.Identity;
 using Storava.Agent.Scanning;
 using Storava.Application.Abstractions;
 using Storava.Contracts.Agent;
+using Storava.Contracts.Workspace;
 using Storava.Infrastructure;
 using Storava.Infrastructure.Persistence;
 using Storava.Migrations;
@@ -101,11 +103,16 @@ public sealed class AgentServer(
         builder.Services.AddCors(options => options.AddPolicy(CorsPolicy, policy => policy
             .WithOrigins(_allowedOrigin)
             .WithMethods("GET", "POST")
-            .WithHeaders("Authorization", "Content-Type")));
+            .WithHeaders("Authorization", "Content-Type")
+            // The archive download names itself here. Without exposing it the page can read the
+            // bytes but not what to call them, and every download would be "download".
+            .WithExposedHeaders("Content-Disposition")));
 
         // The scanner, the rule catalog and the storage are the desktop application's, unchanged.
         // The Agent is a different caller for them, not a second implementation.
-        builder.Services.AddStoravaInfrastructure(scanDatabasePath ?? AgentPaths.ScanDatabase);
+        builder.Services.AddStoravaInfrastructure(
+            scanDatabasePath ?? AgentPaths.ScanDatabase,
+            ArchiveIdentity.Agent);
         builder.Services.AddStoravaPlatform(AgentPaths.SecretsDirectory);
         builder.Services.AddStoravaRules<SqliteScanItemSinkFactory>();
         // Execution decides whether a step may run; the platform layer above provides the only
@@ -214,6 +221,45 @@ public sealed class AgentServer(
 
             var items = await scans.ItemsAsync(scanId, limit, foldersOnly, cancellationToken);
             return items is null ? Results.NotFound() : Results.Json(items);
+        });
+
+        // A walk the Agent ran, written as the same .storava file the desktop application writes
+        // and the page can read. It is what stops an agent scan from being trapped in this process:
+        // the archive is the one format all three editions already agree on.
+        app.MapGet($"{AgentScanPaths.Scans}/{{scanId}}/archive", async (
+            HttpContext context,
+            string scanId,
+            AgentScanService scans,
+            CancellationToken cancellationToken) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            string? path = await scans.WriteArchiveAsync(
+                scanId,
+                CultureInfo.CurrentUICulture.Name,
+                cancellationToken);
+
+            if (path is null)
+                return Results.NotFound();
+
+            // Opened with DeleteOnClose so the temporary file goes away once the response has been
+            // written — including when the download is abandoned half-way, which a delete after
+            // the send would never reach.
+            var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 64 * 1024,
+                FileOptions.DeleteOnClose | FileOptions.Asynchronous);
+
+            return Results.Stream(
+                stream,
+                contentType: "application/octet-stream",
+                fileDownloadName: scans.ArchiveFileName(scanId),
+                enableRangeProcessing: false);
         });
 
         // The only two endpoints that can change the disk. Both need a pass like everything else,

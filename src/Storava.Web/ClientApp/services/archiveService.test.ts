@@ -22,6 +22,17 @@ async function desktopArchive(): Promise<File> {
   return new File([bytes], 'desktop-v2.storava', { type: 'application/zip' });
 }
 
+/**
+ * The same arrangement for the companion Agent, whose fixture its own test suite writes by
+ * downloading one over the wire. Refresh it with
+ * STORAVA_REFRESH_FIXTURES=1 dotnet test tests/Storava.Agent.Tests.
+ */
+async function agentArchive(): Promise<File> {
+  const path = resolve(process.cwd(), 'ClientApp/test/fixtures/agent-v2.storava');
+  const bytes = await readFile(path);
+  return new File([bytes], 'agent-v2.storava', { type: 'application/zip' });
+}
+
 function session(overrides: Partial<ScanSession> = {}): ScanSession {
   return {
     id: 'session-1',
@@ -60,6 +71,44 @@ function item(overrides: Partial<ScanItem> = {}): ScanItem {
     ...overrides,
   };
 }
+
+/**
+ * A walk of a real machine that this page cannot perform and did not write. The Agent is the only
+ * producer whose archives arrive over HTTP rather than from a file the user picked, so a reader
+ * that quietly assumed the desktop was the only other edition would fail exactly here.
+ */
+describe('reading an archive the companion agent wrote', () => {
+  beforeEach(async () => {
+    await clearAllLocalData();
+  });
+
+  it('recognises the agent as the edition that wrote it', async () => {
+    const summary = await inspectArchive(await agentArchive());
+
+    expect(summary.manifest.producedBy).toBe('Agent');
+    expect(summary.manifest.schemaVersion).toBe(2);
+    expect(summary.pathKind).toBe('Absolute');
+  });
+
+  it('imports a walk of a real machine into this workspace', async () => {
+    const imported = await importArchive(await agentArchive());
+
+    expect(imported.status).toBe('imported');
+    expect(imported.metrics.files).toBeGreaterThan(0);
+    expect(imported.topItems.length).toBeGreaterThan(0);
+
+    // Absolute paths, from a file system no browser can reach.
+    expect(imported.topItems.some((entry) => /^[A-Za-z]:\\/.test(entry.relativePath))).toBe(true);
+  });
+
+  it('brings the local rule catalog with it', async () => {
+    const imported = await importArchive(await agentArchive());
+    const cache = imported.topItems.find((entry) => entry.name === 'node_modules');
+
+    expect(cache).toBeDefined();
+    expect(cache!.ruleIds.length).toBeGreaterThan(0);
+  });
+});
 
 describe('reading an archive the desktop edition wrote', () => {
   beforeEach(async () => {

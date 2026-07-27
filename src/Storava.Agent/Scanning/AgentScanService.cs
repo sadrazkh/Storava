@@ -5,6 +5,7 @@ using Storava.Application.Abstractions;
 using Storava.Application.Scanning;
 using Storava.Application.Services;
 using Storava.Contracts.Agent;
+using Storava.Contracts.Workspace;
 using Storava.Domain.Enums;
 
 namespace Storava.Agent.Scanning;
@@ -22,6 +23,7 @@ namespace Storava.Agent.Scanning;
 public sealed class AgentScanService(
     ScanCoordinator coordinator,
     IScanQueryService query,
+    IWorkspaceArchiveService archives,
     ILogger<AgentScanService> logger)
 {
     /// <summary>Bounded so a page cannot ask for a million rows in one response.</summary>
@@ -122,6 +124,74 @@ public sealed class AgentScanService(
             item.IsReparsePoint,
             item.CanDelete,
             item.CanMove)).ToList());
+    }
+
+    /// <summary>
+    /// Writes a finished walk to a portable <c>.storava</c> file and hands back where it went, so
+    /// the caller can stream it and then delete it.
+    /// <para>
+    /// A temporary file rather than a buffer: a walk of a whole drive is millions of rows, and the
+    /// archive writer streams them precisely so the tree is never held in memory. Building it into
+    /// a byte array to serve it would undo that at the last step.
+    /// </para>
+    /// </summary>
+    public async Task<string?> WriteArchiveAsync(
+        string scanId,
+        string culture,
+        CancellationToken cancellationToken)
+    {
+        if (!_runs.TryGetValue(scanId, out var run) || run.State != AgentScanState.Completed)
+            return null;
+
+        if (run.SessionId is not { Length: > 0 } sessionId)
+            return null;
+
+        string path = Path.Combine(
+            Path.GetTempPath(),
+            $"storava-agent-{Guid.NewGuid():N}{StoravaArchiveEntries.Extension}");
+
+        var written = await archives.ExportAsync(sessionId, path, culture, null, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (written.IsFailure)
+        {
+            logger.LogWarning("Writing an archive for {ScanId} failed: {Code}.", scanId, written.Error.Code);
+            TryDelete(path);
+            return null;
+        }
+
+        return path;
+    }
+
+    /// <summary>A readable name for the download, built from the folder that was walked.</summary>
+    public string ArchiveFileName(string scanId)
+    {
+        string root = _runs.TryGetValue(scanId, out var run) ? run.RootPath : "scan";
+        string leaf = Path.GetFileName(Path.TrimEndingDirectorySeparator(root));
+
+        if (string.IsNullOrWhiteSpace(leaf))
+        {
+            // A drive root has no leaf name, so "C:\" becomes "C".
+            leaf = root.Replace(":", string.Empty).Replace("\\", string.Empty).Replace("/", string.Empty);
+        }
+
+        foreach (char invalid in Path.GetInvalidFileNameChars())
+            leaf = leaf.Replace(invalid, '-');
+
+        leaf = leaf.Trim('-', ' ');
+        return $"storava-{(leaf.Length > 0 ? leaf : "scan")}{StoravaArchiveEntries.Extension}";
+    }
+
+    internal static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
     }
 
     /// <summary>
