@@ -442,6 +442,64 @@
     cursor: pointer;
 }
 
+/* Pairing a companion Agent: the code is read off this screen and typed on another machine, so
+   it is set large, spaced and selectable rather than styled as decoration. */
+.account-pairing {
+    margin: .9rem 0;
+    padding: 1rem;
+    border: 1px dashed color-mix(in srgb, var(--pine) 30%, transparent);
+    border-radius: .9rem;
+    background: color-mix(in srgb, var(--lime) 22%, transparent);
+}
+
+.account-pairing-label {
+    display: block;
+    color: var(--muted);
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.account-pairing-code {
+    display: block;
+    margin: .5rem 0;
+    color: var(--ink);
+    font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    /* Always left-to-right: the code is not language text, and in Persian the dashed groups
+       would otherwise be reordered and mistyped. */
+    direction: ltr;
+    unicode-bidi: isolate;
+    user-select: all;
+}
+
+.account-pairing-help,
+.account-pairing-meta,
+.account-pairing-note {
+    margin: .35rem 0 0;
+    color: var(--muted);
+    font-size: .67rem;
+    line-height: 1.5;
+}
+
+.account-pairing-form {
+    margin-top: .9rem;
+}
+
+.account-pairing-form .account-revoke {
+    border-color: color-mix(in srgb, var(--pine) 35%, transparent);
+    color: var(--pine);
+}
+
+.account-session-meta code {
+    font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
 @media (max-width: 960px) {
     .account-page {
         display: block;

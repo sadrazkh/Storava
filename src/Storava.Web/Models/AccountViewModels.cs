@@ -64,7 +64,14 @@ public sealed record AccountDeviceViewModel(
     string DisplayName,
     string DeviceType,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset LastSeenAtUtc);
+    DateTimeOffset LastSeenAtUtc,
+    string KeyFingerprint);
+
+/// <summary>
+/// A pairing code, shown once immediately after it is generated. The server keeps only a hash, so
+/// leaving this page means the code cannot be shown again — a new one has to be generated.
+/// </summary>
+public sealed record PairingCodeViewModel(string Code, DateTimeOffset ExpiresAtUtc);
 
 public sealed record AccountIndexViewModel(
     string DisplayName,
@@ -74,7 +81,8 @@ public sealed record AccountIndexViewModel(
     DateTimeOffset CreatedAtUtc,
     IReadOnlyList<AccountSessionViewModel> Sessions,
     IReadOnlyList<AccountDeviceViewModel> Devices,
-    long RecordedUsageUnits);
+    long RecordedUsageUnits,
+    PairingCodeViewModel? PairingCode = null);
 
 public sealed record CheckEmailViewModel(
     bool DeliverySucceeded,

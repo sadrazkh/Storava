@@ -15,7 +15,16 @@ public sealed class HomeController : Controller
     [HttpGet("/scan")]
     public IActionResult Scan() => View();
 
-    [HttpGet("/Home/Error")]
+    /// <summary>
+    /// The localized error surface, also re-executed by the status-code-pages middleware.
+    /// <para>
+    /// That re-execution keeps the original request's method, so a form post that is rate limited
+    /// or rejected arrives here as a POST. Answering only GET turned every such rejection into an
+    /// empty 405 that hid the real status, which is why this accepts both.
+    /// </para>
+    /// </summary>
+    [AcceptVerbs("GET", "POST", Route = "/Home/Error")]
+    [IgnoreAntiforgeryToken]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(int? statusCode = null)
     {

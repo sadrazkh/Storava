@@ -14,6 +14,8 @@ public sealed class ApplicationDbContext(
 
     public DbSet<UsageLedgerEntry> UsageLedger => Set<UsageLedgerEntry>();
 
+    public DbSet<DevicePairingCode> DevicePairingCodes => Set<DevicePairingCode>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -41,11 +43,27 @@ public sealed class ApplicationDbContext(
             entity.Property(device => device.DisplayName).HasMaxLength(120);
             entity.Property(device => device.DeviceType).HasMaxLength(48);
             entity.Property(device => device.PublicKeyThumbprint).HasMaxLength(128);
+            entity.Property(device => device.PublicKey).HasMaxLength(512);
+            entity.Property(device => device.ChannelSecretProtected).HasMaxLength(1024);
+            entity.Ignore(device => device.IsActive);
             entity.HasIndex(device => new { device.UserId, device.RevokedAtUtc });
             entity.HasIndex(device => device.PublicKeyThumbprint).IsUnique();
             entity.HasOne(device => device.User)
                 .WithMany(user => user.Devices)
                 .HasForeignKey(device => device.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DevicePairingCode>(entity =>
+        {
+            entity.Property(code => code.CodeHash).HasMaxLength(64);
+            entity.Ignore(code => code.IsSpent);
+            // Redemption looks a code up by its hash alone, before any user is known.
+            entity.HasIndex(code => code.CodeHash).IsUnique();
+            entity.HasIndex(code => code.ExpiresAtUtc);
+            entity.HasOne(code => code.User)
+                .WithMany(user => user.PairingCodes)
+                .HasForeignKey(code => code.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

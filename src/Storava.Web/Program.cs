@@ -96,13 +96,17 @@ try
         })
         .AddEntityFrameworkStores<ApplicationDbContext>()
         .AddDefaultTokenProviders();
+    // Cookie naming depends on the transport, not on taste: the __Host- prefix is only valid on a
+    // Secure cookie, so it can only be used where the site is actually served over https.
+    var productionCookies = !builder.Environment.IsDevelopment() &&
+        !string.Equals(
+            builder.Environment.EnvironmentName,
+            "Testing",
+            StringComparison.OrdinalIgnoreCase);
+
     builder.Services.ConfigureApplicationCookie(options =>
     {
-        var productionCookie = !builder.Environment.IsDevelopment() &&
-            !string.Equals(
-                builder.Environment.EnvironmentName,
-                "Testing",
-                StringComparison.OrdinalIgnoreCase);
+        var productionCookie = productionCookies;
         options.Cookie.Name = productionCookie
             ? "__Host-Storava.Auth"
             : "Storava.Auth";
@@ -150,6 +154,7 @@ try
     }
 
     builder.Services.AddScoped<IAccountSessionService, AccountSessionService>();
+    builder.Services.AddScoped<IDevicePairingService, DevicePairingService>();
     builder.Services.AddScoped<IAccountEmailSender, AccountEmailSender>();
     builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
@@ -178,10 +183,18 @@ try
 
     builder.Services.AddAntiforgery(options =>
     {
-        options.Cookie.Name = "__Host-Storava.Antiforgery";
+        // The __Host- prefix is only valid on a cookie that is also Secure, and a browser drops
+        // one that is not. Over plain http — which is how development and the integration host
+        // run — that meant the antiforgery cookie was never stored and every form post came back
+        // as a rejected 400. The application cookie above switches names for the same reason.
+        options.Cookie.Name = productionCookies
+            ? "__Host-Storava.Antiforgery"
+            : "Storava.Antiforgery";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Strict;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SecurePolicy = productionCookies
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
         options.HeaderName = "X-Storava-Antiforgery";
     });
 
@@ -200,12 +213,16 @@ try
                     QueueLimit = 0,
                     AutoReplenishment = true
                 }));
+        // Sign-in, registration, reset and device pairing share one tighter bucket: they are the
+        // endpoints worth guessing at. Configurable so a test host or an office behind one NAT
+        // address is not throttled as though it were an attacker.
+        var accountPermit = builder.Configuration.GetValue("WebSecurity:AccountRateLimitPermit", 10);
         options.AddPolicy("account", context =>
             RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 10,
+                    PermitLimit = accountPermit,
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0,
                     AutoReplenishment = true

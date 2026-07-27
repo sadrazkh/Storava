@@ -66,8 +66,15 @@
   <data name="AccountExpires" xml:space="preserve"><value>Expires</value></data>
   <data name="AccountRevoke" xml:space="preserve"><value>Revoke</value></data>
   <data name="AccountDevices" xml:space="preserve"><value>Connected devices</value></data>
-  <data name="AccountDevicesBody" xml:space="preserve"><value>Companion Agent devices will appear here after secure pairing in the next phase.</value></data>
+  <data name="AccountDevicesBody" xml:space="preserve"><value>A companion Agent runs on your own computer and can see the file system a browser cannot. Pairing records that the Agent exists — never what it finds.</value></data>
   <data name="AccountNoDevices" xml:space="preserve"><value>No companion device is paired yet.</value></data>
+  <data name="AgentPairDevice" xml:space="preserve"><value>Connect a computer</value></data>
+  <data name="AgentPairingCodeLabel" xml:space="preserve"><value>Type this into the Agent</value></data>
+  <data name="AgentPairingCodeHelp" xml:space="preserve"><value>Run "storava-agent pair" on the computer you want to connect and enter this code. It is shown once and pairs exactly one machine.</value></data>
+  <data name="AgentPairingCodeExpires" xml:space="preserve"><value>Expires at</value></data>
+  <data name="AgentDeviceFingerprint" xml:space="preserve"><value>Key</value></data>
+  <data name="AgentDeviceRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="AgentPairingBoundary" xml:space="preserve"><value>Your scans still never reach this server. A paired Agent talks to the browser on the same machine; the server only knows the Agent exists and can be told to forget it.</value></data>
   <data name="AccountUsage" xml:space="preserve"><value>Usage ledger</value></data>
   <data name="AccountUsageBody" xml:space="preserve"><value>The ledger is ready for future metering. Direct BYOK requests are not billed or counted by Storava.</value></data>
   <data name="AccountUsageUnits" xml:space="preserve"><value>Recorded units</value></data>

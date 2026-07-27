@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -17,6 +18,7 @@ public sealed class AccountController(
     SignInManager<ApplicationUser> signInManager,
     ApplicationDbContext database,
     IAccountSessionService sessionService,
+    IDevicePairingService pairing,
     IAccountEmailSender emailSender,
     IOptions<AccountEmailOptions> emailOptions,
     IWebHostEnvironment environment,
@@ -269,18 +271,14 @@ public sealed class AccountController(
 
         var currentSessionId = sessionService.GetCurrentSessionId(User);
         var sessions = await sessionService.ListAsync(user.Id, cancellationToken);
-        var deviceRecords = await database.UserDevices
-            .AsNoTracking()
-            .Where(device => device.UserId == user.Id && device.RevokedAtUtc == null)
-            .ToListAsync(cancellationToken);
-        var devices = deviceRecords
-            .OrderByDescending(device => device.LastSeenAtUtc)
+        var devices = (await pairing.ListAsync(user.Id, cancellationToken))
             .Select(device => new AccountDeviceViewModel(
                 device.Id,
                 device.DisplayName,
                 device.DeviceType,
                 device.CreatedAtUtc,
-                device.LastSeenAtUtc))
+                device.LastSeenAtUtc,
+                Fingerprint(device.PublicKeyThumbprint)))
             .ToList();
         var usage = await database.UsageLedger
             .Where(entry => entry.UserId == user.Id)
@@ -300,8 +298,77 @@ public sealed class AccountController(
                 session.ExpiresAtUtc,
                 session.Id == currentSessionId)).ToList(),
             devices,
-            usage));
+            usage,
+            ReadPairingCode()));
     }
+
+    /// <summary>
+    /// Generates the code the user types into the Agent on the machine they want to connect. It is
+    /// carried to the redirect and shown once: the server stores only a hash, so it genuinely
+    /// cannot be shown again.
+    /// </summary>
+    [Authorize]
+    [EnableRateLimiting("account")]
+    [HttpPost("/account/devices/pair")]
+    public async Task<IActionResult> PairDevice(CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        string code = await pairing.IssueCodeAsync(user.Id, cancellationToken);
+        TempData[PairingCodeKey] = code;
+        TempData[PairingExpiryKey] = timeProvider
+            .GetUtcNow()
+            .Add(DevicePairingService.CodeLifetime)
+            .ToString("O");
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize]
+    [EnableRateLimiting("account")]
+    [HttpPost("/account/devices/{deviceId:guid}/revoke")]
+    public async Task<IActionResult> RevokeDevice(Guid deviceId, CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Challenge();
+        }
+
+        await pairing.RevokeAsync(user.Id, deviceId, cancellationToken);
+        return RedirectToAction(nameof(Index));
+    }
+
+    private const string PairingCodeKey = "Storava.PairingCode";
+    private const string PairingExpiryKey = "Storava.PairingCodeExpiry";
+
+    private PairingCodeViewModel? ReadPairingCode()
+    {
+        if (TempData[PairingCodeKey] is not string code || string.IsNullOrWhiteSpace(code))
+        {
+            return null;
+        }
+
+        var expiresAt = TempData[PairingExpiryKey] is string raw &&
+            DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : timeProvider.GetUtcNow().Add(DevicePairingService.CodeLifetime);
+
+        return new PairingCodeViewModel(code, expiresAt);
+    }
+
+    /// <summary>
+    /// A short, readable slice of the device's key hash. Enough for the user to tell two machines
+    /// apart and to check the Agent is showing the same one — not enough to be a secret.
+    /// </summary>
+    private static string Fingerprint(string thumbprint) =>
+        thumbprint.Length < 16 ? thumbprint : string.Join(' ', Enumerable
+            .Range(0, 4)
+            .Select(index => thumbprint.Substring(index * 4, 4)));
 
     [Authorize]
     [EnableRateLimiting("account")]

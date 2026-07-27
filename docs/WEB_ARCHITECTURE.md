@@ -160,3 +160,51 @@ security middleware. No scanned metadata or file upload endpoint was introduced.
 - Copied browser addresses are normalized and de-duplicate legacy root segments. The UI calls
   them browser-relative and explains that only the Phase 8 companion Agent can provide an
   operating-system absolute path.
+
+## Phase 8 — the companion Agent
+
+### Why the Agent talks to the browser, not to the server
+
+The browser can only see a folder the user picked, and only ever knows a path relative to it. An
+Agent running on the machine has the whole file system and real operating-system paths. The
+question is how the page reaches it.
+
+Relaying through the Storava server was rejected: it would mean scan data crossing a boundary this
+project has kept closed since Phase 1, and no amount of encryption changes the fact that the tree
+would leave the machine. The Agent therefore listens on loopback and the page talks to it
+directly. The server is never in that path.
+
+That choice has a cost worth stating plainly. Since **Chrome 142** (October 2025), a request from a
+public site to `127.0.0.1` is governed by **Local Network Access** and raises a permission prompt;
+the older Private Network Access preflight headers are gone. Permission-gated local requests are
+exempt from mixed-content blocking, and `upgrade-insecure-requests` does not apply to loopback,
+which is a secure context — so an `https://` page can reach an `http://` Agent, once the user
+agrees. `connect-src` in the security headers has to name the Agent origin for this to work at all.
+
+### Pairing (implemented)
+
+- The Agent generates a P-256 key pair on first run. The private half is encrypted with Windows
+  DPAPI under `%LOCALAPPDATA%\Storava\Agent` and never leaves the machine; only the public half is
+  presented. Copying the file to another machine or Windows account yields nothing.
+- The user generates a code on the account page and types it into `storava-agent pair`. The code
+  is stored only as a SHA-256 hash, expires in ten minutes, and is spent exactly once — a code that
+  leaks in a screenshot cannot attach a second machine. Generating a new code retires the old one.
+- Redemption creates the device row and returns a 32-byte channel secret, once. The server keeps
+  its copy encrypted with the application data-protection key, so a database dump alone cannot mint
+  a token the Agent would accept. The secret is per device: one leak reaches one machine.
+- Removing a device destroys that secret rather than setting a flag, which is what makes revocation
+  real. `unpair` clears the Agent's own identity so a removed machine cannot re-present a key the
+  server still has on file.
+- Identity and channel authentication are deliberately separate concerns, so either can be rotated
+  without the other.
+
+`POST /api/agent/pair` is the entire server surface an Agent talks to, and it is anonymous by
+necessity — a native process holds no antiforgery cookie — so it is rate limited and protected by
+the code itself. No path, no drive, no scan and no file crosses it in either direction. The device
+row records that an Agent exists, what to call it, and whether it is still allowed.
+
+### Not yet built
+
+The loopback listener, the browser-issued access token, drive and scan endpoints, and local
+actions are the remaining stages. Until they land, a paired Agent does nothing but exist and can
+be removed; the page still says browser-relative, because that is still all it can offer.

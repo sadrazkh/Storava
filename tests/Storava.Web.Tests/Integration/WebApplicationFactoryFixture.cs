@@ -22,7 +22,12 @@ public sealed class WebApplicationFactoryFixture : WebApplicationFactory<Program
                 ["Database:ApplyMigrations"] = "true",
                 ["ConnectionStrings:AccountDatabase"] = $"Data Source={_databasePath}",
                 ["AccountEmail:DeliveryMode"] = "Development",
-                ["AccountEmail:PublicBaseUrl"] = "https://accounts.storava.test"
+                ["AccountEmail:PublicBaseUrl"] = "https://accounts.storava.test",
+                // Every test in a class shares one loopback address, so the production per-IP
+                // account limit would throttle the suite rather than the behaviour under test.
+                // Rate limiting itself is covered by its own test, which sets its own limit.
+                ["WebSecurity:AccountRateLimitPermit"] = "10000",
+                ["WebSecurity:RateLimitPermit"] = "10000"
             });
         });
     }

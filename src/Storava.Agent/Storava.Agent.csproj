@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Windows-targeted so the Agent can reuse the same DPAPI secret store and, from the next
+         stage, the same disk scanner the desktop app runs. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Storava.Agent</RootNamespace>
+    <AssemblyName>storava-agent</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Storava.Agent.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Storava.Application\Storava.Application.csproj" />
+    <ProjectReference Include="..\Storava.Platform\Storava.Platform.csproj" />
+  </ItemGroup>
+
+</Project>

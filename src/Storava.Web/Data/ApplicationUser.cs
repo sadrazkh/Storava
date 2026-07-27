@@ -22,5 +22,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>
 
     public ICollection<UserDevice> Devices { get; } = [];
 
+    public ICollection<DevicePairingCode> PairingCodes { get; } = [];
+
     public ICollection<UsageLedgerEntry> UsageEntries { get; } = [];
 }

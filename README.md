@@ -5,7 +5,9 @@ reclaim it. It **only analyzes, advises and plans** — no file or folder is eve
 moved or renamed without your explicit selection and confirmation. The AI advisor can
 recommend, but it can never act.
 
-> Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) · **Storava Web / Phase 7** (complete).
+> Status: **Desktop Phase 7 — Portable archives & resumable scans** (complete) ·
+> **Storava Web / Phase 7** (complete) · **Phase 8 — companion Agent** (pairing complete;
+> loopback channel, scanning and local actions still to come).
 
 ## Tech stack
 
@@ -27,6 +29,7 @@ src/
   Storava.Reporting       # report model and HTML/JSON/CSV writers
   Storava.App             # WPF UI: shell, design system, localization, pages
   Storava.Web             # browser edition (ASP.NET Core MVC + Vue islands)
+  Storava.Agent           # companion Agent: the local process the browser edition pairs with
 tests/                    # one xUnit project per layer above
 ```
 
@@ -76,6 +79,30 @@ docker compose up --build
 Set `STORAVA_DB_PASSWORD`, `STORAVA_PUBLIC_BASE_URL`, and the `STORAVA_SMTP_*` variables for
 confirmation and password-reset email. The production container is then available at
 `http://localhost:8080`.
+
+## Companion Agent
+
+A browser can only see the folder you picked, and only ever knows a path relative to it. The
+Agent runs on your own machine, so it has the real file system — and it talks to the Storava page
+in your browser over loopback rather than through the server, because a scan that went through the
+server would be a scan that left your machine.
+
+Pairing is implemented. Generate a code on your account page and, on the machine you want to
+connect:
+
+```bash
+dotnet run --project src/Storava.Agent/Storava.Agent.csproj -- pair --server https://storava.example
+```
+
+The Agent generates a key pair locally and presents only the public half; the private key is
+encrypted with Windows DPAPI under `%LOCALAPPDATA%\Storava\Agent`. Codes are stored only as a
+hash, last ten minutes, and pair exactly one machine. `storava-agent status` prints the key
+fingerprint to compare against the account page, and `storava-agent unpair` forgets the pairing
+locally — removing the device on the account page destroys the secret that would let a browser
+reach it at all.
+
+Nothing about the machine's contents reaches the server: pairing records that an Agent exists,
+what to call it, and whether it is still allowed.
 
 ## Run
 

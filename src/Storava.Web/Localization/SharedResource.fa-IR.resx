@@ -66,8 +66,15 @@
   <data name="AccountExpires" xml:space="preserve"><value>انقضا</value></data>
   <data name="AccountRevoke" xml:space="preserve"><value>لغو نشست</value></data>
   <data name="AccountDevices" xml:space="preserve"><value>دستگاه‌های متصل</value></data>
-  <data name="AccountDevicesBody" xml:space="preserve"><value>Agentهای همراه پس از اتصال امن در فاز بعد اینجا نمایش داده می‌شوند.</value></data>
+  <data name="AccountDevicesBody" xml:space="preserve"><value>Agent همراه روی کامپیوتر خودتان اجرا می‌شود و فایل‌سیستمی را می‌بیند که مرورگر نمی‌بیند. اتصال فقط ثبت می‌کند که این Agent وجود دارد — نه چیزی که پیدا می‌کند.</value></data>
   <data name="AccountNoDevices" xml:space="preserve"><value>هنوز دستگاه همراهی متصل نشده است.</value></data>
+  <data name="AgentPairDevice" xml:space="preserve"><value>اتصال یک کامپیوتر</value></data>
+  <data name="AgentPairingCodeLabel" xml:space="preserve"><value>این را در Agent وارد کنید</value></data>
+  <data name="AgentPairingCodeHelp" xml:space="preserve"><value>روی کامپیوتری که می‌خواهید وصل شود «storava-agent pair» را اجرا کنید و این کد را وارد کنید. این کد یک بار نمایش داده می‌شود و دقیقاً یک دستگاه را وصل می‌کند.</value></data>
+  <data name="AgentPairingCodeExpires" xml:space="preserve"><value>انقضا در</value></data>
+  <data name="AgentDeviceFingerprint" xml:space="preserve"><value>کلید</value></data>
+  <data name="AgentDeviceRemove" xml:space="preserve"><value>حذف</value></data>
+  <data name="AgentPairingBoundary" xml:space="preserve"><value>اسکن‌های شما همچنان هرگز به این سرور نمی‌رسند. Agent متصل با مرورگرِ همان دستگاه حرف می‌زند؛ سرور فقط می‌داند که Agent وجود دارد و می‌تواند آن را فراموش کند.</value></data>
   <data name="AccountUsage" xml:space="preserve"><value>دفتر مصرف</value></data>
   <data name="AccountUsageBody" xml:space="preserve"><value>زیرساخت ثبت مصرف برای آینده آماده است. درخواست‌های مستقیم BYOK توسط استوراوا محاسبه یا صورتحساب نمی‌شوند.</value></data>
   <data name="AccountUsageUnits" xml:space="preserve"><value>واحد ثبت‌شده</value></data>

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Storava.Agent/Storava.Agent.csproj" />
     <Project Path="src/Storava.AI/Storava.AI.csproj" />
     <Project Path="src/Storava.App/Storava.App.csproj" />
     <Project Path="src/Storava.Application/Storava.Application.csproj" />
@@ -13,6 +14,7 @@
     <Project Path="src/Storava.Web/Storava.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Storava.Agent.Tests/Storava.Agent.Tests.csproj" />
     <Project Path="tests/Storava.AI.Tests/Storava.AI.Tests.csproj" />
     <Project Path="tests/Storava.Application.Tests/Storava.Application.Tests.csproj" />
     <Project Path="tests/Storava.App.Tests/Storava.App.Tests.csproj" />

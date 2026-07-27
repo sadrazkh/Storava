@@ -76,6 +76,19 @@
                     <section class="account-section">
                         <h3>@T["AccountDevices"]</h3>
                         <p>@T["AccountDevicesBody"]</p>
+
+                        @if (Model.PairingCode is { } pairing)
+                        {
+                            <div class="account-pairing">
+                                <span class="account-pairing-label">@T["AgentPairingCodeLabel"]</span>
+                                <code class="account-pairing-code">@pairing.Code</code>
+                                <p class="account-pairing-help">@T["AgentPairingCodeHelp"]</p>
+                                <p class="account-pairing-meta">
+                                    @T["AgentPairingCodeExpires"]: @pairing.ExpiresAtUtc.ToLocalTime().ToString("t")
+                                </p>
+                            </div>
+                        }
+
                         @if (Model.Devices.Count == 0)
                         {
                             <strong>@T["AccountNoDevices"]</strong>
@@ -84,12 +97,25 @@
                         {
                             @foreach (var device in Model.Devices)
                             {
-                                <div class="account-session">
-                                    <strong>@device.DisplayName</strong>
-                                    <span class="account-session-meta">@device.DeviceType</span>
-                                </div>
+                                <article class="account-session">
+                                    <div>
+                                        <strong>@device.DisplayName</strong>
+                                        <div class="account-session-meta">
+                                            <span>@T["AgentDeviceFingerprint"]: <code>@device.KeyFingerprint</code></span>
+                                            <span>@T["AccountLastSeen"]: @device.LastSeenAtUtc.ToLocalTime().ToString("g")</span>
+                                        </div>
+                                    </div>
+                                    <form asp-action="RevokeDevice" asp-route-deviceId="@device.Id" method="post">
+                                        <button class="account-revoke" type="submit">@T["AgentDeviceRemove"]</button>
+                                    </form>
+                                </article>
                             }
                         }
+
+                        <form asp-action="PairDevice" method="post" class="account-pairing-form">
+                            <button class="account-revoke" type="submit">@T["AgentPairDevice"]</button>
+                        </form>
+                        <p class="account-pairing-note">@T["AgentPairingBoundary"]</p>
                     </section>
                     <section class="account-section">
                         <h3>@T["AccountUsage"]</h3>
