@@ -17,7 +17,7 @@
 
             <!-- Hero -->
             <Border Grid.Row="0" CornerRadius="{StaticResource Radius.Card}"
-                    Background="{StaticResource Storava.Brush.Hero}" Padding="32,30">
+                    Background="{DynamicResource Storava.Brush.Hero}" Padding="32,30">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Border Width="46" Height="46" CornerRadius="12" Background="#22FFFFFF">
@@ -57,7 +57,7 @@
                             Background="{DynamicResource MaterialDesignSelection}">
                         <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="26" Height="26"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                 Foreground="{StaticResource Storava.Brush.Success}" />
+                                                 Foreground="{DynamicResource Storava.Brush.Success}" />
                     </Border>
                     <StackPanel Grid.Column="1" Margin="16,0,0,0">
                         <TextBlock Text="{DynamicResource Str.Welcome.Safety.Title}"
@@ -84,7 +84,7 @@
                 <Border Style="{StaticResource Storava.Card}" Margin="8,0,8,0">
                     <StackPanel>
                         <materialDesign:PackIcon Kind="LightbulbOnOutline" Width="30" Height="30"
-                                                 Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                 Foreground="{DynamicResource Storava.Brush.Warning}" />
                         <TextBlock Text="{DynamicResource Str.Welcome.Feature2.Title}"
                                    Style="{StaticResource Storava.Text.H2}" Margin="0,12,0,4" />
                         <TextBlock Text="{DynamicResource Str.Welcome.Feature2.Body}"
@@ -94,7 +94,7 @@
                 <Border Style="{StaticResource Storava.Card}" Margin="8,0,0,0">
                     <StackPanel>
                         <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="30" Height="30"
-                                                 Foreground="{StaticResource Storava.Brush.Success}" />
+                                                 Foreground="{DynamicResource Storava.Brush.Success}" />
                         <TextBlock Text="{DynamicResource Str.Welcome.Feature3.Title}"
                                    Style="{StaticResource Storava.Text.H2}" Margin="0,12,0,4" />
                         <TextBlock Text="{DynamicResource Str.Welcome.Feature3.Body}"

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Windows.Media;
 using Storava.App.Services;
 using Storava.Application.Abstractions;
 using Storava.Domain.Entities;
@@ -29,7 +28,7 @@ public sealed class MigrationPreflightModel
         ActionText = localization[$"Str.Plan.Action.{entry.Action}"];
         IsDelete = entry.Action == SuggestedAction.Delete;
         RiskText = localization[$"Str.Risk.{entry.RiskLevel}"];
-        RiskBrush = CategoryPalette.BrushForRisk(entry.RiskLevel);
+        Risk = entry.RiskLevel;
 
         CanRun = preflight.CanRun;
         // The measured size, not the one recorded by the scan — it is what the step would free now.
@@ -45,7 +44,12 @@ public sealed class MigrationPreflightModel
     public string ActionText { get; }
     public bool IsDelete { get; }
     public string RiskText { get; }
-    public Brush RiskBrush { get; }
+    /// <summary>
+    /// The level itself rather than a colour for it. A brush built here would be frozen at the
+    /// theme in force when the row was created, and would keep those colours when the user
+    /// switched; the tag style resolves the palette instead, and follows.
+    /// </summary>
+    public RiskLevel Risk { get; }
     public string SizeText { get; }
     public bool CanRun { get; }
     public string? BlockerText { get; }
@@ -72,7 +76,7 @@ public sealed class MigrationLogModel
         HasDestination = !string.IsNullOrWhiteSpace(step.DestinationPath);
         ActionText = localization[$"Str.Plan.Action.{step.Action}"];
         StatusText = localization[$"Str.Migration.Status.{step.Status}"];
-        StatusBrush = BrushForStatus(step.Status);
+        Risk = RiskForStatus(step.Status);
         FreedText = new ByteSize(step.BytesFreed).Humanize(culture);
         WasCompleted = step.Status == ExecutionStatus.Completed;
 
@@ -93,7 +97,12 @@ public sealed class MigrationLogModel
     public bool HasDestination { get; }
     public string ActionText { get; }
     public string StatusText { get; }
-    public Brush StatusBrush { get; }
+    /// <summary>
+    /// The outcome as a risk level, so one tag style colours every state. Named Risk, not
+    /// StatusRisk, because the tag style binds this name — under any other one the trigger simply
+    /// never fires and a failed step renders identically to a completed one.
+    /// </summary>
+    public RiskLevel Risk { get; }
     public string FreedText { get; }
     public bool WasCompleted { get; }
     public string? DetailText { get; }
@@ -103,11 +112,11 @@ public sealed class MigrationLogModel
     public string? LinkPath { get; }
     public bool HasLink { get; }
 
-    private static Brush BrushForStatus(ExecutionStatus status) => status switch
+    private static RiskLevel RiskForStatus(ExecutionStatus status) => status switch
     {
-        ExecutionStatus.Completed => CategoryPalette.BrushForRisk(RiskLevel.Low),
-        ExecutionStatus.Skipped => CategoryPalette.BrushForRisk(RiskLevel.Unknown),
-        ExecutionStatus.RolledBack => CategoryPalette.BrushForRisk(RiskLevel.Medium),
-        _ => CategoryPalette.BrushForRisk(RiskLevel.High)
+        ExecutionStatus.Completed => RiskLevel.Low,
+        ExecutionStatus.Skipped => RiskLevel.Unknown,
+        ExecutionStatus.RolledBack => RiskLevel.Medium,
+        _ => RiskLevel.High
     };
 }

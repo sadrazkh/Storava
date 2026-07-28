@@ -29,7 +29,7 @@
                 <!-- Brand -->
                 <Border DockPanel.Dock="Top" Padding="20,22,20,14">
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="40" Height="40" CornerRadius="11" Background="{StaticResource Storava.Brush.Hero}">
+                        <Border Width="40" Height="40" CornerRadius="11" Background="{DynamicResource Storava.Brush.Hero}">
                             <materialDesign:PackIcon Kind="HarddiskPlus" Width="22" Height="22"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" />
                         </Border>
@@ -92,7 +92,7 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Command="{Binding ToggleLanguageCommand}"
                                 Style="{StaticResource MaterialDesignOutlinedButton}"
-                                materialDesign:ButtonAssist.CornerRadius="999" Height="36" Padding="14,0" Margin="0,0,10,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" Height="36" Padding="14,0" Margin="0,0,10,0"
                                 ToolTip="{DynamicResource Str.Shell.ToggleLanguage}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Translate" VerticalAlignment="Center" Margin="0,0,6,0" />

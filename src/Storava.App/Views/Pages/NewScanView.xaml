@@ -89,8 +89,8 @@
 
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                             Visibility="{Binding HasError, Converter={StaticResource Conv.BoolVis}}">
-                    <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="{StaticResource Storava.Brush.Danger}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                    <TextBlock Text="{DynamicResource Str.NewScan.InvalidPath}" Foreground="{StaticResource Storava.Brush.Danger}" Style="{StaticResource Storava.Text.Body}" VerticalAlignment="Center" />
+                    <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="{DynamicResource Storava.Brush.Danger}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBlock Text="{DynamicResource Str.NewScan.InvalidPath}" Foreground="{DynamicResource Storava.Brush.Danger}" Style="{StaticResource Storava.Text.Body}" VerticalAlignment="Center" />
                 </StackPanel>
 
                 <Button HorizontalAlignment="Left" Command="{Binding StartScanCommand}"

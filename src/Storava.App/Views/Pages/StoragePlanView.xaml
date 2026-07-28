@@ -31,9 +31,9 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0"
                             Visibility="{Binding IsSaved, Converter={StaticResource Conv.BoolVis}}">
                     <materialDesign:PackIcon Kind="CheckCircle" VerticalAlignment="Center" Margin="0,0,6,0"
-                                             Foreground="{StaticResource Storava.Brush.Success}" />
+                                             Foreground="{DynamicResource Storava.Brush.Success}" />
                     <TextBlock Text="{DynamicResource Str.Plan.Saved}" Style="{StaticResource Storava.Text.Body}"
-                               Foreground="{StaticResource Storava.Brush.Success}" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource Storava.Brush.Success}" VerticalAlignment="Center" />
                 </StackPanel>
 
                 <Button Command="{Binding ClearCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
@@ -61,7 +61,7 @@
                 Visibility="{Binding HasSession, Converter={StaticResource Conv.BoolVis}}">
             <StackPanel Orientation="Horizontal">
                 <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="22" Height="22" VerticalAlignment="Top"
-                                         Margin="0,1,12,0" Foreground="{StaticResource Storava.Brush.Success}" />
+                                         Margin="0,1,12,0" Foreground="{DynamicResource Storava.Brush.Success}" />
                 <TextBlock Text="{DynamicResource Str.Plan.SafetyNote}" Style="{StaticResource Storava.Text.Body}"
                            TextWrapping="Wrap" MaxWidth="880" />
             </StackPanel>
@@ -119,8 +119,8 @@
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                                 <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.H2}"
                                                            VerticalAlignment="Center" />
-                                                <Border Style="{StaticResource Storava.Badge}" Background="{Binding RiskBrush}" Margin="10,0,0,0">
-                                                    <TextBlock Text="{Binding RiskText}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                                <Border Style="{StaticResource Storava.Badge.Risk}" Margin="10,0,0,0">
+                                                    <TextBlock Text="{Binding RiskText}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
                                                 <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
                                                         Background="{DynamicResource MaterialDesignChipBackground}">
@@ -142,7 +142,7 @@
                                                     Visibility="{Binding HasWarning, Converter={StaticResource Conv.BoolVis}}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <materialDesign:PackIcon Kind="AlertOutline" Width="16" Height="16" VerticalAlignment="Top"
-                                                                             Margin="0,2,8,0" Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                                             Margin="0,2,8,0" Foreground="{DynamicResource Storava.Brush.Warning}" />
                                                     <TextBlock Text="{Binding Warning}" Style="{StaticResource Storava.Text.Caption}"
                                                                TextWrapping="Wrap" MaxWidth="440" />
                                                 </StackPanel>
@@ -222,16 +222,16 @@
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
                                     Visibility="{Binding MeetsGoal, Converter={StaticResource Conv.BoolVis}}">
                             <materialDesign:PackIcon Kind="TargetVariant" VerticalAlignment="Center" Margin="0,0,6,0"
-                                                     Foreground="{StaticResource Storava.Brush.Success}" />
+                                                     Foreground="{DynamicResource Storava.Brush.Success}" />
                             <TextBlock Text="{DynamicResource Str.Plan.Goal.Met}" Style="{StaticResource Storava.Text.Body}"
-                                       Foreground="{StaticResource Storava.Brush.Success}" VerticalAlignment="Center" />
+                                       Foreground="{DynamicResource Storava.Brush.Success}" VerticalAlignment="Center" />
                         </StackPanel>
 
                         <Border CornerRadius="8" Padding="12,10" Margin="0,12,0,0" Background="#22EF4444"
                                 Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,8,0"
-                                                         Foreground="{StaticResource Storava.Brush.Danger}" />
+                                                         Foreground="{DynamicResource Storava.Brush.Danger}" />
                                 <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Caption}"
                                            TextWrapping="Wrap" MaxWidth="300" />
                             </StackPanel>
@@ -266,8 +266,8 @@
                                                     <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="SemiBold"
                                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
-                                                <Border Style="{StaticResource Storava.Badge}" Background="{Binding RiskBrush}">
-                                                    <TextBlock Text="{Binding ActionText}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                                <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                    <TextBlock Text="{Binding ActionText}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
                                                 <TextBlock Text="{Binding SizeText}" FontSize="12" FontWeight="SemiBold"
                                                            VerticalAlignment="Center" Margin="8,0,0,0"
@@ -283,7 +283,7 @@
                                                         Visibility="{Binding HasOfficialMethod, Converter={StaticResource Conv.BoolVis}}">
                                                 <materialDesign:PackIcon Kind="CheckDecagramOutline" Width="15" Height="15"
                                                                          VerticalAlignment="Top" Margin="0,2,6,0"
-                                                                         Foreground="{StaticResource Storava.Brush.Success}" />
+                                                                         Foreground="{DynamicResource Storava.Brush.Success}" />
                                                 <TextBlock Text="{DynamicResource Str.Plan.OfficialMethod}"
                                                            Style="{StaticResource Storava.Text.Caption}" />
                                             </StackPanel>
@@ -292,7 +292,7 @@
                                                         Visibility="{Binding NeedsLink, Converter={StaticResource Conv.BoolVis}}">
                                                 <materialDesign:PackIcon Kind="LinkVariant" Width="15" Height="15"
                                                                          VerticalAlignment="Top" Margin="0,2,6,0"
-                                                                         Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                                         Foreground="{DynamicResource Storava.Brush.Warning}" />
                                                 <TextBlock Text="{DynamicResource Str.Plan.NeedsLink}"
                                                            Style="{StaticResource Storava.Text.Caption}"
                                                            TextWrapping="Wrap" MaxWidth="300" />

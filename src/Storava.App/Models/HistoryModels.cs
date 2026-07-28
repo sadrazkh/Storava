@@ -102,7 +102,7 @@ public sealed class FolderChangeModel
 
         // The sign is carried by the label, not by a negative byte count, which would read oddly.
         DeltaText = (change.Delta > 0 ? "+" : "−") + new ByteSize(Math.Abs(change.Delta)).Humanize(culture);
-        DeltaBrush = CategoryPalette.BrushForRisk(change.Delta > 0 ? RiskLevel.High : RiskLevel.Low);
+        Risk = change.Delta > 0 ? RiskLevel.High : RiskLevel.Low;
     }
 
     public string Path { get; }
@@ -114,7 +114,8 @@ public sealed class FolderChangeModel
     public string BeforeText { get; }
     public string AfterText { get; }
     public string DeltaText { get; }
-    public Brush DeltaBrush { get; }
+    /// <summary>Growth reads as high risk and shrinkage as low, so the tag colours itself.</summary>
+    public RiskLevel Risk { get; }
 }
 
 /// <summary>A category's movement between two scans.</summary>

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Windows.Media;
 using Storava.App.Services;
 using Storava.Application.Abstractions;
 using Storava.Domain.Entities;
@@ -28,7 +27,7 @@ public sealed class RecommendationCardModel
         SizeText = new ByteSize(recommendation.EstimatedSpace).Humanize(culture);
         CategoryText = localization[$"Str.Category.{recommendation.Category}"];
         RiskText = localization[$"Str.Risk.{recommendation.RiskLevel}"];
-        RiskBrush = CategoryPalette.BrushForRisk(recommendation.RiskLevel);
+        Risk = recommendation.RiskLevel;
         ConfidenceText = recommendation.Confidence.ToString("P0", culture);
 
         CanDelete = recommendation.CanDelete;
@@ -52,7 +51,12 @@ public sealed class RecommendationCardModel
     public string SizeText { get; }
     public string CategoryText { get; }
     public string RiskText { get; }
-    public Brush RiskBrush { get; }
+    /// <summary>
+    /// The level itself rather than a colour for it. A brush built here would be frozen at the
+    /// theme in force when the row was created, and would keep those colours when the user
+    /// switched; the tag style resolves the palette instead, and follows.
+    /// </summary>
+    public RiskLevel Risk { get; }
     public string ConfidenceText { get; }
 
     public bool CanDelete { get; }

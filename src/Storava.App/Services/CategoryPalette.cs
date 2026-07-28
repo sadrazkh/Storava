@@ -4,8 +4,14 @@ using Storava.Domain.Enums;
 namespace Storava.App.Services;
 
 /// <summary>
-/// Stable colours for categories and risk levels. Category hues are spread around the wheel so
-/// adjacent slices stay distinguishable, and risk uses the semantic palette from the design system.
+/// Stable colours for categories and risk levels, for the places that need a <see cref="Color"/>
+/// rather than a brush — the charts, which draw their own geometry.
+/// <para>
+/// Nothing here produces a brush for a tag any more. A brush built in code is frozen at the theme
+/// in force when it was made, so tags resolve their colours from the palette dictionary instead
+/// and follow when the user switches. Leaving a second way to colour a risk here would be an
+/// invitation to drift back.
+/// </para>
 /// </summary>
 public static class CategoryPalette
 {
@@ -48,13 +54,6 @@ public static class CategoryPalette
 
     public static Color ForRisk(RiskLevel risk) =>
         RiskColors.TryGetValue(risk, out var color) ? color : RiskColors[RiskLevel.Unknown];
-
-    public static Brush BrushForRisk(RiskLevel risk)
-    {
-        var brush = new SolidColorBrush(ForRisk(risk));
-        brush.Freeze();
-        return brush;
-    }
 
     private static Color FromHex(string hex) => (Color)ColorConverter.ConvertFromString(hex)!;
 }

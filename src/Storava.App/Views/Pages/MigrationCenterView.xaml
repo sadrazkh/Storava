@@ -62,7 +62,7 @@
             <Border CornerRadius="10" Padding="14,12" Margin="0,0,0,12" Background="#22F59E0B">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="ShieldAlertOutline" Width="22" Height="22" VerticalAlignment="Top"
-                                             Margin="0,1,12,0" Foreground="{StaticResource Storava.Brush.Warning}" />
+                                             Margin="0,1,12,0" Foreground="{DynamicResource Storava.Brush.Warning}" />
                     <TextBlock Text="{DynamicResource Str.Migration.SafetyNote}" Style="{StaticResource Storava.Text.Body}"
                                TextWrapping="Wrap" MaxWidth="920" />
                 </StackPanel>
@@ -83,7 +83,7 @@
                     Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
-                                             Foreground="{StaticResource Storava.Brush.Danger}" />
+                                             Foreground="{DynamicResource Storava.Brush.Danger}" />
                     <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
                                TextWrapping="Wrap" MaxWidth="920" />
                 </StackPanel>
@@ -118,8 +118,8 @@
                                      Visibility="{Binding HasCurrentStep, Converter={StaticResource Conv.BoolVis}}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <Border Style="{StaticResource Storava.Badge}" Background="{DynamicResource PrimaryHueMidBrush}">
-                                <TextBlock Text="{Binding CurrentActionText}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                            <Border Style="{StaticResource Storava.Badge.Accent}">
+                                <TextBlock Text="{Binding CurrentActionText}" Style="{StaticResource Storava.Badge.Text}" />
                             </Border>
                             <TextBlock Text="{Binding CurrentPositionText}" Style="{StaticResource Storava.Text.Caption}"
                                        VerticalAlignment="Center" Margin="10,0,0,0" />
@@ -204,7 +204,7 @@
 
                             <Button Command="{Binding CancelStepCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
                                     Height="40" Padding="18,0" Margin="8,0,0,0"
-                                    Foreground="{StaticResource Storava.Brush.Danger}"
+                                    Foreground="{DynamicResource Storava.Brush.Danger}"
                                     Visibility="{Binding IsExecuting, Converter={StaticResource Conv.BoolVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="StopCircleOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
@@ -246,9 +246,8 @@
 
                                             <StackPanel Grid.Column="1">
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                    <Border Style="{StaticResource Storava.Badge}" Background="{Binding RiskBrush}">
-                                                        <TextBlock Text="{Binding ActionText}" Foreground="White"
-                                                                   FontSize="11" FontWeight="SemiBold" />
+                                                    <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource Storava.Badge.Text}" />
                                                     </Border>
                                                     <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.Body}"
                                                                VerticalAlignment="Center" Margin="8,0,0,0" TextWrapping="Wrap" />
@@ -263,7 +262,7 @@
                                                     <StackPanel Orientation="Horizontal">
                                                         <materialDesign:PackIcon Kind="CloseCircleOutline" Width="15" Height="15"
                                                                                  VerticalAlignment="Top" Margin="0,2,6,0"
-                                                                                 Foreground="{StaticResource Storava.Brush.Danger}" />
+                                                                                 Foreground="{DynamicResource Storava.Brush.Danger}" />
                                                         <TextBlock Text="{Binding BlockerText}" Style="{StaticResource Storava.Text.Caption}"
                                                                    TextWrapping="Wrap" MaxWidth="440" />
                                                     </StackPanel>
@@ -276,7 +275,7 @@
                                                             <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                                 <materialDesign:PackIcon Kind="AlertOutline" Width="14" Height="14"
                                                                                          VerticalAlignment="Top" Margin="0,3,6,0"
-                                                                                         Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                                                         Foreground="{DynamicResource Storava.Brush.Warning}" />
                                                                 <TextBlock Text="{Binding}" Style="{StaticResource Storava.Text.Caption}"
                                                                            TextWrapping="Wrap" MaxWidth="440" />
                                                             </StackPanel>
@@ -332,7 +331,7 @@
                         Visibility="{Binding HasLog, Converter={StaticResource Conv.BoolVis}}">
                     <StackPanel>
                         <TextBlock Text="{Binding FreedText}" Style="{StaticResource Storava.Text.Display}"
-                                   Foreground="{StaticResource Storava.Brush.Success}" />
+                                   Foreground="{DynamicResource Storava.Brush.Success}" />
                         <TextBlock Text="{DynamicResource Str.Migration.Summary.Freed}"
                                    Style="{StaticResource Storava.Text.Caption}" Margin="0,0,0,16" />
 
@@ -357,9 +356,9 @@
                         <StackPanel Orientation="Horizontal" Margin="0,16,0,0"
                                     Visibility="{Binding IsFinished, Converter={StaticResource Conv.BoolVis}}">
                             <materialDesign:PackIcon Kind="CheckCircle" VerticalAlignment="Center" Margin="0,0,6,0"
-                                                     Foreground="{StaticResource Storava.Brush.Success}" />
+                                                     Foreground="{DynamicResource Storava.Brush.Success}" />
                             <TextBlock Text="{DynamicResource Str.Migration.Finished}" Style="{StaticResource Storava.Text.Body}"
-                                       Foreground="{StaticResource Storava.Brush.Success}" VerticalAlignment="Center" />
+                                       Foreground="{DynamicResource Storava.Brush.Success}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -380,15 +379,14 @@
                                     <Border Style="{StaticResource Storava.Card}" Padding="14,12" Margin="0,0,0,8">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <Border Style="{StaticResource Storava.Badge}" Background="{Binding StatusBrush}">
-                                                    <TextBlock Text="{Binding StatusText}" Foreground="White"
-                                                               FontSize="11" FontWeight="SemiBold" />
+                                                <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                    <TextBlock Text="{Binding StatusText}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
                                                 <TextBlock Text="{Binding ActionText}" Style="{StaticResource Storava.Text.Caption}"
                                                            VerticalAlignment="Center" Margin="8,0,0,0" />
                                                 <TextBlock Text="{Binding FreedText}" FontSize="12" FontWeight="SemiBold"
                                                            VerticalAlignment="Center" Margin="8,0,0,0"
-                                                           Foreground="{StaticResource Storava.Brush.Success}"
+                                                           Foreground="{DynamicResource Storava.Brush.Success}"
                                                            Visibility="{Binding WasCompleted, Converter={StaticResource Conv.BoolVis}}" />
                                             </StackPanel>
 
@@ -411,7 +409,7 @@
                                                         Visibility="{Binding WasRecycled, Converter={StaticResource Conv.BoolVis}}">
                                                 <materialDesign:PackIcon Kind="DeleteRestore" Width="14" Height="14"
                                                                          VerticalAlignment="Top" Margin="0,3,6,0"
-                                                                         Foreground="{StaticResource Storava.Brush.Success}" />
+                                                                         Foreground="{DynamicResource Storava.Brush.Success}" />
                                                 <TextBlock Text="{DynamicResource Str.Migration.InRecycleBin}"
                                                            Style="{StaticResource Storava.Text.Caption}"
                                                            TextWrapping="Wrap" MaxWidth="330" />

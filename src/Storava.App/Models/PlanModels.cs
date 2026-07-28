@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Storava.App.Services;
 using Storava.Application.Abstractions;
@@ -36,7 +35,7 @@ public sealed partial class PlanCandidateModel : ObservableObject
         SizeText = new ByteSize(recommendation.EstimatedSpace).Humanize(culture);
         CategoryText = localization[$"Str.Category.{recommendation.Category}"];
         RiskText = localization[$"Str.Risk.{recommendation.RiskLevel}"];
-        RiskBrush = CategoryPalette.BrushForRisk(recommendation.RiskLevel);
+        Risk = recommendation.RiskLevel;
 
         var options = new List<PlanActionOption>();
         if (recommendation.CanMove)
@@ -64,7 +63,12 @@ public sealed partial class PlanCandidateModel : ObservableObject
     public string SizeText { get; }
     public string CategoryText { get; }
     public string RiskText { get; }
-    public Brush RiskBrush { get; }
+    /// <summary>
+    /// The level itself rather than a colour for it. A brush built here would be frozen at the
+    /// theme in force when the row was created, and would keep those colours when the user
+    /// switched; the tag style resolves the palette instead, and follows.
+    /// </summary>
+    public RiskLevel Risk { get; }
 
     public IReadOnlyList<PlanActionOption> AvailableActions { get; }
 
@@ -93,7 +97,7 @@ public sealed class PlanStepModel
         IsDelete = entry.Action == SuggestedAction.Delete;
         SizeText = new ByteSize(entry.EstimatedSpace).Humanize(culture);
         RiskText = localization[$"Str.Risk.{entry.RiskLevel}"];
-        RiskBrush = CategoryPalette.BrushForRisk(entry.RiskLevel);
+        Risk = entry.RiskLevel;
         MethodHint = entry.MethodHint;
         Warning = entry.Warning;
         HasWarning = !string.IsNullOrWhiteSpace(entry.Warning);
@@ -111,7 +115,12 @@ public sealed class PlanStepModel
     public bool IsDelete { get; }
     public string SizeText { get; }
     public string RiskText { get; }
-    public Brush RiskBrush { get; }
+    /// <summary>
+    /// The level itself rather than a colour for it. A brush built here would be frozen at the
+    /// theme in force when the row was created, and would keep those colours when the user
+    /// switched; the tag style resolves the palette instead, and follows.
+    /// </summary>
+    public RiskLevel Risk { get; }
     public string? MethodHint { get; }
     public string? Warning { get; }
     public bool HasWarning { get; }

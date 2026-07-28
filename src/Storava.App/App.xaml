@@ -11,7 +11,9 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml" />
 
                 <!-- Storava design system (order matters: tokens before consumers) -->
-                <ResourceDictionary Source="Resources/Theme/Palette.xaml" />
+                <!-- The dark palette by default; ThemeService swaps this entry for the light
+                     one, which is why it must stay first among the Storava dictionaries. -->
+                <ResourceDictionary Source="Resources/Theme/Palette.Dark.xaml" />
                 <ResourceDictionary Source="Resources/Theme/Spacing.xaml" />
                 <ResourceDictionary Source="Resources/Theme/Typography.xaml" />
                 <ResourceDictionary Source="Resources/Theme/Controls.xaml" />

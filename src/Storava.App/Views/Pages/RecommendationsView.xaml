@@ -72,7 +72,7 @@
             <Border Grid.Column="2" Style="{StaticResource Storava.Card}" Padding="18,14">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="24" Height="24" VerticalAlignment="Top"
-                                             Margin="0,2,12,0" Foreground="{StaticResource Storava.Brush.Success}" />
+                                             Margin="0,2,12,0" Foreground="{DynamicResource Storava.Brush.Success}" />
                     <TextBlock Text="{DynamicResource Str.Recommendations.SafetyNote}" Style="{StaticResource Storava.Text.Caption}"
                                MaxWidth="620" VerticalAlignment="Center" />
                 </StackPanel>
@@ -120,8 +120,8 @@
                                     <!-- Title row -->
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                         <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.H2}" VerticalAlignment="Center" />
-                                        <Border Style="{StaticResource Storava.Badge}" Background="{Binding RiskBrush}" Margin="10,0,0,0">
-                                            <TextBlock Text="{Binding RiskText}" Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                        <Border Style="{StaticResource Storava.Badge.Risk}" Margin="10,0,0,0">
+                                            <TextBlock Text="{Binding RiskText}" Style="{StaticResource Storava.Badge.Text}" />
                                         </Border>
                                         <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
                                                 Background="{DynamicResource MaterialDesignChipBackground}">
@@ -169,7 +169,7 @@
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <materialDesign:PackIcon Kind="CheckDecagramOutline" Width="16" Height="16" VerticalAlignment="Center"
-                                                                         Margin="0,0,6,0" Foreground="{StaticResource Storava.Brush.Success}" />
+                                                                         Margin="0,0,6,0" Foreground="{DynamicResource Storava.Brush.Success}" />
                                                 <TextBlock Text="{DynamicResource Str.Recommendations.OfficialMethod}"
                                                            FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
                                             </StackPanel>
@@ -185,7 +185,7 @@
                                             Visibility="{Binding HasWarning, Converter={StaticResource Conv.BoolVis}}">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="AlertOutline" Width="16" Height="16" VerticalAlignment="Top"
-                                                                     Margin="0,2,8,0" Foreground="{StaticResource Storava.Brush.Warning}" />
+                                                                     Margin="0,2,8,0" Foreground="{DynamicResource Storava.Brush.Warning}" />
                                             <TextBlock Text="{Binding Warning}" Style="{StaticResource Storava.Text.Caption}" MaxWidth="560" />
                                         </StackPanel>
                                     </Border>

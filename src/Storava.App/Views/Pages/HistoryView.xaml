@@ -53,7 +53,7 @@
                     Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="AlertCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
-                                             Foreground="{StaticResource Storava.Brush.Danger}" />
+                                             Foreground="{DynamicResource Storava.Brush.Danger}" />
                     <TextBlock Text="{Binding ErrorMessage}" Style="{StaticResource Storava.Text.Body}"
                                TextWrapping="Wrap" MaxWidth="920" />
                 </StackPanel>
@@ -79,7 +79,7 @@
                     Visibility="{Binding ArchiveStatus, Converter={StaticResource Conv.NullVis}}">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="CheckCircleOutline" VerticalAlignment="Top" Margin="0,2,10,0"
-                                             Foreground="{StaticResource Storava.Brush.Success}" />
+                                             Foreground="{DynamicResource Storava.Brush.Success}" />
                     <TextBlock Text="{Binding ArchiveStatus}" Style="{StaticResource Storava.Text.Body}"
                                TextWrapping="Wrap" MaxWidth="920" />
                 </StackPanel>
@@ -158,10 +158,10 @@
 
                             <StackPanel Grid.Column="0" Margin="0,0,28,0">
                                 <TextBlock Text="{Binding ComparisonDeltaText}" Style="{StaticResource Storava.Text.Display}"
-                                           Foreground="{StaticResource Storava.Brush.Danger}"
+                                           Foreground="{DynamicResource Storava.Brush.Danger}"
                                            Visibility="{Binding ComparisonGrew, Converter={StaticResource Conv.BoolVis}}" />
                                 <TextBlock Text="{Binding ComparisonDeltaText}" Style="{StaticResource Storava.Text.Display}"
-                                           Foreground="{StaticResource Storava.Brush.Success}"
+                                           Foreground="{DynamicResource Storava.Brush.Success}"
                                            Visibility="{Binding ComparisonGrew, Converter={StaticResource Conv.InvBoolVis}}" />
                                 <TextBlock Text="{Binding ComparisonSpanText}" Style="{StaticResource Storava.Text.Caption}" />
                             </StackPanel>
@@ -215,9 +215,8 @@
 
                                             <StackPanel Grid.Column="0" Margin="0,0,14,0">
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                    <Border Style="{StaticResource Storava.Badge}" Background="{Binding DeltaBrush}">
-                                                        <TextBlock Text="{Binding KindText}" Foreground="White"
-                                                                   FontSize="11" FontWeight="SemiBold" />
+                                                    <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                        <TextBlock Text="{Binding KindText}" Style="{StaticResource Storava.Badge.Text}" />
                                                     </Border>
                                                     <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
                                                             Background="{DynamicResource MaterialDesignChipBackground}">
@@ -276,11 +275,11 @@
                                                    VerticalAlignment="Center" Margin="0,0,14,0" />
                                         <TextBlock Grid.Column="3" Text="{Binding DeltaText}" FontSize="13" FontWeight="SemiBold"
                                                    VerticalAlignment="Center" MinWidth="90" TextAlignment="Right"
-                                                   Foreground="{StaticResource Storava.Brush.Danger}"
+                                                   Foreground="{DynamicResource Storava.Brush.Danger}"
                                                    Visibility="{Binding Grew, Converter={StaticResource Conv.BoolVis}}" />
                                         <TextBlock Grid.Column="3" Text="{Binding DeltaText}" FontSize="13" FontWeight="SemiBold"
                                                    VerticalAlignment="Center" MinWidth="90" TextAlignment="Right"
-                                                   Foreground="{StaticResource Storava.Brush.Success}"
+                                                   Foreground="{DynamicResource Storava.Brush.Success}"
                                                    Visibility="{Binding Grew, Converter={StaticResource Conv.InvBoolVis}}" />
                                     </Grid>
                                 </DataTemplate>
@@ -342,7 +341,7 @@
                                                        HorizontalAlignment="Left" />
                                             <TextBlock Text="{Binding FreedText}" FontSize="13" FontWeight="SemiBold"
                                                        HorizontalAlignment="Right"
-                                                       Foreground="{StaticResource Storava.Brush.Success}" />
+                                                       Foreground="{DynamicResource Storava.Brush.Success}" />
                                         </Grid>
 
                                         <StackPanel Orientation="Horizontal">
@@ -361,7 +360,7 @@
                                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                         <materialDesign:PackIcon Kind="CheckCircleOutline" Width="13" Height="13"
                                                                                  VerticalAlignment="Top" Margin="0,3,6,0"
-                                                                                 Foreground="{StaticResource Storava.Brush.Success}"
+                                                                                 Foreground="{DynamicResource Storava.Brush.Success}"
                                                                                  Visibility="{Binding WasCompleted, Converter={StaticResource Conv.BoolVis}}" />
                                                         <materialDesign:PackIcon Kind="MinusCircleOutline" Width="13" Height="13"
                                                                                  VerticalAlignment="Top" Margin="0,3,6,0"
@@ -411,11 +410,9 @@
                                                         Visibility="{Binding IsCompleted, Converter={StaticResource Conv.InvBoolVis}}">
                                                     <TextBlock Text="{Binding StatusText}" FontSize="11" />
                                                 </Border>
-                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                        Background="{DynamicResource PrimaryHueMidBrush}"
+                                                <Border Style="{StaticResource Storava.Badge.Accent}" Margin="6,0,0,0"
                                                         Visibility="{Binding CanResume, Converter={StaticResource Conv.BoolVis}}">
-                                                    <TextBlock Text="{DynamicResource Str.History.ResumableBadge}"
-                                                               Foreground="White" FontSize="11" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{DynamicResource Str.History.ResumableBadge}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
                                                 <!-- Measured elsewhere: the paths in it describe another machine's disk -->
                                                 <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"

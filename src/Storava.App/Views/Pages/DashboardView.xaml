@@ -42,14 +42,14 @@
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="8,0,8,0">
                     <StackPanel>
-                        <materialDesign:PackIcon Kind="ChartArc" Foreground="{StaticResource Storava.Brush.Warning}" Width="24" Height="24" />
+                        <materialDesign:PackIcon Kind="ChartArc" Foreground="{DynamicResource Storava.Brush.Warning}" Width="24" Height="24" />
                         <TextBlock Text="{Binding UsedText}" Style="{StaticResource Storava.Text.Metric}" Margin="0,10,0,0" />
                         <TextBlock Text="{DynamicResource Str.Dashboard.Metric.Used}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="8,0,8,0">
                     <StackPanel>
-                        <materialDesign:PackIcon Kind="CheckCircleOutline" Foreground="{StaticResource Storava.Brush.Success}" Width="24" Height="24" />
+                        <materialDesign:PackIcon Kind="CheckCircleOutline" Foreground="{DynamicResource Storava.Brush.Success}" Width="24" Height="24" />
                         <TextBlock Text="{Binding FreeText}" Style="{StaticResource Storava.Text.Metric}" Margin="0,10,0,0" />
                         <TextBlock Text="{DynamicResource Str.Dashboard.Metric.Free}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
@@ -121,7 +121,7 @@
                                        Visibility="{Binding AiEnabled, Converter={StaticResource Conv.InvBoolVis}}" />
                             <TextBlock Text="{DynamicResource Str.Dashboard.Ai.Enabled}"
                                        Style="{StaticResource Storava.Text.Body}"
-                                       Foreground="{StaticResource Storava.Brush.Success}" Margin="0,8,0,0"
+                                       Foreground="{DynamicResource Storava.Brush.Success}" Margin="0,8,0,0"
                                        Visibility="{Binding AiEnabled, Converter={StaticResource Conv.BoolVis}}" />
                         </StackPanel>
                     </Border>

@@ -15,6 +15,10 @@
     <CornerRadius x:Key="Radius.Control">10</CornerRadius>
     <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
 
+    <!-- Tags. A pill radius on a short element makes a lozenge, which is what the status
+         tags used to be; at this size a small radius reads as a tag instead. -->
+    <CornerRadius x:Key="Radius.Tag">5</CornerRadius>
+
     <!-- Common paddings/margins -->
     <Thickness x:Key="Pad.Page">28,24,28,24</Thickness>
     <Thickness x:Key="Pad.Card">20</Thickness>

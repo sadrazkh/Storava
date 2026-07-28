@@ -81,11 +81,110 @@
         </Style.Triggers>
     </Style>
 
-    <!-- Pill badge container -->
+    <!-- ============================================================
+         Tags.
+
+         A tag is a tinted fill, a legible label and a quiet border, and
+         all three come from one palette entry. The previous version was a
+         999-radius lozenge filled with a saturated hue under white text —
+         wrong shape, and the label sat at about 2:1 contrast.
+
+         DynamicResource throughout: these brushes are swapped wholesale
+         when the theme changes, and a StaticResource would keep the dark
+         colours on a light window.
+         ============================================================ -->
     <Style x:Key="Storava.Badge" TargetType="Border">
-        <Setter Property="CornerRadius" Value="{StaticResource Radius.Pill}" />
-        <Setter Property="Padding" Value="10,3" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Tag}" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Neutral.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Neutral.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Neutral.Text}" />
+        <Setter Property="TextElement.FontSize" Value="11" />
+        <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- The label inside a tag. Inherits the tag's colour rather than naming one, so a tag
+         only ever has to be given its meaning once. -->
+    <Style x:Key="Storava.Badge.Text" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- A tag that colours itself from a RiskLevel, so no view picks risk colours by hand
+         and no view can pick a different set than its neighbour. -->
+    <Style x:Key="Storava.Badge.Risk" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Risk}" Value="Low">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.Low.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.Low.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Low.Text}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Risk}" Value="Medium">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.Medium.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.Medium.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Medium.Text}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Risk}" Value="High">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.High.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.High.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.High.Text}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Risk}" Value="Protected">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.Protected.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.Protected.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Protected.Text}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Risk}" Value="Unknown">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.Unknown.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.Unknown.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Unknown.Text}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- A fixed protected tag, for the places that state "this is protected" outright rather
+         than carrying a risk level to colour themselves from. Explicit, because a risk-triggered
+         style over a model with no risk to read silently falls back to neutral. -->
+    <Style x:Key="Storava.Badge.Protected" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Risk.Protected.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Risk.Protected.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Protected.Text}" />
+    </Style>
+
+    <Style x:Key="Storava.Badge.Success" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Success.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Success.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Success.Text}" />
+    </Style>
+
+    <Style x:Key="Storava.Badge.Warning" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Warning.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Warning.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Warning.Text}" />
+    </Style>
+
+    <Style x:Key="Storava.Badge.Danger" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Danger.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Danger.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Danger.Text}" />
+    </Style>
+
+    <!-- The accent tag keeps MaterialDesign's own foreground for the primary hue, which is
+         computed for contrast against whatever accent the user picked in settings — something a
+         fixed white cannot be. -->
+    <Style x:Key="Storava.Badge.Accent" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryHueMidForegroundBrush}" />
+    </Style>
+
+    <Style x:Key="Storava.Badge.Info" TargetType="Border" BasedOn="{StaticResource Storava.Badge}">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Info.Fill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Info.Edge}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Info.Text}" />
     </Style>
 
 </ResourceDictionary>
