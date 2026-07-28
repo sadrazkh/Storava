@@ -109,11 +109,13 @@ public class PlanExecutionServiceTests
         Assert.Equal(ExecutionStatus.Completed, step.Status);
 
         // The order is the guarantee: copy, then recycle the original, then leave the link.
+        // The link's kind is asserted too — a folder must get a junction, which needs no
+        // privilege, and asking for a file's symbolic link instead would fail for most users.
         Assert.Equal(
             [
                 @"copy:D:\dev\node_modules->E:\moved\node_modules",
                 @"recycle:D:\dev\node_modules",
-                @"link:D:\dev\node_modules->E:\moved\node_modules"
+                @"link:D:\dev\node_modules->E:\moved\node_modules:folder"
             ],
             _fs.Operations);
 
@@ -321,7 +323,8 @@ public class PlanExecutionServiceTests
     private static StoragePlanEntry Entry(
         SuggestedAction action,
         string path = @"D:\dev\node_modules",
-        long estimated = 1_000_000) => new()
+        long estimated = 1_000_000,
+        bool isFolder = true) => new()
     {
         Id = Guid.NewGuid().ToString("n"),
         PlanId = "plan",
@@ -332,6 +335,99 @@ public class PlanExecutionServiceTests
         Action = action,
         EstimatedSpace = estimated,
         RiskLevel = RiskLevel.Low,
+        IsFolder = isFolder,
         Method = action == SuggestedAction.Move ? MigrationMethod.Junction : MigrationMethod.None
     };
+
+    // --- a single file ---------------------------------------------------------------
+    //
+    // A big file is as ordinary a thing to clear as a folder, and the four-step dance around it is
+    // identical. What differs is that a file has no junction, only a symbolic link.
+
+    [Fact]
+    public async Task AFile_IsCopiedAndVerifiedBeforeTheOriginalIsTouched()
+    {
+        _fs.AddFile(@"D:\media\raw.mkv", bytes: 8_000_000);
+        var (execution, step) = await StartAsync(
+            Entry(SuggestedAction.Move, path: @"D:\media\raw.mkv", estimated: 8_000_000, isFolder: false));
+        step.DestinationPath = @"E:\moved\raw.mkv";
+
+        var result = await _service.ExecuteStepAsync(execution, step, Confirm(step));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ExecutionStatus.Completed, step.Status);
+        Assert.Equal(8_000_000, step.BytesFreed);
+
+        // Same order as a folder, and the link is asked for as a file link — a junction would be
+        // refused by the operating system for something that is not a directory.
+        Assert.Equal(
+            [
+                @"copy:D:\media\raw.mkv->E:\moved\raw.mkv",
+                @"recycle:D:\media\raw.mkv",
+                @"link:D:\media\raw.mkv->E:\moved\raw.mkv:file"
+            ],
+            _fs.Operations);
+    }
+
+    [Fact]
+    public async Task AFile_IsRecycledLikeAnythingElse()
+    {
+        _fs.AddFile(@"D:\media\raw.mkv", bytes: 8_000_000);
+        var (execution, step) = await StartAsync(
+            Entry(SuggestedAction.Delete, path: @"D:\media\raw.mkv", estimated: 8_000_000, isFolder: false));
+
+        var result = await _service.ExecuteStepAsync(execution, step, Confirm(step));
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains(@"D:\media\raw.mkv", _fs.Recycled);
+        // Removal is always the Recycle Bin, for a file exactly as for a folder.
+        Assert.Equal(@"D:\media\raw.mkv", step.RecycledPath);
+    }
+
+    /// <summary>
+    /// A file's symbolic link needs a privilege most users do not have. The space really was freed
+    /// and the data really is safe, so this is a warning on a completed step, never a rollback.
+    /// </summary>
+    [Fact]
+    public async Task AFileMove_SurvivesALinkItWasNotAllowedToCreate()
+    {
+        _fs.AddFile(@"D:\media\raw.mkv", bytes: 8_000_000);
+        _fs.FailLink = true;
+
+        var (execution, step) = await StartAsync(
+            Entry(SuggestedAction.Move, path: @"D:\media\raw.mkv", estimated: 8_000_000, isFolder: false));
+        step.DestinationPath = @"E:\moved\raw.mkv";
+
+        var result = await _service.ExecuteStepAsync(execution, step, Confirm(step));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ExecutionStatus.Completed, step.Status);
+        Assert.Equal(ExecutionErrors.LinkFailed.Code, step.ErrorCode);
+        Assert.Null(step.LinkPath);
+        Assert.Contains(@"D:\media\raw.mkv", _fs.Recycled);
+    }
+
+    /// <summary>
+    /// A copy that lands wrong must be abandoned and cleaned up, leaving the original untouched —
+    /// the same guarantee a folder gets, verified against a fresh measurement rather than a report.
+    /// </summary>
+    [Fact]
+    public async Task AFileMove_RollsBackWhenTheCopyDoesNotMatch()
+    {
+        _fs.AddFile(@"D:\media\raw.mkv", bytes: 8_000_000);
+        _fs.CopyResultOverride = new DirectoryFacts(7_000_000, 1, 0, 0);
+
+        var (execution, step) = await StartAsync(
+            Entry(SuggestedAction.Move, path: @"D:\media\raw.mkv", estimated: 8_000_000, isFolder: false));
+        step.DestinationPath = @"E:\moved\raw.mkv";
+
+        var result = await _service.ExecuteStepAsync(execution, step, Confirm(step));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ExecutionStatus.RolledBack, step.Status);
+        Assert.True(_fs.Exists(@"D:\media\raw.mkv"));
+        Assert.Null(step.RecycledPath);
+        // The short copy is cleaned up rather than left to occupy the space the move was for.
+        Assert.Contains(@"E:\moved\raw.mkv", _fs.Recycled);
+    }
 }

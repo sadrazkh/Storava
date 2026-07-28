@@ -116,17 +116,23 @@
                                                   IsEnabled="{Binding CanBePlanned}" />
 
                                         <StackPanel Grid.Column="1" Margin="0,0,16,0">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                                <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.H2}"
-                                                           VerticalAlignment="Center" />
-                                                <Border Style="{StaticResource Storava.Badge.Risk}" Margin="10,0,0,0">
-                                                    <TextBlock Text="{Binding RiskText}" Style="{StaticResource Storava.Badge.Text}" />
-                                                </Border>
-                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                        Background="{DynamicResource MaterialDesignChipBackground}">
-                                                    <TextBlock Text="{Binding CategoryText}" FontSize="11" />
-                                                </Border>
-                                            </StackPanel>
+                                            <Grid Style="{StaticResource Storava.TitleRow}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Title}"
+                                                           Style="{StaticResource Storava.TitleRow.Text}" />
+                                                <WrapPanel Grid.Column="1" Style="{StaticResource Storava.TitleRow.Tags}">
+                                                    <Border Style="{StaticResource Storava.Badge.Risk}" Margin="10,0,0,0">
+                                                        <TextBlock Text="{Binding RiskText}" Style="{StaticResource Storava.Badge.Text}" />
+                                                    </Border>
+                                                    <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0">
+                                                        <TextBlock Text="{Binding CategoryText}" Style="{StaticResource Storava.Badge.Text}" />
+                                                    </Border>
+                                                </WrapPanel>
+                                            </Grid>
 
                                             <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
                                                        TextTrimming="CharacterEllipsis" Margin="0,0,0,8" />

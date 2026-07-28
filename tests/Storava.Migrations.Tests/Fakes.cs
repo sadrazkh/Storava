@@ -40,7 +40,14 @@ internal sealed class FakeFileSystem : IFileSystemActions
     public void AddDirectory(string path, long bytes, long files = 1, long links = 0) =>
         Directories[path] = new DirectoryFacts(bytes, files, 0, links);
 
+    /// <summary>Files this fake disk holds, by path and size. A folder lives in Directories.</summary>
+    public Dictionary<string, long> Files { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public void AddFile(string path, long bytes) => Files[path] = bytes;
+
     public bool DirectoryExists(string path) => Directories.ContainsKey(path);
+
+    public bool Exists(string path) => Directories.ContainsKey(path) || Files.ContainsKey(path);
 
     public bool IsReparsePoint(string path) => ReparsePoints.Contains(path);
 
@@ -57,18 +64,36 @@ internal sealed class FakeFileSystem : IFileSystemActions
 
     public Result<string> GetVolumeRoot(string path) => Result.Success(RootOf(path));
 
-    public Task<Result<DirectoryFacts>> MeasureAsync(string path, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Directories.TryGetValue(path, out var facts)
-            ? Result.Success(facts)
-            : Result.Failure<DirectoryFacts>(ExecutionErrors.SourceMissing));
+    public Task<Result<DirectoryFacts>> MeasureAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (Directories.TryGetValue(path, out var facts))
+            return Task.FromResult(Result.Success(facts));
 
-    public Task<Result> CopyDirectoryAsync(
+        // One file counts as one file, mirroring what the real implementation reports, so a test
+        // that verifies a copied file compares the same shape the production code compares.
+        if (Files.TryGetValue(path, out long bytes))
+            return Task.FromResult(Result.Success(new DirectoryFacts(bytes, 1, 0, 0)));
+
+        return Task.FromResult(Result.Failure<DirectoryFacts>(ExecutionErrors.SourceMissing));
+    }
+
+    public Task<Result> CopyAsync(
         string sourcePath,
         string destinationPath,
         IProgress<CopyProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         Operations.Add($"copy:{sourcePath}->{destinationPath}");
+
+        if (Files.TryGetValue(sourcePath, out long fileBytes))
+        {
+            if (FailCopy)
+                return Task.FromResult(Result.Failure(ExecutionErrors.CopyFailed));
+
+            Files[destinationPath] = CopyResultOverride?.Bytes ?? fileBytes;
+            progress?.Report(new CopyProgress(fileBytes, fileBytes, destinationPath));
+            return Task.FromResult(Result.Success());
+        }
 
         if (CancelDuringCopy)
         {
@@ -94,13 +119,14 @@ internal sealed class FakeFileSystem : IFileSystemActions
             return Task.FromResult(Result.Failure(ExecutionErrors.RecycleFailed));
 
         Directories.Remove(path);
+        Files.Remove(path);
         Recycled.Add(path);
         return Task.FromResult(Result.Success());
     }
 
-    public Result CreateDirectoryLink(string linkPath, string targetPath, MigrationMethod method)
+    public Result CreateLink(string linkPath, string targetPath, MigrationMethod method, bool isFolder = true)
     {
-        Operations.Add($"link:{linkPath}->{targetPath}");
+        Operations.Add($"link:{linkPath}->{targetPath}:{(isFolder ? "folder" : "file")}");
         return FailLink ? Result.Failure(ExecutionErrors.LinkFailed) : Result.Success();
     }
 

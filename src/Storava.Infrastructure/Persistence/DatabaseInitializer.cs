@@ -102,6 +102,12 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
         CREATE TABLE IF NOT EXISTS StoragePlanEntries (
             Id               TEXT NOT NULL PRIMARY KEY,
             PlanId           TEXT NOT NULL,
+            -- Empty for a step the user picked out of the scan themselves, which has no
+            -- recommendation behind it. Left NOT NULL rather than relaxed, because
+            -- CREATE TABLE IF NOT EXISTS cannot relax a column on a database that already
+            -- exists — the constraint would differ between an upgraded install and a fresh
+            -- one, and code would have to cope with both shapes forever. HasNoRule is the
+            -- flag that actually answers the question.
             RecommendationId TEXT NOT NULL,
             ScanItemId       TEXT NOT NULL,
             Path             TEXT NOT NULL,
@@ -178,7 +184,15 @@ public sealed class DatabaseInitializer : IDatabaseInitializer
         ("ScanSessions", "ImportedAt", "TEXT NULL"),
         ("ScanSessions", "SourceLabel", "TEXT NULL"),
         // Directories still pending when a scan was interrupted, so it can be continued later.
-        ("ScanSessions", "ResumeState", "TEXT NULL")
+        ("ScanSessions", "ResumeState", "TEXT NULL"),
+        // Whether a step is a folder or a single file. Defaulting to 1 is right for every row
+        // written before this existed: only folders could be planned at all back then.
+        ("StoragePlanEntries", "IsFolder", "INTEGER NOT NULL DEFAULT 1"),
+        ("PlanExecutionSteps", "IsFolder", "INTEGER NOT NULL DEFAULT 1"),
+        // Whether the user chose this without a rule behind it. Old rows all came from the rule
+        // catalog, because nothing else could reach a plan, so 0 is correct for them.
+        ("StoragePlanEntries", "HasNoRule", "INTEGER NOT NULL DEFAULT 0"),
+        ("PlanExecutionSteps", "HasNoRule", "INTEGER NOT NULL DEFAULT 0")
     ];
 
     private readonly StoravaDbOptions _options;

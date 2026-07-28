@@ -143,6 +143,8 @@ public sealed class PlanExecutionService
                 Title = entry.Title,
                 Action = entry.Action,
                 Method = entry.Method,
+                IsFolder = entry.IsFolder,
+                HasNoRule = entry.HasNoRule,
                 Order = entry.Order,
                 MeasuredBytes = result.MeasuredBytes,
                 Status = result.CanRun ? ExecutionStatus.Pending : ExecutionStatus.Skipped
@@ -279,7 +281,7 @@ public sealed class PlanExecutionService
         try
         {
             copied = await _fileSystem
-                .CopyDirectoryAsync(step.SourcePath, destination, progress, cancellationToken)
+                .CopyAsync(step.SourcePath, destination, progress, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException)
@@ -336,7 +338,7 @@ public sealed class PlanExecutionService
         // 4. Leave a link behind so anything hard-coded to the old path keeps working.
         if (step.Method is MigrationMethod.Junction or MigrationMethod.SymbolicLink)
         {
-            var link = _fileSystem.CreateDirectoryLink(step.SourcePath, destination, step.Method);
+            var link = _fileSystem.CreateLink(step.SourcePath, destination, step.Method, step.IsFolder);
             if (link.IsSuccess)
             {
                 step.LinkPath = step.SourcePath;
@@ -364,7 +366,9 @@ public sealed class PlanExecutionService
     /// </summary>
     private async Task DiscardCopyAsync(string destination)
     {
-        if (!_fileSystem.DirectoryExists(destination))
+        // Exists, not DirectoryExists: a half-written file copy is just as much a leftover as a
+        // half-written tree, and leaving it would quietly consume the space the move was for.
+        if (!_fileSystem.Exists(destination))
             return;
 
         var discarded = await _fileSystem.MoveToRecycleBinAsync(destination, CancellationToken.None)

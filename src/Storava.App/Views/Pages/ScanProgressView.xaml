@@ -6,10 +6,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="980">
-    <Grid Margin="{StaticResource Pad.Page}" MaxWidth="960" HorizontalAlignment="Left">
+    <!-- Stretch, not Left.
+
+         Left makes the Grid size itself to its widest child, and its widest child is the path
+         currently being walked — a string that changes several times a second. Every one of those
+         changes resized the whole page, so the five metric tiles grew and shrank continuously
+         while the scan ran. Stretching decouples the layout from the data: the tiles are the same
+         width at the first file as at the millionth. -->
+    <Grid Margin="{StaticResource Pad.Page}" MaxWidth="1100" HorizontalAlignment="Stretch">
         <StackPanel>
             <!-- Header -->
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,18" HorizontalAlignment="Stretch">
                 <!-- Spinner stops while paused so the visual state matches reality. -->
                 <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                              IsIndeterminate="{Binding Controller.IsPaused, Converter={StaticResource Conv.InvBool}}"
@@ -18,7 +25,7 @@
                 <materialDesign:PackIcon Kind="CheckCircle" Width="34" Height="34" VerticalAlignment="Center"
                                          Foreground="{DynamicResource Storava.Brush.Success}"
                                          Visibility="{Binding IsComplete, Converter={StaticResource Conv.BoolVis}}" />
-                <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                <StackPanel Margin="14,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsComplete, Converter={StaticResource Conv.InvBoolVis}}">
                         <TextBlock Text="{DynamicResource Str.Progress.Title}"
@@ -31,8 +38,9 @@
                     <TextBlock Text="{DynamicResource Str.Progress.Complete}"
                                Style="{StaticResource Storava.Text.H1}"
                                Visibility="{Binding IsComplete, Converter={StaticResource Conv.BoolVis}}" />
+                    <!-- Trims inside whatever room it is given rather than asking for more. -->
                     <TextBlock Text="{Binding Controller.CurrentPath}" Style="{StaticResource Storava.Text.Caption}"
-                               TextTrimming="CharacterEllipsis" MaxWidth="760" HorizontalAlignment="Left"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
                                Visibility="{Binding IsComplete, Converter={StaticResource Conv.InvBoolVis}}" />
                 </StackPanel>
             </StackPanel>

@@ -32,6 +32,16 @@ public sealed class PlanExecutionStep
 
     public MigrationMethod Method { get; init; } = MigrationMethod.None;
 
+    /// <summary>
+    /// False for a file. Carried from the plan entry rather than probed at execution time: what is
+    /// on disk now decides how to copy, but what the user approved decides what they approved, and
+    /// a folder replaced by a file between the two is exactly the substitution to refuse.
+    /// </summary>
+    public bool IsFolder { get; init; } = true;
+
+    /// <summary>True when no rule recognised this item and the user chose the action themselves.</summary>
+    public bool HasNoRule { get; init; }
+
     public int Order { get; init; }
 
     /// <summary>Chosen by the user for a move. Null for a delete.</summary>

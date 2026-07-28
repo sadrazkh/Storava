@@ -38,7 +38,7 @@ public class WindowsFileActionsTests : IDisposable
         var source = MakeTree("source", ("a.bin", 512));
         var link = Path.Combine(source, "link");
 
-        Assert.True(_actions.CreateDirectoryLink(link, target, MigrationMethod.Junction).IsSuccess);
+        Assert.True(_actions.CreateLink(link, target, MigrationMethod.Junction).IsSuccess);
 
         var result = await _actions.MeasureAsync(source);
 
@@ -54,7 +54,7 @@ public class WindowsFileActionsTests : IDisposable
         var target = MakeTree("target", ("payload.bin", 64));
         var link = Path.Combine(_root, "junction");
 
-        var result = _actions.CreateDirectoryLink(link, target, MigrationMethod.Junction);
+        var result = _actions.CreateLink(link, target, MigrationMethod.Junction);
 
         Assert.True(result.IsSuccess);
         Assert.True(_actions.IsReparsePoint(link));
@@ -68,7 +68,7 @@ public class WindowsFileActionsTests : IDisposable
         var source = MakeTree("source", ("a.bin", 1000), ("nested/b.bin", 2000), ("nested/deep/c.bin", 3000));
         var destination = Path.Combine(_root, "copied");
 
-        var copied = await _actions.CopyDirectoryAsync(source, destination);
+        var copied = await _actions.CopyAsync(source, destination);
         Assert.True(copied.IsSuccess);
 
         var sourceFacts = (await _actions.MeasureAsync(source)).Value;
@@ -86,7 +86,7 @@ public class WindowsFileActionsTests : IDisposable
         var destination = Path.Combine(_root, "copied");
 
         var reports = new List<CopyProgress>();
-        await _actions.CopyDirectoryAsync(source, destination, new Progress<CopyProgress>(reports.Add));
+        await _actions.CopyAsync(source, destination, new Progress<CopyProgress>(reports.Add));
 
         // Progress is throttled, so only the final report is guaranteed — and it must be honest.
         await WaitForAsync(() => reports.Count > 0);

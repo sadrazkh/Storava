@@ -1,5 +1,6 @@
 using Storava.Application.Abstractions;
 using Storava.Application.Planning;
+using Storava.Application.Scanning;
 using Storava.Domain.Entities;
 using Storava.Domain.Enums;
 
@@ -150,4 +151,90 @@ public class StoragePlanRepositoryTests
         var reloaded = await planning.LoadOrCreateAsync(SessionId);
         Assert.Empty(reloaded.Entries);
     }
+
+    /// <summary>
+    /// A step the user chose for themselves has to come back as one.
+    /// <para>
+    /// Losing <c>IsFolder</c> across the reload would be silent and expensive: a file step read
+    /// back as a folder asks for a junction, which the operating system refuses for anything that
+    /// is not a directory, so the move would run and then fail at the last stage.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task AUserChosenStep_SurvivesAReloadWithItsKindAndItsMissingRule()
+    {
+        using var host = new TestHost();
+        var planning = host.Get<StoragePlanService>();
+
+        var plan = await planning.LoadOrCreateAsync(SessionId);
+
+        var folder = Chosen("i-folder", @"D:\Games\SomeGame", 40_000, isFolder: true);
+        var file = Chosen("i-file", @"D:\media\raw.mkv", 8_000, isFolder: false);
+
+        Assert.True(planning.Include(plan, folder, SessionId, SuggestedAction.Delete).IsSuccess);
+        Assert.True(planning.Include(plan, file, SessionId, SuggestedAction.Move).IsSuccess);
+        await planning.SaveAsync(plan);
+
+        var reloaded = await planning.LoadOrCreateAsync(SessionId);
+
+        var reloadedFolder = reloaded.FindByScanItem("i-folder")!;
+        var reloadedFile = reloaded.FindByScanItem("i-file")!;
+
+        Assert.True(reloadedFolder.IsFolder);
+        Assert.False(reloadedFile.IsFolder);
+
+        // Both were picked by hand, so neither has advice behind it.
+        Assert.True(reloadedFolder.HasNoRule);
+        Assert.True(reloadedFile.HasNoRule);
+        Assert.Null(reloadedFile.RecommendationId);
+    }
+
+    /// <summary>Advice from the catalog must not come back looking user-chosen.</summary>
+    [Fact]
+    public async Task AdviceFromTheCatalog_SurvivesAReloadStillLinkedToItsRecommendation()
+    {
+        using var host = new TestHost();
+        var planning = host.Get<StoragePlanService>();
+        var recommendations = host.Get<IRecommendationRepository>();
+
+        var advice = Advice("r1", "i1", @"C:\dev\nuget", 900);
+        await recommendations.ReplaceForSessionAsync(SessionId, [advice]);
+
+        var plan = await planning.LoadOrCreateAsync(SessionId);
+        Assert.True(planning.Include(plan, advice, SuggestedAction.Delete).IsSuccess);
+        await planning.SaveAsync(plan);
+
+        var reloaded = (await planning.LoadOrCreateAsync(SessionId)).FindByScanItem("i1")!;
+
+        Assert.False(reloaded.HasNoRule);
+        Assert.Equal("r1", reloaded.RecommendationId);
+        Assert.True(reloaded.IsFolder);
+    }
+
+    private static ScanItemView Chosen(string id, string path, long size, bool isFolder) => new(
+        Id: id,
+        ParentId: null,
+        Path: path,
+        Name: System.IO.Path.GetFileName(path),
+        Extension: null,
+        ItemType: isFolder ? ItemType.Folder : ItemType.File,
+        Size: size,
+        AllocatedSize: size,
+        FileCount: isFolder ? 10 : 0,
+        FolderCount: 0,
+        Depth: 2,
+        CreationTime: null,
+        LastWriteTime: null,
+        IsReparsePoint: false,
+        IsProtected: false,
+        IsHidden: false,
+        IsSystem: false,
+        RiskLevel: RiskLevel.Unknown,
+        Category: StorageCategory.Unknown,
+        DetectedTechnology: null,
+        KnownRuleId: null,
+        Confidence: 0,
+        CanDelete: false,
+        CanMove: false,
+        CanRegenerate: false);
 }

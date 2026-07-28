@@ -17,6 +17,9 @@ public interface IFileSystemActions
 {
     bool DirectoryExists(string path);
 
+    /// <summary>True for a file or a folder. What the user picked out of a scan can be either.</summary>
+    bool Exists(string path);
+
     /// <summary>
     /// True for a junction, symbolic link or mount point. Such a folder is a pointer, not storage:
     /// deleting it frees nothing and moving it would copy the target's contents.
@@ -32,15 +35,22 @@ public interface IFileSystemActions
     /// <summary>The volume root for a path, used to tell "different drive" from "same drive".</summary>
     Result<string> GetVolumeRoot(string path);
 
-    /// <summary>Walks the folder and totals what is really there. Read-only.</summary>
+    /// <summary>
+    /// Walks the folder and totals what is really there, or measures a single file. Read-only.
+    /// </summary>
     Task<Result<DirectoryFacts>> MeasureAsync(string path, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Copies a folder tree. The source is never touched. A cancelled or failed copy leaves
-    /// whatever was written at the destination for the caller to clean up — this method does not
-    /// decide what to do about it.
+    /// Copies a folder tree, or a single file. The source is never touched. A cancelled or failed
+    /// copy leaves whatever was written at the destination for the caller to clean up — this
+    /// method does not decide what to do about it.
+    /// <para>
+    /// It takes either kind rather than having a sibling for files because the sequence its caller
+    /// performs — copy, verify against a fresh measurement, recycle the original, link it back — is
+    /// the same either way. Splitting here would split that sequence four times over.
+    /// </para>
     /// </summary>
-    Task<Result> CopyDirectoryAsync(
+    Task<Result> CopyAsync(
         string sourcePath,
         string destinationPath,
         IProgress<CopyProgress>? progress = null,
@@ -56,5 +66,10 @@ public interface IFileSystemActions
     /// Leaves a junction or symbolic link at <paramref name="linkPath"/> pointing at
     /// <paramref name="targetPath"/>, so tools that hard-code the old location keep working.
     /// </summary>
-    Result CreateDirectoryLink(string linkPath, string targetPath, MigrationMethod method);
+    /// <param name="isFolder">
+    /// Which kind of link to make. There is no junction for a file, so a file always needs a
+    /// symbolic link — and that needs administrator rights or Developer Mode, where a folder
+    /// junction needs neither. A file move can therefore succeed and still not leave a link.
+    /// </param>
+    Result CreateLink(string linkPath, string targetPath, MigrationMethod method, bool isFolder = true);
 }

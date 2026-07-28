@@ -45,7 +45,9 @@ public sealed class ExecutionGuard
         if (IsVolumeRoot(sourcePath) || _protectedPaths.IsProtected(sourcePath))
             return Result.Failure(ExecutionErrors.ProtectedPath);
 
-        if (!_fileSystem.DirectoryExists(sourcePath))
+        // Either kind: what the user picked out of a scan can be a single large file just as
+        // easily as a folder, and refusing files here is what made half a disk unactionable.
+        if (!_fileSystem.Exists(sourcePath))
             return Result.Failure(ExecutionErrors.SourceMissing);
 
         // Acting on a link would either free nothing (delete) or copy someone else's data (move).
@@ -82,8 +84,12 @@ public sealed class ExecutionGuard
             return Result.Failure(ExecutionErrors.DestinationSameVolume);
 
         // Merging into a folder that already holds data would mix two trees together and make the
-        // "copy matches the original" check meaningless.
+        // "copy matches the original" check meaningless. A destination that is already a file is
+        // refused for the same reason: writing over it would destroy something.
         if (_fileSystem.DirectoryExists(destinationPath) && !_fileSystem.IsEmptyDirectory(destinationPath))
+            return Result.Failure(ExecutionErrors.DestinationNotEmpty);
+
+        if (!_fileSystem.DirectoryExists(destinationPath) && _fileSystem.Exists(destinationPath))
             return Result.Failure(ExecutionErrors.DestinationNotEmpty);
 
         var freeSpace = _fileSystem.GetAvailableFreeSpace(destinationPath);

@@ -15,7 +15,7 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
 
     private const string EntryColumns =
         "Id, PlanId, RecommendationId, ScanItemId, Path, Title, Action, EstimatedSpace, RiskLevel, " +
-        "Category, Technology, Method, MethodHint, Warning, AddedAt, SortOrder";
+        "Category, Technology, Method, MethodHint, Warning, AddedAt, SortOrder, IsFolder, HasNoRule";
 
     private readonly StoravaDbOptions _options;
     private readonly IDatabaseInitializer _initializer;
@@ -122,7 +122,7 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
                 INSERT INTO StoragePlanEntries ({EntryColumns}) VALUES (
                     $Id, $PlanId, $RecommendationId, $ScanItemId, $Path, $Title, $Action,
                     $EstimatedSpace, $RiskLevel, $Category, $Technology, $Method, $MethodHint,
-                    $Warning, $AddedAt, $SortOrder);
+                    $Warning, $AddedAt, $SortOrder, $IsFolder, $HasNoRule);
                 """;
 
             var p = insert.Parameters;
@@ -137,6 +137,8 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
             var risk = p.Add("$RiskLevel", SqliteType.Integer);
             var category = p.Add("$Category", SqliteType.Integer);
             var technology = p.Add("$Technology", SqliteType.Text);
+            var isFolder = p.Add("$IsFolder", SqliteType.Integer);
+            var hasNoRule = p.Add("$HasNoRule", SqliteType.Integer);
             var method = p.Add("$Method", SqliteType.Integer);
             var methodHint = p.Add("$MethodHint", SqliteType.Text);
             var warning = p.Add("$Warning", SqliteType.Text);
@@ -147,7 +149,11 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
             {
                 id.Value = entry.Id;
                 planId.Value = plan.Id;
-                recommendationId.Value = entry.RecommendationId;
+                // Empty rather than null: the column is NOT NULL on every database already in
+                // existence, and HasNoRule is what actually says whether there is one.
+                recommendationId.Value = entry.RecommendationId ?? string.Empty;
+                isFolder.Value = entry.IsFolder ? 1 : 0;
+                hasNoRule.Value = entry.HasNoRule ? 1 : 0;
                 scanItemId.Value = entry.ScanItemId;
                 path.Value = entry.Path;
                 title.Value = entry.Title;
@@ -191,7 +197,7 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
     {
         Id = r.GetString(0),
         PlanId = r.GetString(1),
-        RecommendationId = r.GetString(2),
+        RecommendationId = r.IsDBNull(2) || r.GetString(2).Length == 0 ? null : r.GetString(2),
         ScanItemId = r.GetString(3),
         Path = r.GetString(4),
         Title = r.GetString(5),
@@ -204,6 +210,8 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
         MethodHint = r.IsDBNull(12) ? null : r.GetString(12),
         Warning = r.IsDBNull(13) ? null : r.GetString(13),
         AddedAt = r.GetFieldValue<DateTimeOffset>(14),
-        Order = r.GetInt32(15)
+        Order = r.GetInt32(15),
+        IsFolder = r.GetInt32(16) != 0,
+        HasNoRule = r.GetInt32(17) != 0
     };
 }

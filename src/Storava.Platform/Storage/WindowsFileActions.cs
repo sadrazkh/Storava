@@ -32,6 +32,8 @@ public sealed class WindowsFileActions : IFileSystemActions
     public bool DirectoryExists(string path) =>
         !string.IsNullOrWhiteSpace(path) && Directory.Exists(path);
 
+    public bool Exists(string path) => Directory.Exists(path) || File.Exists(path);
+
     public bool IsReparsePoint(string path)
     {
         try
@@ -96,7 +98,24 @@ public sealed class WindowsFileActions : IFileSystemActions
     private Result<DirectoryFacts> Measure(string path, CancellationToken cancellationToken)
     {
         if (!Directory.Exists(path))
+        {
+            // One file counts as one file, so that comparing a copied file against its source uses
+            // exactly the same comparison a copied tree does.
+            if (File.Exists(path))
+            {
+                try
+                {
+                    return Result.Success(new DirectoryFacts(new FileInfo(path).Length, 1, 0, 0));
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+                {
+                    _logger.LogWarning(ex, "A file could not be measured.");
+                    return Result.Failure<DirectoryFacts>(ExecutionErrors.CopyFailed);
+                }
+            }
+
             return Result.Failure<DirectoryFacts>(ExecutionErrors.SourceMissing);
+        }
 
         long bytes = 0, files = 0, folders = 0, links = 0;
 
@@ -144,12 +163,57 @@ public sealed class WindowsFileActions : IFileSystemActions
         return Result.Success(new DirectoryFacts(bytes, files, folders, links));
     }
 
-    public Task<Result> CopyDirectoryAsync(
+    public Task<Result> CopyAsync(
         string sourcePath,
         string destinationPath,
         IProgress<CopyProgress>? progress = null,
         CancellationToken cancellationToken = default) =>
-        Task.Run(() => CopyDirectory(sourcePath, destinationPath, progress, cancellationToken), cancellationToken);
+        Task.Run(() => Copy(sourcePath, destinationPath, progress, cancellationToken), cancellationToken);
+
+    private Result Copy(
+        string sourcePath,
+        string destinationPath,
+        IProgress<CopyProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        if (!Directory.Exists(sourcePath) && File.Exists(sourcePath))
+            return CopySingleFile(sourcePath, destinationPath, progress, cancellationToken);
+
+        return CopyDirectory(sourcePath, destinationPath, progress, cancellationToken);
+    }
+
+    /// <summary>
+    /// Copies one file to <paramref name="destinationPath"/>, which names the file itself rather
+    /// than a folder to drop it in — the caller has already decided what it should be called.
+    /// </summary>
+    private Result CopySingleFile(
+        string sourcePath,
+        string destinationPath,
+        IProgress<CopyProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var file = new FileInfo(sourcePath);
+
+            string? parent = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrEmpty(parent))
+                Directory.CreateDirectory(parent);
+
+            CopyFile(file, destinationPath, cancellationToken);
+            progress?.Report(new CopyProgress(file.Length, file.Length, destinationPath));
+            return Result.Success();
+        }
+        catch (OperationCanceledException)
+        {
+            return Result.Failure(ExecutionErrors.Cancelled);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "A file could not be copied.");
+            return Result.Failure(ExecutionErrors.CopyFailed);
+        }
+    }
 
     private Result CopyDirectory(
         string sourcePath,
@@ -288,10 +352,19 @@ public sealed class WindowsFileActions : IFileSystemActions
         return Result.Success();
     }
 
-    public Result CreateDirectoryLink(string linkPath, string targetPath, MigrationMethod method)
+    public Result CreateLink(string linkPath, string targetPath, MigrationMethod method, bool isFolder = true)
     {
         try
         {
+            // A junction only exists for directories. A file has to have a symbolic link, which
+            // needs a privilege a normal user does not have — so this can legitimately fail on a
+            // move that otherwise worked, and the caller records that rather than rolling back.
+            if (!isFolder)
+            {
+                File.CreateSymbolicLink(linkPath, targetPath);
+                return Result.Success();
+            }
+
             switch (method)
             {
                 case MigrationMethod.SymbolicLink:

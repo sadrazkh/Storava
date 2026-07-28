@@ -291,4 +291,129 @@ public class StoragePlanTests
         Assert.Empty(plan.Entries);
         Assert.Equal(0, plan.TotalReclaimable);
     }
+
+    // --- what the user may choose for themselves ------------------------------------
+    //
+    // Most of a real disk is not in the rule catalog. Refusing to plan anything the catalog does
+    // not recognise is what made the whole feature reachable for about three dozen folders.
+
+    private static PlanCandidate Chosen(
+        string scanItemId = "item-1",
+        string path = @"C:\games\assets",
+        long space = 4096,
+        bool isFolder = true,
+        bool isReparsePoint = false,
+        RiskLevel risk = RiskLevel.Unknown,
+        string sessionId = SessionId) => new()
+        {
+            SessionId = sessionId,
+            ScanItemId = scanItemId,
+            Path = path,
+            Title = "assets",
+            EstimatedSpace = space,
+            RiskLevel = risk,
+            IsFolder = isFolder,
+            IsReparsePoint = isReparsePoint,
+            // Nothing matched it, so both capability flags are false — not as a refusal, but
+            // because no rule was ever consulted.
+            IsIdentified = false,
+            CanDelete = false,
+            CanMove = false
+        };
+
+    [Theory]
+    [InlineData(SuggestedAction.Delete)]
+    [InlineData(SuggestedAction.Move)]
+    public void Accepts_AnItemNoRuleRecognises(SuggestedAction action)
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(), action, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value.HasNoRule);
+        Assert.Null(result.Value.RecommendationId);
+    }
+
+    /// <summary>
+    /// The catalog's refusal is knowledge, and knowledge outranks a click. Only silence is treated
+    /// as permission — see PlanCandidate.Permits.
+    /// </summary>
+    [Fact]
+    public void StillRefuses_WhatARuleExplicitlyForbids()
+    {
+        var plan = NewPlan();
+        var known = Chosen() with { IsIdentified = true, CanDelete = false, CanMove = true };
+
+        var result = plan.TryAdd(known, SuggestedAction.Delete, NextEntryId());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(PlanErrors.DeleteNotPermitted.Code, result.Error.Code);
+    }
+
+    /// <summary>
+    /// A junction or symlink is a pointer. Deleting one frees nothing, and moving one would copy
+    /// whatever it points at — data from somewhere the user never selected.
+    /// </summary>
+    [Theory]
+    [InlineData(SuggestedAction.Delete)]
+    [InlineData(SuggestedAction.Move)]
+    public void Refuses_ALinkEvenWhenTheUserChoseIt(SuggestedAction action)
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(isReparsePoint: true), action, NextEntryId());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(PlanErrors.IsLink.Code, result.Error.Code);
+    }
+
+    [Fact]
+    public void Refuses_AProtectedItemEvenWhenTheUserChoseIt()
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(risk: RiskLevel.Protected), SuggestedAction.Delete, NextEntryId());
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(PlanErrors.ProtectedPath.Code, result.Error.Code);
+    }
+
+    /// <summary>
+    /// Nothing in the catalog said how to relocate an unrecognised folder, but a move still has to
+    /// leave something behind. A junction is the mechanism that needs no elevation.
+    /// </summary>
+    [Fact]
+    public void AUserChosenMove_FallsBackToTheMechanismThatNeedsNoPrivilege()
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(), SuggestedAction.Move, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(MigrationMethod.Junction, result.Value.Method);
+    }
+
+    [Fact]
+    public void AFile_IsCarriedThroughAsAFile()
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(isFolder: false), SuggestedAction.Move, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value.IsFolder);
+    }
+
+    [Fact]
+    public void AdviceFromTheCatalog_IsNotMarkedAsUserChosen()
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Advice(), SuggestedAction.Delete, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value.HasNoRule);
+        Assert.NotNull(result.Value.RecommendationId);
+    }
 }

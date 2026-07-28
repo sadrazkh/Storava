@@ -95,7 +95,9 @@
          ============================================================ -->
     <Style x:Key="Storava.Badge" TargetType="Border">
         <Setter Property="CornerRadius" Value="{StaticResource Radius.Tag}" />
-        <Setter Property="Padding" Value="8,2" />
+        <!-- Three above and below, not two: Persian descenders (ج, چ, ی) drop below the
+             baseline and were reaching the border. -->
+        <Setter Property="Padding" Value="8,3" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="{DynamicResource Storava.Brush.Neutral.Fill}" />
@@ -103,6 +105,35 @@
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Neutral.Text}" />
         <Setter Property="TextElement.FontSize" Value="11" />
         <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- A title with tags beside it.
+
+         A horizontal StackPanel is the wrong container for this and was the bug: it gives its
+         first child unlimited width, so a long title took the whole row and pushed the tags past
+         the edge of the card, where they were clipped away. The title is the part that can afford
+         to lose characters, so it gets the flexible column and an ellipsis, and the tags keep the
+         space they need. -->
+    <Style x:Key="Storava.TitleRow" TargetType="Grid">
+        <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+
+    <!-- The title inside such a row.
+
+         Capped rather than left to grow. Its column sizes to the text so the tags sit next to the
+         title where they belong instead of drifting to the far edge of the card, and the cap is
+         what stops a long title reaching them: past this width it truncates. -->
+    <Style x:Key="Storava.TitleRow.Text" TargetType="TextBlock" BasedOn="{StaticResource Storava.Text.H2}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="MaxWidth" Value="520" />
+    </Style>
+
+    <!-- The tags in such a row. Wraps rather than clips when the row is genuinely too narrow. -->
+    <Style x:Key="Storava.TitleRow.Tags" TargetType="WrapPanel">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Orientation" Value="Horizontal" />
     </Style>
 
     <!-- The label inside a tag. Inherits the tag's colour rather than naming one, so a tag

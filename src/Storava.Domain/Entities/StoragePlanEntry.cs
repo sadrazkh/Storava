@@ -15,8 +15,11 @@ public sealed class StoragePlanEntry
     public required string Id { get; init; }
     public required string PlanId { get; init; }
 
-    /// <summary>The advice this step came from.</summary>
-    public required string RecommendationId { get; init; }
+    /// <summary>
+    /// The advice this step came from, or null when the user picked the item out of the scan
+    /// themselves and there is no advice to point back to.
+    /// </summary>
+    public string? RecommendationId { get; init; }
 
     /// <summary>The scan item the step refers to. Never a free-form path.</summary>
     public required string ScanItemId { get; init; }
@@ -32,6 +35,19 @@ public sealed class StoragePlanEntry
 
     /// <summary>Space this step would free on its own, in bytes.</summary>
     public long EstimatedSpace { get; init; }
+
+    /// <summary>
+    /// False for a file. It does not change whether the step is allowed, only how it is carried
+    /// out — a file is copied and linked differently from a tree.
+    /// </summary>
+    public bool IsFolder { get; init; } = true;
+
+    /// <summary>
+    /// True when no rule in the catalog recognised this item and the user chose the action on
+    /// their own. Nothing behaves differently because of it; it is here so the confirmation can
+    /// say plainly that Storava has no knowledge of this item beyond its size.
+    /// </summary>
+    public bool HasNoRule { get; init; }
 
     public RiskLevel RiskLevel { get; init; } = RiskLevel.Unknown;
     public StorageCategory Category { get; init; } = StorageCategory.Unknown;

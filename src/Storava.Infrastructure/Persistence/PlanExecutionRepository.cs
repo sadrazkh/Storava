@@ -20,7 +20,7 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
     private const string StepColumns =
         "Id, ExecutionId, PlanEntryId, ScanItemId, SourcePath, Title, Action, Method, SortOrder, " +
         "DestinationPath, Status, MeasuredBytes, BytesFreed, StartedAt, CompletedAt, RecycledPath, " +
-        "LinkPath, ErrorCode, ErrorMessage";
+        "LinkPath, ErrorCode, ErrorMessage, IsFolder, HasNoRule";
 
     private readonly StoravaDbOptions _options;
     private readonly IDatabaseInitializer _initializer;
@@ -81,7 +81,8 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
             INSERT INTO PlanExecutionSteps ({StepColumns}) VALUES (
                 $Id, $ExecutionId, $PlanEntryId, $ScanItemId, $SourcePath, $Title, $Action, $Method,
                 $SortOrder, $DestinationPath, $Status, $MeasuredBytes, $BytesFreed, $StartedAt,
-                $CompletedAt, $RecycledPath, $LinkPath, $ErrorCode, $ErrorMessage)
+                $CompletedAt, $RecycledPath, $LinkPath, $ErrorCode, $ErrorMessage, $IsFolder,
+                $HasNoRule)
             ON CONFLICT(Id) DO UPDATE SET
                 DestinationPath = excluded.DestinationPath,
                 Status          = excluded.Status,
@@ -104,6 +105,10 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
         p.AddWithValue("$Title", step.Title);
         p.AddWithValue("$Action", (int)step.Action);
         p.AddWithValue("$Method", (int)step.Method);
+        // Carried rather than re-probed: a folder that became a file between planning and running
+        // is exactly the substitution the confirmation exists to refuse.
+        p.AddWithValue("$IsFolder", step.IsFolder ? 1 : 0);
+        p.AddWithValue("$HasNoRule", step.HasNoRule ? 1 : 0);
         p.AddWithValue("$SortOrder", step.Order);
         p.AddWithValue("$DestinationPath", (object?)step.DestinationPath ?? DBNull.Value);
         p.AddWithValue("$Status", (int)step.Status);
@@ -248,6 +253,8 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
         RecycledPath = r.IsDBNull(15) ? null : r.GetString(15),
         LinkPath = r.IsDBNull(16) ? null : r.GetString(16),
         ErrorCode = r.IsDBNull(17) ? null : r.GetString(17),
-        ErrorMessage = r.IsDBNull(18) ? null : r.GetString(18)
+        ErrorMessage = r.IsDBNull(18) ? null : r.GetString(18),
+        IsFolder = r.GetInt32(19) != 0,
+        HasNoRule = r.GetInt32(20) != 0
     };
 }
