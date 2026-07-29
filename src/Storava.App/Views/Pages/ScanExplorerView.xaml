@@ -64,7 +64,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Tabs -->
-            <materialDesign:Card Grid.Column="0" UniformCornerRadius="14" Padding="4">
+            <Border Style="{StaticResource Storava.Card}" Grid.Column="0" Padding="4">
                 <TabControl SelectedIndex="{Binding SelectedTabIndex}"
                             Style="{StaticResource MaterialDesignTabControl}"
                             Background="Transparent">
@@ -157,10 +157,10 @@
                         </DataGrid>
                     </TabItem>
                 </TabControl>
-            </materialDesign:Card>
+            </Border>
 
             <!-- Detail pane -->
-            <materialDesign:Card Grid.Column="2" UniformCornerRadius="14" Padding="20" VerticalAlignment="Stretch">
+            <Border Style="{StaticResource Storava.Card}" Grid.Column="2" Padding="20" VerticalAlignment="Stretch">
                 <Grid>
                     <!-- Empty -->
                     <TextBlock Text="{DynamicResource Str.Explorer.Detail.Empty}" Style="{StaticResource Storava.Text.Caption}"
@@ -218,7 +218,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
-            </materialDesign:Card>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

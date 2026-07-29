@@ -512,4 +512,13 @@
     <sys:String x:Key="Str.Migration.CancelStep">Stop</sys:String>
     <sys:String x:Key="Str.Plan.Error.IsLink">This is a link to somewhere else, not storage of its own.</sys:String>
 
+    <sys:String x:Key="Str.Cleanup.Step.Choose">Choose</sys:String>
+    <sys:String x:Key="Str.Cleanup.Step.Destination">Destination</sys:String>
+    <sys:String x:Key="Str.Cleanup.Step.Run">Check and run</sys:String>
+    <sys:String x:Key="Str.Cleanup.Next.Destination">Continue</sys:String>
+    <sys:String x:Key="Str.Cleanup.Next.Check">Check what would happen</sys:String>
+    <sys:String x:Key="Str.Cleanup.Back">Back</sys:String>
+    <sys:String x:Key="Str.Cleanup.FilterBy">Show</sys:String>
+    <sys:String x:Key="Str.Cleanup.AllRisks">All</sys:String>
+    <sys:String x:Key="Str.Cleanup.NothingCanRun">Nothing here can run. Each step below says why it was refused — the folder may have gone, be a link, or be somewhere Storava will not touch. Go back and choose something else.</sys:String>
 </ResourceDictionary>

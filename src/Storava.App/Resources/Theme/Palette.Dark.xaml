@@ -85,6 +85,12 @@
     <SolidColorBrush x:Key="Storava.Brush.Info" Color="#7DB4F5" />
     <SolidColorBrush x:Key="Storava.Brush.Muted" Color="#A8A8B2" />
 
+
+    <!-- The step the user is on. Its own tokens, contrast-checked in both themes. -->
+    <SolidColorBrush x:Key="Storava.Brush.Step.Fill" Color="#0E3B39" />
+    <SolidColorBrush x:Key="Storava.Brush.Step.Text" Color="#5EEAD4" />
+    <SolidColorBrush x:Key="Storava.Brush.Step.Edge" Color="#2A8079" />
+
     <!-- Hero gradient. Every stop is dark enough to carry white text: the teal it started from
          read at 2.55:1 under the headline it was behind, which is the page's largest type and
          the first thing anyone sees. -->

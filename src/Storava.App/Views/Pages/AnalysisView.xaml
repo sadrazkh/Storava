@@ -39,7 +39,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Treemap -->
-            <materialDesign:Card Grid.Column="0" UniformCornerRadius="14" Padding="16">
+            <Border Style="{StaticResource Storava.Card}" Grid.Column="0" Padding="16">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -88,13 +88,13 @@
                     <TextBlock Grid.Row="2" Text="{DynamicResource Str.Analysis.DrillHint}"
                                Style="{StaticResource Storava.Text.Caption}" Margin="0,10,0,0" Opacity="0.7" />
                 </Grid>
-            </materialDesign:Card>
+            </Border>
 
             <!-- Right column -->
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <!-- Category breakdown -->
-                    <materialDesign:Card UniformCornerRadius="14" Padding="20" Margin="0,0,0,16">
+                    <Border Style="{StaticResource Storava.Card}" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
                             <Grid Margin="0,0,0,12">
                                 <TextBlock Text="{DynamicResource Str.Analysis.Categories}" Style="{StaticResource Storava.Text.H2}" />
@@ -131,10 +131,10 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                    </materialDesign:Card>
+                    </Border>
 
                     <!-- Top consumers -->
-                    <materialDesign:Card UniformCornerRadius="14" Padding="20">
+                    <Border Style="{StaticResource Storava.Card}" Padding="20">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource Str.Analysis.TopConsumers}" Style="{StaticResource Storava.Text.H2}" Margin="0,0,0,12" />
                             <ItemsControl ItemsSource="{Binding TopConsumers}">
@@ -162,7 +162,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                    </materialDesign:Card>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

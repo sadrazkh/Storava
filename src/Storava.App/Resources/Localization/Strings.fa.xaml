@@ -512,4 +512,13 @@
     <sys:String x:Key="Str.Migration.CancelStep">توقف</sys:String>
     <sys:String x:Key="Str.Plan.Error.IsLink">این یک لینک به جای دیگری است، نه فضای ذخیره‌سازی خودش.</sys:String>
 
+    <sys:String x:Key="Str.Cleanup.Step.Choose">انتخاب</sys:String>
+    <sys:String x:Key="Str.Cleanup.Step.Destination">مقصد</sys:String>
+    <sys:String x:Key="Str.Cleanup.Step.Run">بررسی و اجرا</sys:String>
+    <sys:String x:Key="Str.Cleanup.Next.Destination">ادامه</sys:String>
+    <sys:String x:Key="Str.Cleanup.Next.Check">ببین چه اتفاقی می‌افتد</sys:String>
+    <sys:String x:Key="Str.Cleanup.Back">بازگشت</sys:String>
+    <sys:String x:Key="Str.Cleanup.FilterBy">نمایش</sys:String>
+    <sys:String x:Key="Str.Cleanup.AllRisks">همه</sys:String>
+    <sys:String x:Key="Str.Cleanup.NothingCanRun">هیچ‌کدام قابل اجرا نیست. زیر هر گام نوشته چرا رد شده — ممکن است پوشه دیگر نباشد، لینک باشد، یا جایی باشد که استوراوا دست نمی‌زند. برگردید و چیز دیگری انتخاب کنید.</sys:String>
 </ResourceDictionary>

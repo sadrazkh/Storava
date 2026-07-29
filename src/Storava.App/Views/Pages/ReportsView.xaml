@@ -131,7 +131,6 @@
                                            VerticalAlignment="Center" />
                             </StackPanel>
                             <Border Grid.Column="1" Style="{StaticResource Storava.Badge}" VerticalAlignment="Center"
-                                    Background="{DynamicResource MaterialDesignChipBackground}"
                                     Visibility="{Binding AiAvailable, Converter={StaticResource Conv.BoolVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{DynamicResource Str.Ai.Model}" FontSize="11" Opacity="0.7" VerticalAlignment="Center" />
@@ -307,7 +306,7 @@
                     <ItemsControl ItemsSource="{Binding AiSuggestions}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <materialDesign:Card UniformCornerRadius="14" Padding="20" Margin="0,0,0,12">
+                                <Border Style="{StaticResource Storava.Card}" Padding="20" Margin="0,0,0,12">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -360,7 +359,7 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
-                                </materialDesign:Card>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -373,9 +372,8 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="{DynamicResource Str.Ai.Rejected}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    <Border Style="{StaticResource Storava.Badge}" Margin="8,0,0,0"
-                                            Background="{DynamicResource MaterialDesignChipBackground}">
-                                        <TextBlock Text="{Binding AiRejectedCount}" FontSize="11" FontWeight="SemiBold" />
+                                    <Border Style="{StaticResource Storava.Badge}" Margin="8,0,0,0">
+                                        <TextBlock Text="{Binding AiRejectedCount}" Style="{StaticResource Storava.Badge.Text}" />
                                     </Border>
                                 </StackPanel>
                                 <TextBlock Text="{DynamicResource Str.Ai.RejectedNote}" Style="{StaticResource Storava.Text.Caption}"

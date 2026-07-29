@@ -111,7 +111,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Pick two scans -->
-                <materialDesign:Card Grid.Row="0" UniformCornerRadius="14" Padding="18" Margin="0,0,0,12">
+                <Border Style="{StaticResource Storava.Card}" Grid.Row="0" Padding="18" Margin="0,0,0,12">
                     <StackPanel>
                         <TextBlock Text="{DynamicResource Str.History.Compare}"
                                    Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,12" />
@@ -178,7 +178,7 @@
                             </StackPanel>
                         </Grid>
                     </StackPanel>
-                </materialDesign:Card>
+                </Border>
 
                 <!-- What moved -->
                 <Grid Grid.Row="1" Margin="0,0,0,10"
@@ -214,21 +214,21 @@
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                    <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                <!-- Wraps rather than clips: a tag that runs off
+                                                     the edge of the row is a tag nobody can read. -->
+                                                <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <Border Style="{StaticResource Storava.Badge.Risk}" Margin="0,0,6,4">
                                                         <TextBlock Text="{Binding KindText}" Style="{StaticResource Storava.Badge.Text}" />
                                                     </Border>
-                                                    <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                            Background="{DynamicResource MaterialDesignChipBackground}">
-                                                        <TextBlock Text="{Binding CategoryText}" FontSize="11" />
+                                                    <Border Style="{StaticResource Storava.Badge}" Margin="0,0,6,4">
+                                                        <TextBlock Text="{Binding CategoryText}" Style="{StaticResource Storava.Badge.Text}" />
                                                     </Border>
                                                     <!-- Space already counted by a folder above this one -->
-                                                    <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                            Background="{DynamicResource MaterialDesignChipBackground}"
+                                                    <Border Style="{StaticResource Storava.Badge}" Margin="0,0,6,4"
                                                             Visibility="{Binding IsNested, Converter={StaticResource Conv.BoolVis}}">
-                                                        <TextBlock Text="{DynamicResource Str.History.Nested}" FontSize="11" />
+                                                        <TextBlock Text="{DynamicResource Str.History.Nested}" Style="{StaticResource Storava.Badge.Text}" />
                                                     </Border>
-                                                </StackPanel>
+                                                </WrapPanel>
 
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Storava.Text.Body}" />
                                                 <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
@@ -398,29 +398,30 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <!-- Up to four tags beside a size. They wrap onto a
+                                                 second line when the row is narrow instead of the
+                                                 last ones being clipped away. -->
+                                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding SizeText}" FontSize="14" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource PrimaryHueMidBrush}" />
-                                                <Border Style="{StaticResource Storava.Badge}" Margin="8,0,0,0"
-                                                        Background="{DynamicResource MaterialDesignChipBackground}">
-                                                    <TextBlock Text="{Binding ModeText}" FontSize="11" />
+                                                           Margin="0,0,8,4" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource Storava.Brush.Step.Text}" />
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="0,0,6,4">
+                                                    <TextBlock Text="{Binding ModeText}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
-                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                        Background="{DynamicResource MaterialDesignChipBackground}"
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="0,0,6,4"
                                                         Visibility="{Binding IsCompleted, Converter={StaticResource Conv.InvBoolVis}}">
-                                                    <TextBlock Text="{Binding StatusText}" FontSize="11" />
+                                                    <TextBlock Text="{Binding StatusText}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
-                                                <Border Style="{StaticResource Storava.Badge.Accent}" Margin="6,0,0,0"
+                                                <Border Style="{StaticResource Storava.Badge.Accent}" Margin="0,0,6,4"
                                                         Visibility="{Binding CanResume, Converter={StaticResource Conv.BoolVis}}">
                                                     <TextBlock Text="{DynamicResource Str.History.ResumableBadge}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
                                                 <!-- Measured elsewhere: the paths in it describe another machine's disk -->
-                                                <Border Style="{StaticResource Storava.Badge}" Margin="6,0,0,0"
-                                                        Background="{DynamicResource MaterialDesignChipBackground}"
+                                                <Border Style="{StaticResource Storava.Badge}" Margin="0,0,6,4"
                                                         Visibility="{Binding IsImported, Converter={StaticResource Conv.BoolVis}}">
-                                                    <TextBlock Text="{DynamicResource Str.Archive.ImportedBadge}" FontSize="11" />
+                                                    <TextBlock Text="{DynamicResource Str.Archive.ImportedBadge}" Style="{StaticResource Storava.Badge.Text}" />
                                                 </Border>
-                                            </StackPanel>
+                                            </WrapPanel>
 
                                             <TextBlock Text="{Binding RootPath}" Style="{StaticResource Storava.Text.Caption}"
                                                        TextTrimming="CharacterEllipsis" />

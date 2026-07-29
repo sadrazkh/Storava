@@ -71,6 +71,25 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
     /// </summary>
     private bool _isRebuildingScans;
 
+    /// <summary>
+    /// Which phase is on screen.
+    /// <para>
+    /// Everything used to be visible at once, which meant a page of controls with no obvious place
+    /// to start and no obvious place to click next. One thing at a time, with a single primary
+    /// action anchored in the same spot, is the whole point of this.
+    /// </para>
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsChoosing))]
+    [NotifyPropertyChangedFor(nameof(IsPickingDestination))]
+    [NotifyPropertyChangedFor(nameof(IsActing))]
+    [NotifyPropertyChangedFor(nameof(CanGoBack))]
+    [NotifyPropertyChangedFor(nameof(PrimaryActionText))]
+    [NotifyCanExecuteChangedFor(nameof(NextCommand))]
+    private CleanupPhase _phase = CleanupPhase.Choose;
+
+    partial void OnPhaseChanged(CleanupPhase value) => RebuildPhases();
+
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _hasSession;
     [ObservableProperty] private string _rootPathText = string.Empty;
@@ -92,7 +111,10 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
     // Where moves go
     [ObservableProperty] private string? _destinationRoot;
+
     [ObservableProperty] private bool _hasMoves;
+
+    partial void OnHasMovesChanged(bool value) => RebuildPhases();
 
     // The run
     [ObservableProperty] private bool _isPreparing;
@@ -150,8 +172,64 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         _logger = logger;
 
         _localization.LanguageChanged += OnLanguageChanged;
+
+        RebuildPhases();
         _ = LoadAsync();
     }
+
+    public bool IsChoosing => Phase == CleanupPhase.Choose;
+
+    public bool IsPickingDestination => Phase == CleanupPhase.Destination;
+
+    public bool IsActing => Phase == CleanupPhase.Run;
+
+    private void RebuildPhases()
+    {
+        var culture = _localization.CurrentCulture;
+        int number = 1;
+
+        Phases.Clear();
+        Phases.Add(new CleanupPhaseChip(
+            number++.ToString(culture), _localization["Str.Cleanup.Step.Choose"], IsChoosing));
+
+        // Only when there is something to move. A phase that would be skipped is not shown, and
+        // the numbering below it closes up rather than leaving a gap.
+        if (HasMoves)
+        {
+            Phases.Add(new CleanupPhaseChip(
+                number++.ToString(culture), _localization["Str.Cleanup.Step.Destination"], IsPickingDestination));
+        }
+
+        Phases.Add(new CleanupPhaseChip(
+            number.ToString(culture), _localization["Str.Cleanup.Step.Run"], IsActing));
+    }
+
+    /// <summary>Back is offered until the first step has actually changed the disk.</summary>
+    public bool CanGoBack => Phase != CleanupPhase.Choose && !IsRunning && !IsFinished;
+
+    /// <summary>
+    /// What the one primary button says. Named for the step it leads to rather than the step it is
+    /// on, so the button always describes what is about to happen.
+    /// </summary>
+    public string PrimaryActionText => _localization[CleanupPhases.PrimaryKey(Phase)];
+
+    /// <summary>
+    /// True when the check ran and refused every step. Worth saying outright: the numbers alone
+    /// leave the user looking at a button that will not respond and no reason why.
+    /// </summary>
+    public bool NothingCanRun => HasPreflight && !IsPreparing && _preflight is { HasAnythingToDo: false };
+
+    /// <summary>
+    /// The step strip. Rebuilt whenever the phase or the selection changes, because the middle
+    /// phase only exists when something is being moved and the numbering has to follow.
+    /// </summary>
+    public ObservableCollection<CleanupPhaseChip> Phases { get; } = [];
+
+    /// <summary>
+    /// The risk levels present in this scan, as filters. Only levels that actually occur are
+    /// offered — a filter that can only ever return nothing is not worth the room.
+    /// </summary>
+    public ObservableCollection<CleanupTagFilter> RiskFilters { get; } = [];
 
     /// <summary>Every scan of this machine that is still on record.</summary>
     public ObservableCollection<CleanupScanOption> Scans { get; } = [];
@@ -177,7 +255,12 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
                                        step.RequiredName,
                                        StringComparison.OrdinalIgnoreCase);
 
-    private void OnLanguageChanged(object? sender, EventArgs e) => _ = LoadAsync();
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(PrimaryActionText));
+        RebuildPhases();
+        _ = LoadAsync();
+    }
 
     // --- choosing -------------------------------------------------------------------
 
@@ -323,6 +406,8 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         foreach (var model in AllItems)
             model.PropertyChanged += OnItemChanged;
 
+        BuildRiskFilters();
+
         // Start on everything when the catalog recognised nothing here.
         //
         // Defaulting to suggestions-only and letting the page come up empty is the exact failure
@@ -333,6 +418,57 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             SuggestedOnly = false;
 
         ApplyFilter();
+
+        // Worth a line in the log: "the page is empty" has several causes — no scan, no items in
+        // the scan, or a filter hiding them — and they are indistinguishable from a screenshot.
+        _logger.LogInformation(
+            "Cleanup loaded {Total} item(s) ({Suggested} suggested); {Visible} shown with suggestedOnly={Filter}.",
+            AllItems.Count,
+            AllItems.Count(item => item.IsSuggested),
+            VisibleItems.Count,
+            SuggestedOnly);
+    }
+
+    /// <summary>
+    /// Builds one filter per risk level that occurs, ordered gentlest first so the safest things
+    /// to clear are the easiest to reach.
+    /// </summary>
+    private void BuildRiskFilters()
+    {
+        foreach (var existing in RiskFilters)
+            existing.PropertyChanged -= OnFilterChanged;
+
+        RiskFilters.Clear();
+
+        var order = new[] { RiskLevel.Low, RiskLevel.Medium, RiskLevel.Unknown, RiskLevel.High };
+
+        foreach (var risk in order)
+        {
+            int count = AllItems.Count(item => item.Risk == risk);
+            if (count == 0)
+                continue;
+
+            var filter = new CleanupTagFilter(risk, _localization[$"Str.Risk.{risk}"], count);
+            filter.PropertyChanged += OnFilterChanged;
+            RiskFilters.Add(filter);
+        }
+
+        OnPropertyChanged(nameof(HasRiskFilters));
+    }
+
+    public bool HasRiskFilters => RiskFilters.Count > 0;
+
+    private void OnFilterChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CleanupTagFilter.IsSelected))
+            ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void ClearRiskFilters()
+    {
+        foreach (var filter in RiskFilters)
+            filter.IsSelected = false;
     }
 
     partial void OnSuggestedOnlyChanged(bool value) => ApplyFilter();
@@ -341,23 +477,16 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
     private void ApplyFilter()
     {
-        var term = SearchText?.Trim() ?? string.Empty;
+        // No risk chosen means no opinion, which shows everything. Narrowing to nothing at all
+        // would be a filter nobody asked for.
+        var risks = RiskFilters
+            .Where(filter => filter.IsSelected)
+            .Select(filter => filter.Risk)
+            .ToHashSet();
 
         VisibleItems.Clear();
-        foreach (var item in AllItems)
-        {
-            if (SuggestedOnly && !item.IsSuggested)
-                continue;
-
-            if (term.Length > 0 &&
-                item.Title.Contains(term, StringComparison.OrdinalIgnoreCase) == false &&
-                item.Path.Contains(term, StringComparison.OrdinalIgnoreCase) == false)
-            {
-                continue;
-            }
-
+        foreach (var item in CleanupFilter.Apply(AllItems, SuggestedOnly, SearchText, risks))
             VisibleItems.Add(item);
-        }
 
         OnPropertyChanged(nameof(HasItems));
     }
@@ -430,7 +559,53 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         HasSelection = _plan.Entries.Count > 0;
         HasMoves = _plan.MoveCount > 0;
 
-        PrepareCommand.NotifyCanExecuteChanged();
+        NextCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// Whether the primary button is on screen at all.
+    /// <para>
+    /// It steps aside once the run is under way, because from then on the decisions are per item
+    /// and belong to the confirmation card. Hiding it for the whole of the last phase — which is
+    /// what the first version of this layout did — left the run with no way to be started.
+    /// </para>
+    /// </summary>
+    public bool IsPrimaryVisible => !IsRunning && !IsFinished;
+
+    private bool CanGoNext => CleanupPhases.CanAdvance(
+        Phase,
+        HasSelection,
+        HasMoves,
+        !string.IsNullOrWhiteSpace(DestinationRoot),
+        canRun: _preflight is { HasAnythingToDo: true } && !IsPreparing);
+
+    [RelayCommand(CanExecute = nameof(CanGoNext))]
+    private async Task NextAsync()
+    {
+        // The last phase's primary action is to begin, not to advance.
+        if (Phase == CleanupPhase.Run)
+        {
+            await StartAsync().ConfigureAwait(true);
+            return;
+        }
+
+        Phase = CleanupPhases.Next(Phase, HasMoves);
+
+        if (Phase == CleanupPhase.Run)
+            await PrepareAsync().ConfigureAwait(true);
+    }
+
+    [RelayCommand]
+    private void Back()
+    {
+        if (IsRunning || IsFinished)
+            return;
+
+        Phase = CleanupPhases.Back(Phase, HasMoves);
+
+        // Anything checked was checked against the selection as it was; going back is how a user
+        // says they want to change it.
+        ResetRun();
     }
 
     [RelayCommand]
@@ -476,9 +651,29 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
     partial void OnDestinationRootChanged(string? value)
     {
+        NextCommand.NotifyCanExecuteChanged();
+
         // A destination chosen for the whole run does not survive into a run already under way.
         if (HasPreflight && !IsRunning)
             ResetRun();
+    }
+
+    partial void OnIsRunningChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanGoBack));
+        OnPropertyChanged(nameof(IsPrimaryVisible));
+    }
+
+    partial void OnIsFinishedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanGoBack));
+        OnPropertyChanged(nameof(IsPrimaryVisible));
+    }
+
+    partial void OnIsPreparingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(NothingCanRun));
+        NextCommand.NotifyCanExecuteChanged();
     }
 
     // --- the run --------------------------------------------------------------------
@@ -515,6 +710,8 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             ReclaimableText = new ByteSize(report.ReclaimableBytes).Humanize(culture);
             HasPreflight = true;
 
+            OnPropertyChanged(nameof(NothingCanRun));
+            NextCommand.NotifyCanExecuteChanged();
             StartCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
@@ -797,12 +994,16 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         HasCurrentStep = false;
         CurrentStep = null;
         Blockers.Clear();
+
+        OnPropertyChanged(nameof(NothingCanRun));
+        NextCommand.NotifyCanExecuteChanged();
         StartCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
     private async Task StartOverAsync()
     {
+        Phase = CleanupPhase.Choose;
         ResetRun();
         IsRunning = false;
         IsFinished = false;
@@ -864,6 +1065,9 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
         foreach (var item in AllItems)
             item.PropertyChanged -= OnItemChanged;
+
+        foreach (var filter in RiskFilters)
+            filter.PropertyChanged -= OnFilterChanged;
 
         _cts?.Cancel();
         _cts?.Dispose();

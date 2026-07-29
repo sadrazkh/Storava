@@ -3,17 +3,18 @@
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
     <!-- Surface card -->
+    <!-- The one panel surface in the app.
+
+         No drop shadow. A black shadow under a dark panel on a dark page does not read as raised,
+         it reads as a dark halo around something sunken — which, nested inside a page margin and a
+         column margin, is exactly how every panel looked. The border and the spacing carry the
+         separation instead, and they do it the same way at every size. -->
     <Style x:Key="Storava.Card" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource MaterialDesignCardBackground}" />
         <Setter Property="CornerRadius" Value="{StaticResource Radius.Card}" />
         <Setter Property="Padding" Value="{StaticResource Pad.Card}" />
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.16" Color="#000000" />
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <!-- Navigation rail item -->
@@ -174,6 +175,125 @@
                 <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Risk.Unknown.Text}" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+
+    <!-- ============================================================
+         A row in a list of things to act on.
+
+         Flatter and quieter than a card. The previous list used Material's Card with its own
+         elevation and padding, nested inside a page margin and a column margin, so every row sat
+         visibly inset from the panel around it and the whole list read as sunken. A row is not a
+         floating object; it is a line in a list, and it only needs a surface and an edge.
+         ============================================================ -->
+    <Style x:Key="Storava.Row" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignCardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <!-- ============================================================
+         The step chips across the top.
+
+         Tag carries whether this is the step on screen. A DataTrigger on Tag rather than a bound
+         Background keeps the two states defined together in one place, so the active and inactive
+         appearance can never drift apart across three call sites.
+         ============================================================ -->
+    <Style x:Key="Storava.Step" TargetType="Border">
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="Margin" Value="0,0,10,0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBodyLight}" />
+        <Style.Triggers>
+            <!-- Reads IsActive off the chip's own DataContext. The previous arrangement went
+                 through the Border's Tag, which is typed object, so the bound bool was compared
+                 against the literal string "True" and the trigger never fired at all. -->
+            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Step.Fill}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource Storava.Brush.Step.Edge}" />
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Step.Text}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- The numbered disc in a step chip. Round on purpose — it is a number, not a label. -->
+    <Style x:Key="Storava.Step.Number" TargetType="Border">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Pill}" />
+        <Setter Property="Margin" Value="0,0,9,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
+        <Style.Triggers>
+            <!-- The same property the chip reads, so the two cannot disagree. -->
+            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Storava.Brush.Step.Edge}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="Storava.Step.NumberText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="Storava.Step.Text" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ============================================================
+         A filter chip: a tag you can press.
+
+         It carries the same shape and colours as the tag it filters by, so the connection between
+         "these rows are tagged low risk" and "show me the low risk ones" needs no explaining. The
+         checked state is filled rather than outlined, because a filter that is on has to be
+         obvious from the shape of the row, not from a subtlety.
+         ============================================================ -->
+    <Style x:Key="Storava.FilterChip" TargetType="ToggleButton">
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource Storava.Brush.Neutral.Text}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Chip"
+                            CornerRadius="{StaticResource Radius.Tag}"
+                            BorderThickness="1"
+                            Background="{DynamicResource Storava.Brush.Neutral.Fill}"
+                            BorderBrush="{DynamicResource Storava.Brush.Neutral.Edge}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chip" Property="BorderBrush"
+                                    Value="{DynamicResource Storava.Brush.Step.Edge}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Chip" Property="Background"
+                                    Value="{DynamicResource Storava.Brush.Step.Fill}" />
+                            <Setter TargetName="Chip" Property="BorderBrush"
+                                    Value="{DynamicResource Storava.Brush.Step.Edge}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Storava.Brush.Step.Text}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- A fixed protected tag, for the places that state "this is protected" outright rather

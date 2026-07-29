@@ -139,6 +139,61 @@ public sealed partial class CleanupItemModel : ObservableObject
 }
 
 /// <summary>
+/// The three things this page asks for, in the order it asks for them.
+/// <para>
+/// A phase, not a step: a step in this codebase is one confirmed operation inside a run, and the
+/// last phase contains many of them.
+/// </para>
+/// </summary>
+public enum CleanupPhase
+{
+    /// <summary>What should be cleared.</summary>
+    Choose,
+
+    /// <summary>Where the things being moved should go. Skipped when nothing is being moved.</summary>
+    Destination,
+
+    /// <summary>Check, then carry it out one confirmed step at a time.</summary>
+    Run
+}
+
+/// <summary>
+/// One risk level the list can be narrowed to, with how many items carry it.
+/// <para>
+/// The count is part of the filter rather than a separate readout: "medium risk (14)" tells the
+/// user whether the filter is worth pressing before they press it.
+/// </para>
+/// </summary>
+public sealed partial class CleanupTagFilter : ObservableObject
+{
+    [ObservableProperty] private bool _isSelected;
+
+    public CleanupTagFilter(RiskLevel risk, string label, int count)
+    {
+        Risk = risk;
+        Label = label;
+        Count = count;
+    }
+
+    public RiskLevel Risk { get; }
+
+    public string Label { get; }
+
+    public int Count { get; }
+
+    public string CountText => Count.ToString(CultureInfo.CurrentCulture);
+
+    /// <summary>
+    /// What this chip is called out loud. Its visible content is two separate text blocks, which
+    /// on their own announce as nothing at all.
+    /// </summary>
+    public string AutomationName => $"{Label} ({CountText})";
+}
+
+/// <summary>One entry in the step strip across the top of the cleanup page.</summary>
+public sealed record CleanupPhaseChip(string Number, string Label, bool IsActive);
+
+/// <summary>
 /// One scan the cleanup page can be pointed at.
 /// <para>
 /// Imported scans are never offered. Their paths were measured on another machine, and one that
