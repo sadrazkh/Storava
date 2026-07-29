@@ -59,6 +59,34 @@ public sealed class SettingsServiceTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Three by default, and the user's choice survives a restart. A retention setting that quietly
+    /// reset would be worse than none: the app would keep deleting to a number the user did not pick.
+    /// </summary>
+    [Fact]
+    public async Task KeepRecentScans_DefaultsToThreeAndPersists()
+    {
+        using (var provider = BuildProvider())
+        {
+            var service = provider.GetRequiredService<ISettingsService>();
+            await service.LoadAsync();
+
+            Assert.Equal(3, service.Current.KeepRecentScans);
+
+            var updated = service.Current.Clone();
+            updated.KeepRecentScans = 5;
+            await service.SaveAsync(updated);
+        }
+
+        using (var provider = BuildProvider())
+        {
+            var service = provider.GetRequiredService<ISettingsService>();
+            await service.LoadAsync();
+
+            Assert.Equal(5, service.Current.KeepRecentScans);
+        }
+    }
+
     [Fact]
     public async Task SaveAsync_RaisesSettingsChanged()
     {

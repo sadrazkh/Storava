@@ -17,6 +17,12 @@ public sealed class AppSettings
     /// <summary>Set once the onboarding flow has been completed.</summary>
     public bool OnboardingCompleted { get; set; }
 
+    /// <summary>
+    /// How many scans to keep. Older ones are discarded automatically once a new scan finishes,
+    /// because a full-drive scan is millions of rows and nothing else ever removed them.
+    /// </summary>
+    public int KeepRecentScans { get; set; } = 3;
+
     public AiSettings Ai { get; set; } = new();
 
     public AppSettings Clone() => new()
@@ -25,6 +31,7 @@ public sealed class AppSettings
         Theme = Theme,
         AccentColor = AccentColor,
         OnboardingCompleted = OnboardingCompleted,
+        KeepRecentScans = KeepRecentScans,
         Ai = Ai.Clone()
     };
 }

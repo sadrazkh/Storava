@@ -15,6 +15,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private AppLanguage _selectedLanguage;
     [ObservableProperty] private AppTheme _selectedTheme;
     [ObservableProperty] private string _accentColor = "#0FB5AE";
+    [ObservableProperty] private int _keepRecentScans;
     [ObservableProperty] private bool _aiEnabled;
     [ObservableProperty] private string _aiModel = "openrouter/free";
     [ObservableProperty] private string _aiBaseUrl = "https://openrouter.ai/api/v1";
@@ -42,6 +43,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _selectedLanguage = current.Language;
         _selectedTheme = current.Theme;
         _accentColor = current.AccentColor;
+        _keepRecentScans = current.KeepRecentScans;
         _aiEnabled = current.Ai.Enabled;
         _aiModel = current.Ai.ModelName;
         _aiBaseUrl = current.Ai.BaseUrl;
@@ -58,6 +60,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public IReadOnlyList<AppLanguage> Languages { get; } = [AppLanguage.Persian, AppLanguage.English];
 
     public IReadOnlyList<AppTheme> Themes { get; } = [AppTheme.Light, AppTheme.Dark, AppTheme.System];
+
+    /// <summary>
+    /// How many scans may be kept. A short list rather than a free number: the meaningful range is
+    /// small, and a text box here would invite a value that silently loses a scan.
+    /// </summary>
+    public IReadOnlyList<int> KeepScanOptions { get; } = [1, 2, 3, 5, 10];
 
     /// <summary>Curated accent swatches for the picker.</summary>
     public IReadOnlyList<string> AccentPresets { get; } =
@@ -123,6 +131,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
         updated.Language = SelectedLanguage;
         updated.Theme = SelectedTheme;
         updated.AccentColor = AccentColor;
+
+        // One at the bottom: keeping none would mean deleting the scan the user just took. Ten at
+        // the top because each one is millions of rows, which is how the database reached seven
+        // gigabytes in the first place.
+        updated.KeepRecentScans = Math.Clamp(KeepRecentScans, 1, 10);
+
         updated.Ai.Enabled = AiEnabled;
         updated.Ai.ModelName = string.IsNullOrWhiteSpace(AiModel) ? "openrouter/free" : AiModel.Trim();
         updated.Ai.BaseUrl = string.IsNullOrWhiteSpace(AiBaseUrl) ? "https://openrouter.ai/api/v1" : AiBaseUrl.Trim();
@@ -139,6 +153,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         await _settings.SaveAsync(updated).ConfigureAwait(true);
 
         // Reflect whatever the clamps changed, so the page never shows a value that was not saved.
+        KeepRecentScans = updated.KeepRecentScans;
         AiTemperature = updated.Ai.Temperature;
         AiMaxTokens = updated.Ai.MaxTokens;
         AiTimeoutSeconds = updated.Ai.TimeoutSeconds;

@@ -73,6 +73,10 @@
     <sys:String x:Key="Str.Settings.Theme.Dark">تیره</sys:String>
     <sys:String x:Key="Str.Settings.Theme.System">سیستم</sys:String>
     <sys:String x:Key="Str.Settings.Accent">رنگ تأکید</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Section">فضای ذخیره‌سازی</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScans">تعداد اسکن‌هایی که نگه داشته می‌شود</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">اسکن یک درایو کامل میلیون‌ها رکورد دارد. بعد از پایان هر اسکن تازه، اسکن‌های قدیمی‌تر از این تعداد حذف می‌شوند و فضایشان آزاد می‌شود. به فایل‌های روی دیسک شما دست زده نمی‌شود و سابقهٔ تغییرهایی که استوراوا انجام داده همیشه نگه داشته می‌شود.</sys:String>
+
     <sys:String x:Key="Str.Settings.Ai.Section">هوش مصنوعی (OpenRouter)</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Enable">فعال‌سازی مشاور هوش مصنوعی</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Model">مدل</sys:String>

@@ -71,6 +71,24 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Storage. This is the one setting that deletes things on its own, so it says so
+                     plainly rather than sitting behind an advanced screen. -->
+                <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource Str.Settings.Storage.Section}" Style="{StaticResource Storava.Text.H2}" Margin="0,0,0,12" />
+
+                        <TextBlock Text="{DynamicResource Str.Settings.Storage.KeepScans}"
+                                   Style="{StaticResource Storava.Text.Caption}" Margin="0,0,0,6" />
+                        <ComboBox ItemsSource="{Binding KeepScanOptions}" SelectedItem="{Binding KeepRecentScans}"
+                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                  HorizontalAlignment="Left" MinWidth="120" />
+
+                        <TextBlock Text="{DynamicResource Str.Settings.Storage.KeepScansHint}"
+                                   Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap"
+                                   Margin="0,8,0,0" Opacity="0.85" />
+                    </StackPanel>
+                </Border>
+
                 <!-- AI -->
                 <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,16">
                     <StackPanel>

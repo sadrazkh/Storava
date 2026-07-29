@@ -73,6 +73,10 @@
     <sys:String x:Key="Str.Settings.Theme.Dark">Dark</sys:String>
     <sys:String x:Key="Str.Settings.Theme.System">System</sys:String>
     <sys:String x:Key="Str.Settings.Accent">Accent color</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Section">Storage</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScans">Scans to keep</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">A scan of a whole drive holds millions of records. Once a new scan finishes, anything older than this is removed and the space is given back. Files on your disk are never touched, and the record of changes Storava has made is always kept.</sys:String>
+
     <sys:String x:Key="Str.Settings.Ai.Section">AI (OpenRouter)</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Enable">Enable AI advisor</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Model">Model</sys:String>
