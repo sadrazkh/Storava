@@ -43,17 +43,11 @@
     <DataTemplate DataType="{x:Type vmPages:AnalysisViewModel}">
         <views:AnalysisView />
     </DataTemplate>
-    <DataTemplate DataType="{x:Type vmPages:RecommendationsViewModel}">
-        <views:RecommendationsView />
+    <DataTemplate DataType="{x:Type vmPages:CleanupViewModel}">
+        <views:CleanupView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmPages:ReportsViewModel}">
         <views:ReportsView />
-    </DataTemplate>
-    <DataTemplate DataType="{x:Type vmPages:StoragePlanViewModel}">
-        <views:StoragePlanView />
-    </DataTemplate>
-    <DataTemplate DataType="{x:Type vmPages:MigrationCenterViewModel}">
-        <views:MigrationCenterView />
     </DataTemplate>
     <DataTemplate DataType="{x:Type vmPages:HistoryViewModel}">
         <views:HistoryView />

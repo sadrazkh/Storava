@@ -1,0 +1,493 @@
+<UserControl x:Class="Storava.App.Views.Pages.CleanupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1300">
+    <Grid Margin="{StaticResource Pad.Page}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Text="{DynamicResource Str.Cleanup.Title}" Style="{StaticResource Storava.Text.Display}" />
+            <TextBlock Text="{DynamicResource Str.Cleanup.Subtitle}" Style="{StaticResource Storava.Text.Caption}"
+                       TextWrapping="Wrap" MaxWidth="820" Margin="0,4,0,0" />
+            <!-- Which scan this page is working on. Shown as a picker only when there is more
+                 than one to pick from; otherwise it is just the path. -->
+            <ComboBox ItemsSource="{Binding Scans}" SelectedItem="{Binding SelectedScan}"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                      materialDesign:HintAssist.Hint="{DynamicResource Str.Cleanup.Scan}"
+                      HorizontalAlignment="Left" MinWidth="420" MaxWidth="760" Margin="0,10,0,0"
+                      Visibility="{Binding HasSeveralScans, Converter={StaticResource Conv.BoolVis}}" />
+
+            <TextBlock Text="{Binding RootPathText}" Style="{StaticResource Storava.Text.Caption}"
+                       TextTrimming="CharacterEllipsis" Margin="0,4,0,0" Opacity="0.8"
+                       Visibility="{Binding HasSession, Converter={StaticResource Conv.BoolVis}}" />
+        </StackPanel>
+
+        <!-- Nothing to work with -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460"
+                    Visibility="{Binding HasSession, Converter={StaticResource Conv.InvBoolVis}}">
+            <materialDesign:PackIcon Kind="Broom" Width="52" Height="52" HorizontalAlignment="Center"
+                                     Foreground="{DynamicResource MaterialDesignBodyLight}" Opacity="0.6" />
+            <TextBlock Text="{DynamicResource Str.Cleanup.Empty}" Style="{StaticResource Storava.Text.Body}"
+                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"
+                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+        </StackPanel>
+
+        <Grid Grid.Row="1" Visibility="{Binding HasSession, Converter={StaticResource Conv.BoolVis}}">
+            <!-- Both columns give way. A fixed side panel on a narrow window starves the list,
+                 and the list is where every label that has to stay readable lives. -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="320" />
+                <ColumnDefinition Width="2*" MinWidth="300" MaxWidth="440" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============================ Choose ============================ -->
+            <Grid Grid.Column="0" Margin="0,0,16,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="{DynamicResource Str.Cleanup.Search}"
+                             Height="40" VerticalContentAlignment="Center" Margin="0,0,10,0" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ToggleButton IsChecked="{Binding SuggestedOnly}" Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                      VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBlock Text="{DynamicResource Str.Cleanup.SuggestedOnly}" VerticalAlignment="Center"
+                                   Style="{StaticResource Storava.Text.Body}" Margin="0,0,12,0" />
+
+                        <Button Command="{Binding SelectSuggestedCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Height="38" Padding="14,0" Margin="0,0,8,0">
+                            <TextBlock Text="{DynamicResource Str.Cleanup.SelectSuggested}" />
+                        </Button>
+                        <Button Command="{Binding ClearSelectionCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Height="38" Padding="14,0" IsEnabled="{Binding HasSelection}">
+                            <TextBlock Text="{DynamicResource Str.Cleanup.ClearSelection}" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Grid.Row="1" Text="{DynamicResource Str.Cleanup.NoItems}"
+                           Style="{StaticResource Storava.Text.Body}" TextWrapping="Wrap"
+                           VerticalAlignment="Top" MaxWidth="520" Opacity="0.75"
+                           Visibility="{Binding HasItems, Converter={StaticResource Conv.InvBoolVis}}" />
+
+                <!-- The list scrolls itself rather than sitting inside a ScrollViewer.
+
+                     That distinction is the whole of the performance problem: a ScrollViewer hands
+                     its child unlimited height, so a virtualizing panel inside one is told it has
+                     room for everything and dutifully builds every row. Three hundred cards, each
+                     with a picker and two tags, were being constructed before the page could
+                     appear. With the scrolling inside the control, only the visible rows exist. -->
+                <ListBox Grid.Row="1" ItemsSource="{Binding VisibleItems}"
+                         Visibility="{Binding HasItems, Converter={StaticResource Conv.BoolVis}}"
+                         Background="Transparent" BorderThickness="0" Padding="0"
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.CanContentScroll="True"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <!-- Rows are chosen with their checkbox, so the ListBox must not paint a
+                             selection of its own over them. -->
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Focusable" Value="False" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <materialDesign:Card UniformCornerRadius="14" Padding="16" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,2,14,0"
+                                                  IsChecked="{Binding IsSelected}" />
+
+                                        <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                            <!-- The tags get the column that sizes to them and the
+                                                 title gets what is left. The other way round is
+                                                 what cut "Unclassified" down to "Unclassifie": a
+                                                 tag is short and carries meaning, a title can
+                                                 afford an ellipsis. -->
+                                            <Grid Style="{StaticResource Storava.TitleRow}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" MinWidth="60" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Title}"
+                                                           Style="{StaticResource Storava.TitleRow.Text}" />
+                                                <WrapPanel Grid.Column="1" Style="{StaticResource Storava.TitleRow.Tags}">
+                                                    <Border Style="{StaticResource Storava.Badge.Risk}" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding RiskText}" Style="{StaticResource Storava.Badge.Text}" />
+                                                    </Border>
+                                                    <Border Style="{StaticResource Storava.Badge}">
+                                                        <TextBlock Text="{Binding CategoryText}" Style="{StaticResource Storava.Badge.Text}" />
+                                                    </Border>
+                                                </WrapPanel>
+                                            </Grid>
+
+                                            <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,0,0,6" />
+
+                                            <!-- Why the catalog proposed it, or a plain statement that nothing did. -->
+                                            <TextBlock Text="{Binding Reason}" Style="{StaticResource Storava.Text.Body}"
+                                                       TextWrapping="Wrap" HorizontalAlignment="Stretch"
+                                                       Visibility="{Binding HasReason, Converter={StaticResource Conv.BoolVis}}" />
+
+                                            <!-- A Grid, not a horizontal StackPanel: a StackPanel
+                                                 gives its children unlimited width, so the note
+                                                 never wrapped and was cut off mid-sentence. -->
+                                            <Grid Visibility="{Binding IsSuggested, Converter={StaticResource Conv.InvBoolVis}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0" Kind="HelpCircleOutline"
+                                                                         Width="15" Height="15" Margin="0,2,6,0"
+                                                                         VerticalAlignment="Top"
+                                                                         Foreground="{DynamicResource Storava.Brush.Muted}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding UnknownNote}"
+                                                           Style="{StaticResource Storava.Text.Caption}"
+                                                           TextWrapping="Wrap" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" MinWidth="118">
+                                            <TextBlock Text="{Binding SizeText}" Style="{StaticResource Storava.Text.H2}"
+                                                       HorizontalAlignment="Right" TextWrapping="NoWrap" />
+
+                                            <!-- An explicit template, not DisplayMemberPath: the
+                                                 Material style supplies its own ItemTemplate, which
+                                                 wins, and the row then rendered the record's
+                                                 ToString() instead of its label. -->
+                                            <!-- No fixed height. The outlined Material combo
+                                                 reserves vertical room for its floating label, and
+                                                 forcing it to 36 clipped the text to slivers —
+                                                 which is what read as a row of dots rather than
+                                                 the word "Move". -->
+                                            <ComboBox ItemsSource="{Binding AvailableActions}"
+                                                      SelectedItem="{Binding SelectedAction}"
+                                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                      Margin="0,8,0,0" />
+                                        </StackPanel>
+                                    </Grid>
+                                </materialDesign:Card>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <!-- ============================ Act ============================ -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- What is selected -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Cleanup.Selection}"
+                                       Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,10" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding SelectedCountText}" Style="{StaticResource Storava.Text.H1}" />
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.Items}" Style="{StaticResource Storava.Text.Caption}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding SelectedSizeText}" Style="{StaticResource Storava.Text.H1}" />
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.Reclaimable}" Style="{StaticResource Storava.Text.Caption}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{Binding HighestRiskText}" Style="{StaticResource Storava.Text.H2}" Margin="0,6,0,0" />
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.HighestRisk}" Style="{StaticResource Storava.Text.Caption}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- One folder for everything being moved -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding HasMoves, Converter={StaticResource Conv.BoolVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Cleanup.Destination}"
+                                       Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,8" />
+                            <TextBlock Text="{DynamicResource Str.Cleanup.DestinationHelp}"
+                                       Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                            <Button Command="{Binding PickDestinationRootCommand}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    HorizontalAlignment="Stretch" Height="40">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FolderOpenOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.PickDestination}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <TextBlock Text="{Binding DestinationRoot}" Style="{StaticResource Storava.Text.Caption}"
+                                       TextTrimming="CharacterEllipsis" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Dry run -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding IsFinished, Converter={StaticResource Conv.InvBoolVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Cleanup.Prepare}"
+                                       Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,8" />
+                            <TextBlock Text="{DynamicResource Str.Cleanup.PrepareHelp}"
+                                       Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                            <Button Command="{Binding PrepareCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    HorizontalAlignment="Stretch" Height="42"
+                                    Visibility="{Binding IsRunning, Converter={StaticResource Conv.InvBoolVis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ClipboardCheckOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.Check}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <ProgressBar IsIndeterminate="True" Height="3" Margin="0,10,0,0"
+                                         Visibility="{Binding IsPreparing, Converter={StaticResource Conv.BoolVis}}" />
+
+                            <StackPanel Margin="0,12,0,0"
+                                        Visibility="{Binding HasPreflight, Converter={StaticResource Conv.BoolVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{Binding RunnableCountText}" Style="{StaticResource Storava.Text.H2}" />
+                                        <TextBlock Text="{DynamicResource Str.Cleanup.Ready}" Style="{StaticResource Storava.Text.Caption}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding BlockedCountText}" Style="{StaticResource Storava.Text.H2}" />
+                                        <TextBlock Text="{DynamicResource Str.Cleanup.Blocked}" Style="{StaticResource Storava.Text.Caption}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="{Binding ReclaimableText}" Style="{StaticResource Storava.Text.H2}" />
+                                        <TextBlock Text="{DynamicResource Str.Cleanup.Measured}" Style="{StaticResource Storava.Text.Caption}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <ItemsControl ItemsSource="{Binding Blockers}" Margin="0,12,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource Storava.Badge.Danger}" Margin="0,0,0,6"
+                                                    HorizontalAlignment="Stretch" Padding="10,7">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Badge.Text}"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding BlockerText}" FontSize="11" TextWrapping="Wrap" Opacity="0.9" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <Button Command="{Binding StartCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        HorizontalAlignment="Stretch" Height="44" Margin="0,12,0,0"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource Conv.InvBoolVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="PlayCircleOutline" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBlock Text="{DynamicResource Str.Cleanup.Start}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- The one step awaiting a decision -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding HasCurrentStep, Converter={StaticResource Conv.BoolVis}}"
+                            DataContext="{Binding}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Border Style="{StaticResource Storava.Badge.Accent}">
+                                    <TextBlock Text="{Binding CurrentStep.ActionText}" Style="{StaticResource Storava.Badge.Text}" />
+                                </Border>
+                                <TextBlock Text="{Binding CurrentStep.PositionText}" Style="{StaticResource Storava.Text.Caption}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding CurrentStep.Title}" Style="{StaticResource Storava.Text.H2}"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding CurrentStep.Path}" Style="{StaticResource Storava.Text.Caption}"
+                                       TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                            <TextBlock Text="{Binding CurrentStep.SizeText}" Style="{StaticResource Storava.Text.H1}" Margin="0,8,0,0" />
+
+                            <!-- Nothing recognised this, and the user is told so before confirming. -->
+                            <Border Style="{StaticResource Storava.Badge.Warning}" Margin="0,10,0,0" Padding="10,7"
+                                    HorizontalAlignment="Stretch"
+                                    Visibility="{Binding CurrentStep.HasNoRule, Converter={StaticResource Conv.BoolVis}}">
+                                <TextBlock Text="{DynamicResource Str.Cleanup.NoRuleWarning}" FontSize="11" TextWrapping="Wrap" />
+                            </Border>
+
+                            <!-- Destination for this step -->
+                            <StackPanel Margin="0,12,0,0"
+                                        Visibility="{Binding CurrentStep.IsMove, Converter={StaticResource Conv.BoolVis}}">
+                                <TextBlock Text="{DynamicResource Str.Cleanup.StepDestination}"
+                                           Style="{StaticResource Storava.Text.Caption}" Margin="0,0,0,6" />
+                                <TextBlock Text="{Binding StepDestination}" Style="{StaticResource Storava.Text.Body}"
+                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,6" />
+                                <Button Command="{Binding PickStepDestinationCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" Height="36" Padding="12,0"
+                                        HorizontalAlignment="Left">
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.ChangeDestination}" />
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Typing the folder's own name is the approval -->
+                            <TextBlock Text="{DynamicResource Str.Migration.ConfirmPrompt}"
+                                       Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" Margin="0,14,0,6" />
+                            <TextBlock Text="{Binding CurrentStep.RequiredName}" Style="{StaticResource Storava.Text.Body}"
+                                       FontWeight="Bold" Margin="0,0,0,6" />
+                            <TextBox Text="{Binding ConfirmationText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}" Height="40"
+                                     VerticalContentAlignment="Center"
+                                     IsEnabled="{Binding IsExecuting, Converter={StaticResource Conv.InvBool}}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Command="{Binding RunStepCommand}" Style="{StaticResource MaterialDesignRaisedButton}"
+                                        materialDesign:ButtonAssist.CornerRadius="10" Height="42" Padding="20,0" Margin="0,0,8,0">
+                                    <TextBlock Text="{DynamicResource Str.Cleanup.RunStep}" />
+                                </Button>
+                                <Button Command="{Binding SkipStepCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Height="42" Padding="16,0"
+                                        IsEnabled="{Binding IsExecuting, Converter={StaticResource Conv.InvBool}}">
+                                    <TextBlock Text="{DynamicResource Str.Migration.Skip}" />
+                                </Button>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,12,0,0"
+                                        Visibility="{Binding IsExecuting, Converter={StaticResource Conv.BoolVis}}">
+                                <ProgressBar Value="{Binding CopyFraction, Mode=OneWay}" Maximum="1" Height="4" />
+                                <TextBlock Text="{Binding CopyStatusText}" Style="{StaticResource Storava.Text.Caption}" Margin="0,6,0,0" />
+                                <Button Command="{Binding CancelStepCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Height="36" Padding="14,0" Margin="0,8,0,0" HorizontalAlignment="Left"
+                                        Foreground="{DynamicResource Storava.Brush.Danger}">
+                                    <TextBlock Text="{DynamicResource Str.Migration.CancelStep}" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Outcome -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding IsFinished, Converter={StaticResource Conv.BoolVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Cleanup.Done}" Style="{StaticResource Storava.Text.H2}" />
+                            <TextBlock Text="{Binding FreedText}" Style="{StaticResource Storava.Text.Display}" Margin="0,6,0,0" />
+                            <TextBlock Text="{DynamicResource Str.Cleanup.Freed}" Style="{StaticResource Storava.Text.Caption}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Border Style="{StaticResource Storava.Badge.Success}" Margin="0,0,6,0">
+                                    <TextBlock Text="{Binding CompletedCountText}" Style="{StaticResource Storava.Badge.Text}" />
+                                </Border>
+                                <Border Style="{StaticResource Storava.Badge.Danger}" Margin="0,0,6,0">
+                                    <TextBlock Text="{Binding FailedCountText}" Style="{StaticResource Storava.Badge.Text}" />
+                                </Border>
+                                <Border Style="{StaticResource Storava.Badge}">
+                                    <TextBlock Text="{Binding SkippedCountText}" Style="{StaticResource Storava.Badge.Text}" />
+                                </Border>
+                            </StackPanel>
+
+                            <Button Command="{Binding StartOverCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Height="40" Margin="0,14,0,0" HorizontalAlignment="Stretch">
+                                <TextBlock Text="{DynamicResource Str.Cleanup.StartOver}" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- What has happened so far -->
+                    <Border Style="{StaticResource Storava.Card}" Margin="0,0,0,12"
+                            Visibility="{Binding HasLog, Converter={StaticResource Conv.BoolVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str.Migration.LogTitle}"
+                                       Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,10" />
+                            <ItemsControl ItemsSource="{Binding Log}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,10">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <Border Style="{StaticResource Storava.Badge.Risk}">
+                                                    <TextBlock Text="{Binding StatusText}" Style="{StaticResource Storava.Badge.Text}" />
+                                                </Border>
+                                                <TextBlock Text="{Binding FreedText}" Style="{StaticResource Storava.Text.Caption}"
+                                                           VerticalAlignment="Center" Margin="8,0,0,0"
+                                                           Visibility="{Binding WasCompleted, Converter={StaticResource Conv.BoolVis}}" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource Storava.Text.Body}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding RecycledPath}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Visibility="{Binding WasRecycled, Converter={StaticResource Conv.BoolVis}}" />
+                                            <TextBlock Text="{Binding DetailText}" Style="{StaticResource Storava.Text.Caption}"
+                                                       TextWrapping="Wrap" Foreground="{DynamicResource Storava.Brush.Warning}"
+                                                       Visibility="{Binding HasDetail, Converter={StaticResource Conv.BoolVis}}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Notices -->
+                    <Border Style="{StaticResource Storava.Badge.Warning}" Padding="12,10" Margin="0,0,0,10"
+                            HorizontalAlignment="Stretch"
+                            Visibility="{Binding RecoveryNotice, Converter={StaticResource Conv.NullVis}}">
+                        <TextBlock Text="{Binding RecoveryNotice}" FontSize="11" TextWrapping="Wrap" />
+                    </Border>
+
+                    <Border Style="{StaticResource Storava.Badge.Danger}" Padding="12,10"
+                            HorizontalAlignment="Stretch"
+                            Visibility="{Binding ErrorMessage, Converter={StaticResource Conv.NullVis}}">
+                        <TextBlock Text="{Binding ErrorMessage}" FontSize="11" TextWrapping="Wrap" />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

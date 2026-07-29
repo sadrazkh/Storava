@@ -127,7 +127,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         <Setter Property="TextWrapping" Value="NoWrap" />
-        <Setter Property="MaxWidth" Value="520" />
+        <Setter Property="Margin" Value="0,0,10,0" />
     </Style>
 
     <!-- The tags in such a row. Wraps rather than clips when the row is genuinely too narrow. -->

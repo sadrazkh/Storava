@@ -81,10 +81,8 @@ public class ViewSmokeTests
         new ScanProgressView(),
         new ScanExplorerView(),
         new AnalysisView(),
-        new RecommendationsView(),
         new ReportsView(),
-        new StoragePlanView(),
-        new MigrationCenterView(),
+        new CleanupView(),
         new HistoryView()
     ];
 

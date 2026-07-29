@@ -9,7 +9,19 @@ using Storava.Domain.ValueObjects;
 namespace Storava.App.Models;
 
 /// <summary>One choosable action, with the label shown in the picker.</summary>
-public sealed record PlanActionOption(SuggestedAction Action, string Label);
+public sealed record PlanActionOption(SuggestedAction Action, string Label)
+{
+    /// <summary>
+    /// The label, because this is what a ComboBox shows when nothing else tells it otherwise.
+    /// <para>
+    /// A record's generated ToString prints every property — the closed picker rendered
+    /// <c>PlanActionOption { Action = Move, Label = Move }</c> compressed into a narrow box, which
+    /// read as a smear of dashes rather than a word. Fixing it here rather than with an item
+    /// template covers the dropdown and the accessibility name too.
+    /// </para>
+    /// </summary>
+    public override string ToString() => Label;
+}
 
 /// <summary>
 /// A recommendation offered for inclusion in the plan. Only the actions the local rules already

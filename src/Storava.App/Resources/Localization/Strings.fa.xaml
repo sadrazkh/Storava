@@ -470,4 +470,46 @@
     <sys:String x:Key="Str.ComingSoon.Title">به‌زودی</sys:String>
     <sys:String x:Key="Str.ComingSoon.Body">این بخش مربوط به فاز بعدی توسعه است و هنوز پیاده‌سازی نشده است.</sys:String>
 
+
+    <!-- ================= پاک‌سازی: انتخاب و انجام، در یک صفحه ================= -->
+    <sys:String x:Key="Str.Nav.Cleanup">پاک‌سازی</sys:String>
+    <sys:String x:Key="Str.Cleanup.Scan">در حال کار روی این اسکن</sys:String>
+    <sys:String x:Key="Str.Cleanup.Title">پاک‌سازی</sys:String>
+    <sys:String x:Key="Str.Cleanup.Subtitle">انتخاب کنید چه چیزی پاک شود، برای هرکدام تعیین کنید چه اتفاقی بیفتد، و انجامش دهید. تا وقتی نام یک پوشه را تایپ نکنید هیچ‌چیز تغییر نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Empty">اول یک پوشه را اسکن کنید. وقتی چیزی اندازه‌گیری شد، هر چیزی که روی این دستگاه پیدا شود از همین‌جا قابل پاک کردن است.</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoItems">چیزی مطابقت ندارد. «فقط پیشنهادها» را خاموش کنید تا همهٔ چیزهایی که اسکن اندازه گرفته دیده شود، نه فقط آنچه قواعد می‌شناسند.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Search">جست‌وجو بر اساس نام یا مسیر…</sys:String>
+    <sys:String x:Key="Str.Cleanup.SuggestedOnly">فقط پیشنهادها</sys:String>
+    <sys:String x:Key="Str.Cleanup.SelectSuggested">انتخاب پیشنهادها</sys:String>
+    <sys:String x:Key="Str.Cleanup.ClearSelection">پاک کردن انتخاب</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoRuleNote">هیچ قاعده‌ای این را نمی‌شناسد. استوراوا فقط حجمش را می‌داند و بس.</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoRuleWarning">هیچ‌چیز این مورد را نمی‌شناسد، پس پیشنهادی پشتش نیست — تصمیم کاملاً با شماست. قبل از تأیید مطمئن شوید می‌دانید این چیست.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Selection">انتخاب‌شده</sys:String>
+    <sys:String x:Key="Str.Cleanup.Items">مورد</sys:String>
+    <sys:String x:Key="Str.Cleanup.Reclaimable">آزاد می‌شود</sys:String>
+    <sys:String x:Key="Str.Cleanup.HighestRisk">بیشترین ریسک</sys:String>
+    <sys:String x:Key="Str.Cleanup.Destination">مقصد جابه‌جایی‌ها</sys:String>
+    <sys:String x:Key="Str.Cleanup.DestinationHelp">یک پوشه برای همهٔ چیزهایی که جابه‌جا می‌شوند. هر مورد نام خودش را زیر آن نگه می‌دارد، و هرچه تداخل کند نام بلندتری می‌گیرد نه اینکه روی چیزی بنویسد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.PickDestination">انتخاب پوشه…</sys:String>
+    <sys:String x:Key="Str.Cleanup.StepDestination">این مورد می‌رود به</sys:String>
+    <sys:String x:Key="Str.Cleanup.ChangeDestination">تغییر فقط برای این یکی…</sys:String>
+    <sys:String x:Key="Str.Cleanup.Prepare">بررسی</sys:String>
+    <sys:String x:Key="Str.Cleanup.PrepareHelp">هرچه انتخاب کرده‌اید را دوباره با وضعیت فعلی دیسک اندازه می‌گیرد و پیش از دست زدن به چیزی می‌گوید چه چیزی قابل اجرا نیست.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Check">ببین چه اتفاقی می‌افتد</sys:String>
+    <sys:String x:Key="Str.Cleanup.Ready">قابل اجرا</sys:String>
+    <sys:String x:Key="Str.Cleanup.Blocked">مسدود</sys:String>
+    <sys:String x:Key="Str.Cleanup.Measured">اندازهٔ فعلی</sys:String>
+    <sys:String x:Key="Str.Cleanup.Start">شروع</sys:String>
+    <sys:String x:Key="Str.Cleanup.RunStep">انجامش بده</sys:String>
+    <sys:String x:Key="Str.Cleanup.Done">تمام شد</sys:String>
+    <sys:String x:Key="Str.Cleanup.Freed">آزاد شد</sys:String>
+    <sys:String x:Key="Str.Cleanup.StartOver">از نو</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Load">صفحهٔ پاک‌سازی بارگذاری نشد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Prepare">بررسی کامل نشد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Start">اجرا شروع نشد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Step">آن گام به‌طور غیرمنتظره شکست خورد.</sys:String>
+    <sys:String x:Key="Str.Migration.LogTitle">چه اتفاقی افتاد</sys:String>
+    <sys:String x:Key="Str.Migration.CancelStep">توقف</sys:String>
+    <sys:String x:Key="Str.Plan.Error.IsLink">این یک لینک به جای دیگری است، نه فضای ذخیره‌سازی خودش.</sys:String>
+
 </ResourceDictionary>

@@ -9,9 +9,11 @@ public static class NavigationKeys
     public const string ScanProgress = "scan-progress";
     public const string ScanExplorer = "scan-explorer";
     public const string Analysis = "analysis";
-    public const string Recommendations = "recommendations";
-    public const string StoragePlan = "storage-plan";
-    public const string MigrationCenter = "migration-center";
+    /// <summary>
+    /// Choosing what to clear and carrying it out. Replaces the three keys this used to take —
+    /// advice, the plan document and the run — which were three pages for one intention.
+    /// </summary>
+    public const string Cleanup = "cleanup";
     public const string Reports = "reports";
     public const string History = "history";
     public const string Settings = "settings";

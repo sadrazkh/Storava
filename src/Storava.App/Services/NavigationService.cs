@@ -20,9 +20,7 @@ public sealed class NavigationService : INavigationService
         [NavigationKeys.ScanProgress] = typeof(ScanProgressViewModel),
         [NavigationKeys.ScanExplorer] = typeof(ScanExplorerViewModel),
         [NavigationKeys.Analysis] = typeof(AnalysisViewModel),
-        [NavigationKeys.Recommendations] = typeof(RecommendationsViewModel),
-        [NavigationKeys.StoragePlan] = typeof(StoragePlanViewModel),
-        [NavigationKeys.MigrationCenter] = typeof(MigrationCenterViewModel),
+        [NavigationKeys.Cleanup] = typeof(CleanupViewModel),
         [NavigationKeys.Reports] = typeof(ReportsViewModel),
         [NavigationKeys.History] = typeof(HistoryViewModel)
     };

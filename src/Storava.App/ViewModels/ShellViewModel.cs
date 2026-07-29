@@ -114,9 +114,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         new(NavigationKeys.NewScan, "Str.Nav.NewScan", PackIconKind.Magnify, "Str.Shell.Group.Analyze"),
         new(NavigationKeys.ScanExplorer, "Str.Nav.ScanExplorer", PackIconKind.Folder, "Str.Shell.Group.Analyze"),
         new(NavigationKeys.Analysis, "Str.Nav.Analysis", PackIconKind.ChartBoxOutline, "Str.Shell.Group.Analyze"),
-        new(NavigationKeys.Recommendations, "Str.Nav.Recommendations", PackIconKind.Lightbulb, "Str.Shell.Group.Analyze"),
-        new(NavigationKeys.StoragePlan, "Str.Nav.StoragePlan", PackIconKind.ClipboardText, "Str.Shell.Group.Act"),
-        new(NavigationKeys.MigrationCenter, "Str.Nav.MigrationCenter", PackIconKind.SwapHorizontal, "Str.Shell.Group.Act"),
+        new(NavigationKeys.Cleanup, "Str.Nav.Cleanup", PackIconKind.Broom, "Str.Shell.Group.Act"),
         new(NavigationKeys.Reports, "Str.Nav.Reports", PackIconKind.ChartBar, "Str.Shell.Group.System"),
         new(NavigationKeys.History, "Str.Nav.History", PackIconKind.History, "Str.Shell.Group.System"),
         new(NavigationKeys.Settings, "Str.Nav.Settings", PackIconKind.Cog, "Str.Shell.Group.System")

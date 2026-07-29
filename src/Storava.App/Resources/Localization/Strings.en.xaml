@@ -470,4 +470,46 @@
     <sys:String x:Key="Str.ComingSoon.Title">Coming soon</sys:String>
     <sys:String x:Key="Str.ComingSoon.Body">This area is part of a later development phase and is not implemented yet.</sys:String>
 
+
+    <!-- ================= Cleanup: choosing what to clear and doing it ================= -->
+    <sys:String x:Key="Str.Nav.Cleanup">Clean up</sys:String>
+    <sys:String x:Key="Str.Cleanup.Scan">Working on this scan</sys:String>
+    <sys:String x:Key="Str.Cleanup.Title">Clean up</sys:String>
+    <sys:String x:Key="Str.Cleanup.Subtitle">Pick what to clear, choose what happens to each, and carry it out. Nothing changes until you confirm a folder by typing its name.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Empty">Scan a folder first. Once there is something measured, everything found on this machine can be cleared from here.</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoItems">Nothing matches. Turn off &quot;Suggested only&quot; to see everything the scan measured, not just what the rules recognised.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Search">Search by name or path…</sys:String>
+    <sys:String x:Key="Str.Cleanup.SuggestedOnly">Suggested only</sys:String>
+    <sys:String x:Key="Str.Cleanup.SelectSuggested">Select suggested</sys:String>
+    <sys:String x:Key="Str.Cleanup.ClearSelection">Clear</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoRuleNote">No rule recognises this. Storava knows its size and nothing else about it.</sys:String>
+    <sys:String x:Key="Str.Cleanup.NoRuleWarning">Nothing recognises this item, so there is no advice behind it — you are deciding on your own. Check you know what it is before confirming.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Selection">Selected</sys:String>
+    <sys:String x:Key="Str.Cleanup.Items">Items</sys:String>
+    <sys:String x:Key="Str.Cleanup.Reclaimable">Would be freed</sys:String>
+    <sys:String x:Key="Str.Cleanup.HighestRisk">Highest risk</sys:String>
+    <sys:String x:Key="Str.Cleanup.Destination">Where moves go</sys:String>
+    <sys:String x:Key="Str.Cleanup.DestinationHelp">One folder for everything being moved. Each item keeps its own name underneath it, and anything that would collide is given a longer name rather than overwriting.</sys:String>
+    <sys:String x:Key="Str.Cleanup.PickDestination">Choose a folder…</sys:String>
+    <sys:String x:Key="Str.Cleanup.StepDestination">This item will go to</sys:String>
+    <sys:String x:Key="Str.Cleanup.ChangeDestination">Change for this one…</sys:String>
+    <sys:String x:Key="Str.Cleanup.Prepare">Check</sys:String>
+    <sys:String x:Key="Str.Cleanup.PrepareHelp">Re-measures everything you picked against the disk as it is now, and says what cannot run before anything is touched.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Check">Check what would happen</sys:String>
+    <sys:String x:Key="Str.Cleanup.Ready">Can run</sys:String>
+    <sys:String x:Key="Str.Cleanup.Blocked">Blocked</sys:String>
+    <sys:String x:Key="Str.Cleanup.Measured">Measured now</sys:String>
+    <sys:String x:Key="Str.Cleanup.Start">Start</sys:String>
+    <sys:String x:Key="Str.Cleanup.RunStep">Do it</sys:String>
+    <sys:String x:Key="Str.Cleanup.Done">Finished</sys:String>
+    <sys:String x:Key="Str.Cleanup.Freed">Freed</sys:String>
+    <sys:String x:Key="Str.Cleanup.StartOver">Start over</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Load">The cleanup page could not be loaded.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Prepare">The check could not be completed.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Start">The run could not be started.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Step">That step failed unexpectedly.</sys:String>
+    <sys:String x:Key="Str.Migration.LogTitle">What happened</sys:String>
+    <sys:String x:Key="Str.Migration.CancelStep">Stop</sys:String>
+    <sys:String x:Key="Str.Plan.Error.IsLink">This is a link to somewhere else, not storage of its own.</sys:String>
+
 </ResourceDictionary>

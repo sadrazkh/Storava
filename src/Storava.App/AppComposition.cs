@@ -81,10 +81,8 @@ public static class AppComposition
         typeof(ScanProgressViewModel),
         typeof(ScanExplorerViewModel),
         typeof(AnalysisViewModel),
-        typeof(RecommendationsViewModel),
         typeof(ReportsViewModel),
-        typeof(StoragePlanViewModel),
-        typeof(MigrationCenterViewModel),
+        typeof(CleanupViewModel),
         typeof(HistoryViewModel)
     ];
 }
