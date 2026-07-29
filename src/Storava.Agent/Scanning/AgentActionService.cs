@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Storava.Application.Abstractions;
 using Storava.Contracts.Agent;
+using Storava.Domain.Common;
 using Storava.Domain.Entities;
 using Storava.Domain.Enums;
 using Storava.Migrations;
@@ -92,6 +93,13 @@ public sealed class AgentActionService(
             ? (request.DestinationPath ?? string.Empty).Trim()
             : null;
 
+        // What the move leaves behind is the user's call, not the Agent's. It used to always
+        // create a junction, which keeps every hard-coded path working but is not always wanted;
+        // a plain move frees the same space and leaves nothing.
+        var method = ResolveMoveMethod(request.MoveMethod, action);
+        if (method.IsFailure)
+            return PrepareResult.Refused(method.Error.Code, method.Error.Message);
+
         if (action == SuggestedAction.Move)
         {
             var allowed = guard.ValidateDestination(item.Path, destination, measured.Value.Bytes);
@@ -117,7 +125,7 @@ public sealed class AgentActionService(
             SourcePath = item.Path,
             Title = item.Name,
             Action = action,
-            Method = action == SuggestedAction.Move ? MigrationMethod.Junction : MigrationMethod.None,
+            Method = method.Value,
             Order = 0,
             MeasuredBytes = measured.Value.Bytes,
             DestinationPath = destination,
@@ -138,7 +146,15 @@ public sealed class AgentActionService(
         }
 
         if (item.RiskLevel == RiskLevel.High) warnings.Add("high_risk");
-        if (action == SuggestedAction.Move) warnings.Add("junction_left_behind");
+
+        // Two different things happen to the old path, so they are two different warnings. Saying
+        // "a junction is left behind" after a plain move would be false.
+        if (action == SuggestedAction.Move)
+        {
+            warnings.Add(method.Value == MigrationMethod.Junction
+                ? "junction_left_behind"
+                : "old_path_will_break");
+        }
 
         logger.LogInformation("Prepared a {Action} step for review.", action);
 
@@ -215,6 +231,37 @@ public sealed class AgentActionService(
 
         action = SuggestedAction.NoAction;
         return false;
+    }
+
+    /// <summary>
+    /// Reads what the caller asked a move to leave behind.
+    /// <para>
+    /// Absent means a junction, which is what the Agent did before this was a choice at all, so an
+    /// older page that knows nothing about the field keeps behaving exactly as it did. An
+    /// unrecognised value is refused rather than quietly treated as one of the two: the difference
+    /// between them is whether every path pointing at that folder keeps working, which is not
+    /// something to guess at on the user's behalf.
+    /// </para>
+    /// </summary>
+    internal static Result<MigrationMethod> ResolveMoveMethod(string? requested, SuggestedAction action)
+    {
+        if (action != SuggestedAction.Move)
+            return Result.Success(MigrationMethod.None);
+
+        if (string.IsNullOrWhiteSpace(requested))
+            return Result.Success(MigrationMethod.Junction);
+
+        var value = requested.Trim();
+
+        if (string.Equals(value, AgentMoveMethods.Junction, StringComparison.OrdinalIgnoreCase))
+            return Result.Success(MigrationMethod.Junction);
+
+        if (string.Equals(value, AgentMoveMethods.Copy, StringComparison.OrdinalIgnoreCase))
+            return Result.Success(MigrationMethod.None);
+
+        return Result.Failure<MigrationMethod>(new Error(
+            "unknown_move_method",
+            $"'{value}' is not a way to move a folder. Use '{AgentMoveMethods.Junction}' or '{AgentMoveMethods.Copy}'."));
     }
 
     private sealed record PendingStep(PlanExecution Execution, PlanExecutionStep Step);

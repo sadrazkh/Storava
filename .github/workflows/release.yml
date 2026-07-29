@@ -1,0 +1,228 @@
+name: Storava Release
+
+# Pushing a version tag is the whole trigger. Nothing here runs on a branch, so a release only
+# ever comes from a commit somebody deliberately tagged.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'   # v1.2.0-rc1 and friends, published as a pre-release
+
+permissions:
+  contents: write   # needed to create the release and attach files to it
+
+concurrency:
+  group: storava-release-${{ github.ref }}
+  cancel-in-progress: false   # a half-uploaded release is worse than a slow one
+
+jobs:
+  # The tag is the single source of the version number. Deriving it once here means the executables,
+  # the MSI upgrade logic and the release page cannot disagree about what this build is.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+      prerelease: ${{ steps.read.outputs.prerelease }}
+    steps:
+      - id: read
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+
+          # MSI upgrade detection only looks at the first three parts, so a pre-release suffix has
+          # to come off the number even though it stays on the release name.
+          number="${version%%-*}"
+
+          echo "version=$number" >> "$GITHUB_OUTPUT"
+          if [ "$version" != "$number" ]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "Releasing $tag as version $number"
+
+  # Nothing is published until the suite passes. A release is the one build a user cannot easily
+  # undo taking, so it does not skip the checks the ordinary CI run does.
+  verify:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore Storava.slnx
+      - name: Build
+        run: dotnet build Storava.slnx --configuration Release --no-restore -p:Version=${{ needs.version.outputs.version }}
+      - name: Test
+        run: dotnet test Storava.slnx --configuration Release --no-build
+
+  # Both Windows editions, each as something you install and something you just run.
+  package:
+    needs: [version, verify]
+    runs-on: windows-latest
+    timeout-minutes: 40
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish companion agent
+        run: dotnet publish src/Storava.Agent/Storava.Agent.csproj -p:PublishProfile=win-x64 -p:Version=$env:VERSION
+
+      - name: Publish desktop edition
+        run: dotnet publish src/Storava.App/Storava.App.csproj -p:PublishProfile=win-x64 -p:Version=$env:VERSION
+
+      # Self-contained and single-file are the two claims the publish profiles make. A stray runtime
+      # assembly beside the executable means one of them quietly stopped being true, and the portable
+      # zip below would ship something that only runs on the machine that built it.
+      - name: Verify each edition is one self-contained file
+        shell: pwsh
+        run: |
+          foreach ($edition in @(
+            @{ Name = 'agent';   Path = 'artifacts/agent/win-x64';   Exe = 'storava-agent.exe' },
+            @{ Name = 'desktop'; Path = 'artifacts/desktop/win-x64'; Exe = 'Storava.exe' }
+          )) {
+            $files = Get-ChildItem $edition.Path -File
+            if ($files.Count -ne 1) {
+              throw "$($edition.Name) published $($files.Count) files, expected 1: $($files.Name -join ', ')"
+            }
+            if ($files[0].Name -ne $edition.Exe) {
+              throw "$($edition.Name) published $($files[0].Name), expected $($edition.Exe)"
+            }
+            "$($edition.Name): $($files[0].Name), $([math]::Round($files[0].Length / 1MB)) MB"
+          }
+
+      - name: Check the agent runs without a .NET runtime installed
+        shell: pwsh
+        run: |
+          # Self-contained means it must not need the shared runtime. Emptying the environment's
+          # hint variables is the cheapest approximation of a machine that has none.
+          $env:DOTNET_ROOT = ''
+          $env:DOTNET_MULTILEVEL_LOOKUP = '0'
+          $output = & ./artifacts/agent/win-x64/storava-agent.exe status 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) { throw "agent status exited $LASTEXITCODE`n$output" }
+          $output
+
+      # --no-incremental because the version reaches the package through a compile-time constant.
+      # A build that decides its output is already up to date keeps the version it was built with,
+      # which locally produced an MSI stamped 1.0.0 from a run that asked for 2.4.7.
+      - name: Build the installers
+        run: |
+          dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj -p:Version=$env:VERSION --no-incremental
+          dotnet build src/Storava.App.Installer/Storava.App.Installer.wixproj -p:Version=$env:VERSION --no-incremental
+
+      # The tag is what the release claims to be, so the packages are read back and made to agree.
+      - name: Verify the packages carry the tagged version
+        shell: pwsh
+        run: |
+          $installer = New-Object -ComObject WindowsInstaller.Installer
+          foreach ($msi in @('artifacts/installers/StoravaAgent.msi', 'artifacts/installers/Storava.msi')) {
+            $database = $installer.GetType().InvokeMember(
+              'OpenDatabase', 'InvokeMethod', $null, $installer, @((Resolve-Path $msi).Path, 0))
+            $view = $database.GetType().InvokeMember(
+              'OpenView', 'InvokeMethod', $null, $database,
+              @("SELECT Value FROM Property WHERE Property = 'ProductVersion'"))
+            $view.GetType().InvokeMember('Execute', 'InvokeMethod', $null, $view, $null) | Out-Null
+            $record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
+            $found = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(1))
+
+            if ($found -ne "$env:VERSION.0") {
+              throw "$msi is version $found but the tag says $env:VERSION"
+            }
+            "$msi: $found"
+          }
+
+      # Scope="perUser" alone did not put ALLUSERS and MSIINSTALLPERUSER in the Property table, and
+      # getting that wrong registers the product machine-wide while its files sit in one profile.
+      # Both packages are read back rather than trusted.
+      - name: Verify both installers are per-user
+        shell: pwsh
+        run: |
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/Storava.msi
+
+      # The portable form is the same executable with nothing to install. Zipped rather than posted
+      # bare so the browser download does not get flagged, and named with the version so two
+      # downloads in a folder stay tellable apart.
+      - name: Build the portable packages
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/release | Out-Null
+
+          Compress-Archive -Path artifacts/desktop/win-x64/Storava.exe `
+                           -DestinationPath "artifacts/release/Storava-$env:VERSION-win-x64-portable.zip" -Force
+          Compress-Archive -Path artifacts/agent/win-x64/storava-agent.exe `
+                           -DestinationPath "artifacts/release/StoravaAgent-$env:VERSION-win-x64-portable.zip" -Force
+
+          Copy-Item artifacts/installers/Storava.msi      "artifacts/release/Storava-$env:VERSION-win-x64-setup.msi"
+          Copy-Item artifacts/installers/StoravaAgent.msi "artifacts/release/StoravaAgent-$env:VERSION-win-x64-setup.msi"
+
+          Get-ChildItem artifacts/release | ForEach-Object {
+            "{0}  {1} MB" -f $_.Name, [math]::Round($_.Length / 1MB)
+          }
+
+      # Published beside the files so a download can be checked against something that did not
+      # travel with it.
+      - name: Write checksums
+        shell: pwsh
+        run: |
+          # Excluded explicitly rather than relying on the file not existing yet: a re-run over a
+          # populated directory would otherwise list the checksum file's own former contents.
+          Get-ChildItem artifacts/release -File -Exclude SHA256SUMS.txt |
+            ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name } |
+            Set-Content artifacts/release/SHA256SUMS.txt -Encoding ascii
+
+          Get-Content artifacts/release/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storava-release-${{ env.VERSION }}
+          path: artifacts/release/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          $notes = @"
+          ## Storava $env:VERSION
+
+          ### Desktop edition (Windows)
+          | Download | What it is |
+          | --- | --- |
+          | ``Storava-$env:VERSION-win-x64-setup.msi`` | Installs for your Windows account. No administrator needed. |
+          | ``Storava-$env:VERSION-win-x64-portable.zip`` | One executable. Unzip and run it; nothing is installed. |
+
+          ### Companion agent (Windows)
+          | Download | What it is |
+          | --- | --- |
+          | ``StoravaAgent-$env:VERSION-win-x64-setup.msi`` | Installs for your Windows account. No administrator needed. |
+          | ``StoravaAgent-$env:VERSION-win-x64-portable.zip`` | One executable. Unzip and run it; nothing is installed. |
+
+          Both editions are self-contained: they carry their own .NET runtime and need nothing else installed.
+          Both installers are per-user by design — Storava's database and its encrypted API key are tied to one
+          Windows account, so an install shared across accounts could not read them.
+
+          ``SHA256SUMS.txt`` lists the checksum of every file above.
+          "@
+
+          $arguments = @(
+            'release', 'create', $env:GITHUB_REF_NAME,
+            '--title', "Storava $env:VERSION",
+            '--notes', $notes
+          )
+          if ($env:PRERELEASE -eq 'true') { $arguments += '--prerelease' }
+          $arguments += (Get-ChildItem artifacts/release -File | ForEach-Object { $_.FullName })
+
+          & gh @arguments

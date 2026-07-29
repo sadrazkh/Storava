@@ -12,14 +12,9 @@ public sealed class RecommendationRepository : IRecommendationRepository
         "Technology, RuleId, EstimatedSpace, Confidence, Score, CanDelete, CanMove, CanRegenerate, " +
         "OfficialMigrationMethod, FallbackMigrationMethod, OfficialMigrationHint, Warning, Source";
 
-    private readonly StoravaDbOptions _options;
-    private readonly IDatabaseInitializer _initializer;
+    private readonly DatabaseGateway _db;
 
-    public RecommendationRepository(StoravaDbOptions options, IDatabaseInitializer initializer)
-    {
-        _options = options;
-        _initializer = initializer;
-    }
+    public RecommendationRepository(DatabaseGateway db) => _db = db;
 
     public Task ReplaceForSessionAsync(
         string sessionId,
@@ -37,7 +32,7 @@ public sealed class RecommendationRepository : IRecommendationRepository
     /// Narrows the delete to rows the AI produced. Without it, saving what the AI said would take
     /// the rule catalog's advice with it.
     /// </param>
-    private async Task ReplaceAsync(
+    private Task ReplaceAsync(
         string sessionId,
         IEnumerable<Recommendation> recommendations,
         bool onlyAi,
@@ -46,10 +41,8 @@ public sealed class RecommendationRepository : IRecommendationRepository
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
         ArgumentNullException.ThrowIfNull(recommendations);
 
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(async (connection, _) =>
+        {
         await using var transaction = (SqliteTransaction)await connection
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
@@ -128,17 +121,14 @@ public sealed class RecommendationRepository : IRecommendationRepository
         }
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Recommendation>> GetBySessionAsync(
+    public Task<IReadOnlyList<Recommendation>> GetBySessionAsync(
         string sessionId,
-        CancellationToken cancellationToken = default)
-    {
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
+        CancellationToken cancellationToken = default) =>
+        _db.RunAsync<IReadOnlyList<Recommendation>>(async (connection, _) =>
+        {
         await using var command = connection.CreateCommand();
         command.CommandText = $"SELECT {Columns} FROM Recommendations WHERE SessionId = $s ORDER BY Score DESC;";
         command.Parameters.AddWithValue("$s", sessionId);
@@ -148,7 +138,7 @@ public sealed class RecommendationRepository : IRecommendationRepository
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             result.Add(Map(reader));
         return result;
-    }
+        }, cancellationToken);
 
     private static Recommendation Map(SqliteDataReader r) => new()
     {

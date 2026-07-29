@@ -13,14 +13,9 @@ public sealed class ScanQueryService : IScanQueryService
         "Depth, CreationTime, LastWriteTime, IsReparsePoint, IsProtected, IsHidden, IsSystem, " +
         "RiskLevel, Category, DetectedTechnology, KnownRuleId, Confidence, CanDelete, CanMove, CanRegenerate";
 
-    private readonly StoravaDbOptions _options;
-    private readonly IDatabaseInitializer _initializer;
+    private readonly DatabaseGateway _db;
 
-    public ScanQueryService(StoravaDbOptions options, IDatabaseInitializer initializer)
-    {
-        _options = options;
-        _initializer = initializer;
-    }
+    public ScanQueryService(DatabaseGateway db) => _db = db;
 
     public Task<IReadOnlyList<ScanItemView>> GetRootsAsync(string sessionId, CancellationToken cancellationToken = default)
         => QueryAsync(
@@ -101,14 +96,8 @@ public sealed class ScanQueryService : IScanQueryService
     public async Task<IReadOnlyList<FolderSize>> GetFolderSizesAsync(
         string sessionId, int maxDepth, int limit, CancellationToken cancellationToken = default)
     {
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        // Off the caller's thread: see QueryAsync for why awaiting this provider
-        // does not on its own leave the UI free.
-        return await Task.Run(async () =>
+        return await _db.RunAsync(async (connection, _) =>
         {
-            await using var connection = new SqliteConnection(_options.ConnectionString);
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
             await using var command = connection.CreateCommand();
             command.CommandText = $"""
@@ -142,14 +131,8 @@ public sealed class ScanQueryService : IScanQueryService
     public async Task<IReadOnlyList<CategoryUsage>> GetCategoryUsageAsync(
         string sessionId, CancellationToken cancellationToken = default)
     {
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        // Off the caller's thread: see QueryAsync for why awaiting this provider
-        // does not on its own leave the UI free.
-        return await Task.Run(async () =>
+        return await _db.RunAsync(async (connection, _) =>
         {
-            await using var connection = new SqliteConnection(_options.ConnectionString);
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
             long scannedTotal = await GetScannedTotalAsync(connection, sessionId, cancellationToken).ConfigureAwait(false);
 
@@ -266,18 +249,8 @@ public sealed class ScanQueryService : IScanQueryService
     private async Task<IReadOnlyList<ScanItemView>> QueryAsync(
         string sql, Action<SqliteCommand> bind, CancellationToken cancellationToken)
     {
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        // Run on a pool thread rather than the caller's.
-        //
-        // This provider's async methods are synchronous underneath: SQLite has no async file I/O,
-        // so ExecuteReaderAsync and ReadAsync complete inline and awaiting them never yields. A
-        // page that awaits a query is therefore running the whole query on the UI thread, and on a
-        // scan of a full drive that means mapping hundreds of thousands of rows between repaints.
-        return await Task.Run<IReadOnlyList<ScanItemView>>(async () =>
+        return await _db.RunAsync<IReadOnlyList<ScanItemView>>(async (connection, _) =>
         {
-            await using var connection = new SqliteConnection(_options.ConnectionString);
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
             await using var command = connection.CreateCommand();
             command.CommandText = sql;

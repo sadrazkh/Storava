@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A per-user installer for the desktop edition, for the same reason the Agent's is per-user.
+
+  Storava keeps everything it knows in %LOCALAPPDATA%\Storava — the scan database, the settings, and
+  an OpenRouter key encrypted with Windows DPAPI scoped to one Windows account. Installed
+  machine-wide and started as somebody else, it would find none of that and could not decrypt the
+  key. Installing where it can actually run is the honest choice, and it happens to need no
+  administrator.
+
+  Nothing here writes an autostart entry: the desktop edition is something a person opens, not a
+  service.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package
+    Name="Storava"
+    Manufacturer="Storava"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="b6d24e18-9f07-4a53-8c61-3ea75d92b0c4"
+    Scope="perUser"
+    Compressed="yes"
+    InstallerVersion="500">
+
+    <SummaryInformation Description="Storava storage analysis for Windows" />
+
+    <!--
+      ALLUSERS is deliberately absent, exactly as in the Agent's package. Its three states are:
+      absent means per-user, 1 means per-machine, and 2 means "per-machine if this user is allowed,
+      otherwise per-user". Setting it to 2 reads like the careful choice and is the wrong one — on a
+      machine whose user is a local administrator it takes the per-machine branch, registering the
+      product machine-wide while its files sit in one user's profile.
+    -->
+    <Property Id="MSIINSTALLPERUSER" Value="1" />
+
+    <!-- Installing over an older copy replaces it rather than leaving two side by side. -->
+    <MajorUpgrade
+      AllowSameVersionUpgrades="yes"
+      DowngradeErrorMessage="A newer version of Storava is already installed." />
+
+    <!-- The payload is an already-compressed single-file executable, so the cab cannot do much
+         with it; high is still worth asking for and costs only build time. -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="StoravaIcon" SourceFile="$(var.PublishedDir)Storava.exe" />
+    <Property Id="ARPPRODUCTICON" Value="StoravaIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/sadrazkh/Storava" />
+    <!-- Nothing here modifies anything outside the user's own profile. -->
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Storava" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="Storava" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Storava" Level="1">
+      <ComponentGroupRef Id="DesktopFiles" />
+      <ComponentGroupRef Id="DesktopShortcuts" />
+    </Feature>
+
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="DesktopFiles" Directory="INSTALLFOLDER">
+      <Component Id="DesktopExecutable" Guid="7a51c9d3-4b62-4e0f-95a8-1c8d3f60e2b7">
+        <File Id="StoravaExe"
+              Name="Storava.exe"
+              Source="$(var.PublishedDir)Storava.exe"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DesktopShortcuts" Directory="ShortcutFolder">
+      <Component Id="DesktopShortcut" Guid="e39b0a74-8c15-42d6-a7f3-5d21b8e94c60">
+        <Shortcut Id="StoravaStartMenuShortcut"
+                  Name="Storava"
+                  Description="See what is using space on this computer, and reclaim it safely"
+                  Target="[INSTALLFOLDER]Storava.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+
+        <RemoveFolder Id="RemoveStoravaShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
+
+        <!-- A per-user component needs a per-user key path, and this is the only registry value the
+             installer owns. Scans, settings and the stored key live under %LOCALAPPDATA%\Storava and
+             are deliberately left alone on uninstall: they are the user's, not the package's. -->
+        <RegistryValue Root="HKCU"
+                       Key="Software\Storava\App"
+                       Name="Installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

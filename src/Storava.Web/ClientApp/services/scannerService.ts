@@ -1,11 +1,22 @@
 import type { FolderSelection } from '@/models/capabilities';
 import type { CategoryAggregate, ScanItem, ScanMetrics, ScanSession, ScanStatus, WorkerEvent } from '@/models/scan';
-import { putDirectoryHandle, putItemsBatch, putSession } from '@/services/scanDatabase';
+import { applyScanRetention, putDirectoryHandle, putItemsBatch, putSession } from '@/services/scanDatabase';
+
+/**
+ * How many scans are kept once a new one finishes.
+ *
+ * Three: enough to compare a folder against how it looked last time, few enough that the browser's
+ * storage stays small. The desktop edition keeps the same number for the same reason.
+ */
+export const KEEP_RECENT_SCANS = 3;
 
 export interface ScanCallbacks {
   onSession(session: ScanSession): void;
   onBatch(items: ScanItem[], session: ScanSession): void;
   onError(message: string): void;
+
+  /** Called when older scans were discarded, so the history on screen can catch up. */
+  onRetention?(discardedIds: string[]): void;
 }
 
 export class ScannerService {
@@ -89,7 +100,19 @@ export class ScannerService {
       this.session.completedAt = Date.now();
       this.session.updatedAt = Date.now();
       const completed = structuredClone(this.session);
-      this.writeChain = this.writeChain.then(() => putSession(completed));
+      this.writeChain = this.writeChain
+        .then(() => putSession(completed))
+        // Older scans go now that a newer one exists. Chained after the write rather than awaited
+        // by the caller: the scan is finished and saved by this point, and nothing on screen is
+        // waiting for the tidying up. The scan just taken is named so it can never be the one
+        // discarded, however the clock behaved.
+        .then(() => applyScanRetention(KEEP_RECENT_SCANS, completed.id))
+        .then((discarded) => {
+          if (discarded.length > 0) this.callbacks.onRetention?.(discarded);
+        })
+        .catch(() => {
+          // Housekeeping must not be able to turn a finished scan into a failure.
+        });
       this.callbacks.onSession(completed);
       this.worker?.terminate();
       this.worker = null;

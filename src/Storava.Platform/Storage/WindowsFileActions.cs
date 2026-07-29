@@ -338,7 +338,7 @@ public sealed class WindowsFileActions : IFileSystemActions
         if (code != 0 || operation.AnyOperationsAborted)
         {
             _logger.LogError("SHFileOperation refused to recycle a folder (code {Code}).", code);
-            return Result.Failure(ExecutionErrors.RecycleFailed);
+            return Result.Failure(RecycleErrorFor(code));
         }
 
         // The shell reports success even when a folder survives, for example on a volume with no
@@ -351,6 +351,32 @@ public sealed class WindowsFileActions : IFileSystemActions
 
         return Result.Success();
     }
+
+    /// <summary>
+    /// Turns the shell's number into something the person in front of the screen can act on.
+    /// <para>
+    /// This is worth the trouble because of what a failure here costs. The removal is the last step
+    /// of a move, so by the time it fails the copy has already been made and verified, and the
+    /// recovery is to undo all of it. Being told only that "the folder could not be sent to the
+    /// Recycle Bin" after that leaves no way to tell a locked file — close the program, try again —
+    /// apart from a permission problem, which retrying will never fix.
+    /// </para>
+    /// <para>
+    /// <c>SHFileOperation</c> returns a mixture of its own pre-Win32 <c>DE_</c> codes and ordinary
+    /// Win32 ones, so both are matched. Anything unrecognised stays the general failure rather than
+    /// being dressed up as a diagnosis.
+    /// </para>
+    /// </summary>
+    internal static Error RecycleErrorFor(int code) => code switch
+    {
+        NativeMethods.ErrorSharingViolation or NativeMethods.ErrorLockViolation
+            => ExecutionErrors.RecycleSourceInUse,
+
+        NativeMethods.ErrorAccessDenied or NativeMethods.DeAccessDeniedSrc
+            => ExecutionErrors.RecycleAccessDenied,
+
+        _ => ExecutionErrors.RecycleFailed
+    };
 
     public Result CreateLink(string linkPath, string targetPath, MigrationMethod method, bool isFolder = true)
     {

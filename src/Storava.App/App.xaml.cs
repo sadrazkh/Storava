@@ -3,7 +3,9 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
+using Storava.App.Diagnostics;
 using Storava.App.ViewModels;
 using Storava.App.Views;
 using Storava.Application.Abstractions;
@@ -13,6 +15,7 @@ namespace Storava.App;
 public partial class App : System.Windows.Application
 {
     private IHost? _host;
+    private UiResponsivenessMonitor? _uiMonitor;
 
     private static string AppDataDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Storava");
@@ -45,6 +48,10 @@ public partial class App : System.Windows.Application
     private void InitializeAndShow()
     {
         var services = _host!.Services;
+
+        // Started before anything is shown, so a stall during the first page counts too.
+        _uiMonitor = new UiResponsivenessMonitor(
+            Dispatcher, services.GetRequiredService<ILogger<UiResponsivenessMonitor>>());
 
         // Load persisted settings and apply appearance before the window appears.
         var settings = services.GetRequiredService<ISettingsService>();
@@ -101,6 +108,8 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs e)
     {
         Log.Information("Storava shutting down.");
+        _uiMonitor?.Dispose();
+
         try
         {
             _host?.StopAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();

@@ -16,4 +16,9 @@
     <ProjectReference Include="..\Storava.Application\Storava.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Windows-targeted test project covers how a shell failure code is classified here. -->
+    <InternalsVisibleTo Include="Storava.App.Tests" />
+  </ItemGroup>
+
 </Project>

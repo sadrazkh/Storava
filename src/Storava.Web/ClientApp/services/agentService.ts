@@ -437,17 +437,35 @@ function fileNameFrom(header: string | null): string | null {
  * Asks what would happen, without anything happening. The Agent re-measures the folder and hands
  * back the phrase the user must type; nothing on disk is touched by this call.
  */
+/**
+ * What a move leaves at the old location.
+ *
+ * `junction` puts an NTFS directory junction there, so every path that pointed at the folder still
+ * works — a build that hard-codes it, a launcher, a config file written years ago. `copy` moves it
+ * and leaves nothing, which frees exactly the same space and breaks all of them.
+ *
+ * Sending nothing means `junction`, which is what the agent did before this was a choice.
+ */
+export type AgentMoveMethod = 'junction' | 'copy';
+
 export async function previewAction(
   connection: AgentConnection,
   scanId: string,
   itemId: string,
   action: 'delete' | 'move',
   destinationPath?: string,
+  moveMethod?: AgentMoveMethod,
 ): Promise<{ preview: AgentActionPreview } | { problem: AgentProblem }> {
   const response = await agentFetch(connection, '/v1/actions/preview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scanId, itemId, action, destinationPath: destinationPath ?? null }),
+    body: JSON.stringify({
+      scanId,
+      itemId,
+      action,
+      destinationPath: destinationPath ?? null,
+      moveMethod: moveMethod ?? null,
+    }),
   });
 
   if (response.ok) return { preview: (await response.json()) as AgentActionPreview };

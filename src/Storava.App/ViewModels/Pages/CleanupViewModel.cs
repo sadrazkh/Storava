@@ -1094,6 +1094,8 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         "exec.copy_failed" => "Str.Migration.Error.CopyFailed",
         "exec.verification_failed" => "Str.Migration.Error.VerificationFailed",
         "exec.recycle_failed" => "Str.Migration.Error.RecycleFailed",
+        "exec.recycle_in_use" => "Str.Migration.Error.RecycleInUse",
+        "exec.recycle_access_denied" => "Str.Migration.Error.RecycleAccessDenied",
         "exec.link_failed" => "Str.Migration.Error.LinkFailed",
         "exec.not_confirmed" => "Str.Migration.Error.NotConfirmed",
         "exec.confirmation_stale" => "Str.Migration.Error.Stale",

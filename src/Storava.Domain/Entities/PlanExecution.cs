@@ -161,6 +161,18 @@ public static class ExecutionErrors
     public static readonly Error RecycleFailed =
         new("exec.recycle_failed", "The folder could not be sent to the Recycle Bin.");
 
+    /// <summary>
+    /// Something still had a file inside the folder open. By far the most common way a move fails,
+    /// and the one a person can actually do something about — so it says so instead of leaving them
+    /// to guess why the work was undone.
+    /// </summary>
+    public static readonly Error RecycleSourceInUse =
+        new("exec.recycle_in_use", "Another program is still using something inside this folder.");
+
+    /// <summary>Windows refused on permission grounds, which no amount of closing programs will fix.</summary>
+    public static readonly Error RecycleAccessDenied =
+        new("exec.recycle_access_denied", "Windows would not allow this folder to be removed.");
+
     public static readonly Error LinkFailed =
         new("exec.link_failed", "The folder was moved but the link back to the old location could not be created.");
 

@@ -430,6 +430,8 @@ describe('acting on what the agent found', () => {
       itemId: 'item-1',
       action: 'delete',
       destinationPath: null,
+      // A delete has no old location to leave anything at, so no method is asked for.
+      moveMethod: null,
     });
   });
 
@@ -441,6 +443,33 @@ describe('acting on what the agent found', () => {
     const sent = JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string) as { destinationPath: string };
     expect(sent.destinationPath)
       .toBe('D:\\caches\\nuget');
+  });
+
+  /**
+   * What a move leaves at the old location is the user's choice. A junction means every path that
+   * pointed at the folder still works; a plain move frees the same space and breaks all of them.
+   * The agent cannot honour a choice the page never sends.
+   */
+  it('passes the chosen move method through', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({ ...preview, action: 'move' }));
+
+    await previewAction(connection, 'scan-1', 'item-1', 'move', 'D:\\caches\\nuget', 'copy');
+
+    const sent = JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string) as { moveMethod: string };
+    expect(sent.moveMethod).toBe('copy');
+  });
+
+  /**
+   * Sending nothing has to keep meaning a junction, which is what the agent did before this was a
+   * choice at all — otherwise upgrading the page would silently start breaking paths.
+   */
+  it('sends no method when none was chosen, leaving the agent its default', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({ ...preview, action: 'move' }));
+
+    await previewAction(connection, 'scan-1', 'item-1', 'move', 'D:\\caches\\nuget');
+
+    const sent = JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string) as { moveMethod: string | null };
+    expect(sent.moveMethod).toBeNull();
   });
 
   it('surfaces the agent’s reason for refusing an action', async () => {

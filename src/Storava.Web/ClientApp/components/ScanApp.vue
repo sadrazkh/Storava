@@ -81,6 +81,12 @@ const scanner = new ScannerService({
   onError: (message) => {
     errors.value = [message, ...errors.value].slice(0, 30);
   },
+  // Retention runs after the scan reports itself finished, so the history list drawn a moment ago
+  // still has the discarded scans in it. Without this the user can pick one that is already gone.
+  onRetention: (discarded) => {
+    void refreshHistory();
+    compareIds.value = compareIds.value.filter((id) => !discarded.includes(id));
+  },
 });
 
 const isActive = computed(() => session.value?.status === 'running' || session.value?.status === 'paused');

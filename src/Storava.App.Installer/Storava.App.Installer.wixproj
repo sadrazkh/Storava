@@ -1,0 +1,33 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+
+  <PropertyGroup>
+    <OutputName>Storava</OutputName>
+    <OutputType>Package</OutputType>
+    <!-- The desktop edition publishes win-x64 only; an installer offering anything else would lie. -->
+    <InstallerPlatform>x64</InstallerPlatform>
+    <!-- ICE61 fires because AllowSameVersionUpgrades is on, which is exactly what we want:
+         reinstalling the same version should replace the copy rather than sit beside it.
+         The others are per-user-install checks that assume a machine-wide package. -->
+    <SuppressIces>ICE38;ICE43;ICE57;ICE61;ICE64;ICE91</SuppressIces>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\installers\</OutputPath>
+  </PropertyGroup>
+
+  <!--
+    The MSI packages the already-published single file rather than building it. Publishing is its
+    own step with its own settings (self-contained, single-file, ReadyToRun), and having the
+    installer rebuild it would give two definitions of what ships.
+  -->
+
+  <!-- One version for the product, taken from Directory.Build.props like everything else. MSI
+       needs four parts even though only the first three affect upgrade detection. -->
+  <PropertyGroup>
+    <PublishedAppDir>$(MSBuildThisFileDirectory)..\..\artifacts\desktop\win-x64\</PublishedAppDir>
+    <DefineConstants>$(DefineConstants);ProductVersion=$(Version).0;PublishedDir=$(PublishedAppDir)</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="RequirePublishedApp" BeforeTargets="Build">
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\..\artifacts\desktop\win-x64\Storava.exe')"
+           Text="Publish the desktop edition first: dotnet publish src/Storava.App/Storava.App.csproj -p:PublishProfile=win-x64" />
+  </Target>
+
+</Project>

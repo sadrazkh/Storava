@@ -22,20 +22,16 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
         "DestinationPath, Status, MeasuredBytes, BytesFreed, StartedAt, CompletedAt, RecycledPath, " +
         "LinkPath, ErrorCode, ErrorMessage, IsFolder, HasNoRule";
 
-    private readonly StoravaDbOptions _options;
-    private readonly IDatabaseInitializer _initializer;
+    private readonly DatabaseGateway _db;
 
-    public PlanExecutionRepository(StoravaDbOptions options, IDatabaseInitializer initializer)
-    {
-        _options = options;
-        _initializer = initializer;
-    }
+    public PlanExecutionRepository(DatabaseGateway db) => _db = db;
 
-    public async Task SaveAsync(PlanExecution execution, CancellationToken cancellationToken = default)
+    public Task SaveAsync(PlanExecution execution, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(execution);
 
-        await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(async (connection, _) =>
+        {
         await using var transaction = (SqliteTransaction)await connection
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
@@ -59,14 +55,16 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
             await WriteStepAsync(connection, transaction, step, cancellationToken).ConfigureAwait(false);
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
     }
 
-    public async Task SaveStepAsync(PlanExecutionStep step, CancellationToken cancellationToken = default)
+    public Task SaveStepAsync(PlanExecutionStep step, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(step);
 
-        await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        await WriteStepAsync(connection, transaction: null, step, cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(
+            (connection, _) => WriteStepAsync(connection, transaction: null, step, cancellationToken),
+            cancellationToken);
     }
 
     private static async Task WriteStepAsync(
@@ -124,55 +122,56 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<PlanExecution?> GetAsync(string executionId, CancellationToken cancellationToken = default)
+    public Task<PlanExecution?> GetAsync(string executionId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
 
-        await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        return await ReadOneAsync(
-            connection,
-            $"SELECT {ExecutionColumns} FROM PlanExecutions WHERE Id = $v;",
-            executionId,
-            cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(
+            (connection, _) => ReadOneAsync(
+                connection,
+                $"SELECT {ExecutionColumns} FROM PlanExecutions WHERE Id = $v;",
+                executionId,
+                cancellationToken),
+            cancellationToken);
     }
 
-    public async Task<PlanExecution?> GetLatestForSessionAsync(
+    public Task<PlanExecution?> GetLatestForSessionAsync(
         string sessionId,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
 
-        await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-        return await ReadOneAsync(
-            connection,
-            $"SELECT {ExecutionColumns} FROM PlanExecutions WHERE SessionId = $v ORDER BY StartedAt DESC LIMIT 1;",
-            sessionId,
-            cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(
+            (connection, _) => ReadOneAsync(
+                connection,
+                $"SELECT {ExecutionColumns} FROM PlanExecutions WHERE SessionId = $v ORDER BY StartedAt DESC LIMIT 1;",
+                sessionId,
+                cancellationToken),
+            cancellationToken);
     }
 
-    public async Task<IReadOnlyList<PlanExecution>> GetRecentAsync(
+    public Task<IReadOnlyList<PlanExecution>> GetRecentAsync(
         int limit,
-        CancellationToken cancellationToken = default)
-    {
-        await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-
-        var executions = new List<PlanExecution>();
-
-        await using (var command = connection.CreateCommand())
+        CancellationToken cancellationToken = default) =>
+        _db.RunAsync<IReadOnlyList<PlanExecution>>(async (connection, _) =>
         {
-            command.CommandText = $"SELECT {ExecutionColumns} FROM PlanExecutions ORDER BY StartedAt DESC LIMIT $n;";
-            command.Parameters.AddWithValue("$n", Math.Max(1, limit));
+            var executions = new List<PlanExecution>();
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                executions.Add(MapExecution(reader));
-        }
+            await using (var command = connection.CreateCommand())
+            {
+                command.CommandText = $"SELECT {ExecutionColumns} FROM PlanExecutions ORDER BY StartedAt DESC LIMIT $n;";
+                command.Parameters.AddWithValue("$n", Math.Max(1, limit));
 
-        foreach (var execution in executions)
-            execution.Load(await LoadStepsAsync(connection, execution.Id, cancellationToken).ConfigureAwait(false));
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    executions.Add(MapExecution(reader));
+            }
 
-        return executions;
-    }
+            foreach (var execution in executions)
+                execution.Load(await LoadStepsAsync(connection, execution.Id, cancellationToken).ConfigureAwait(false));
+
+            return executions;
+        }, cancellationToken);
 
     private static async Task<PlanExecution?> ReadOneAsync(
         SqliteConnection connection,
@@ -215,14 +214,6 @@ public sealed class PlanExecutionRepository : IPlanExecutionRepository
         return steps;
     }
 
-    private async Task<SqliteConnection> OpenAsync(CancellationToken cancellationToken)
-    {
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-        return connection;
-    }
 
     private static PlanExecution MapExecution(SqliteDataReader r) => new()
     {

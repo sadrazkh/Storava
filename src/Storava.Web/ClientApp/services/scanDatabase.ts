@@ -338,3 +338,37 @@ export async function clearAllLocalData(): Promise<void> {
   transaction.objectStore(advisorResultStore).clear();
   await transactionDone(transaction);
 }
+
+/**
+ * Keeps only the most recent scans, so the browser's storage stops growing without limit.
+ *
+ * A scan of a large folder is hundreds of thousands of records, and nothing ever removed them: the
+ * only way to reclaim any of it was for somebody to remember to press delete. The desktop edition
+ * grew a six-gigabyte database that way before the same rule was added there.
+ *
+ * A scan is also the one kind of data here that can simply be taken again, which is what makes
+ * discarding the old ones reasonable at all.
+ *
+ * @param keep How many to keep. Below one is treated as one — never discard everything.
+ * @param protectedId A scan that must survive whatever its age, being the one on screen.
+ * @returns The ids that were discarded.
+ */
+export async function applyScanRetention(keep: number, protectedId?: string): Promise<string[]> {
+  const limit = Math.max(1, Math.floor(keep));
+  const sessions = await listSessions(); // newest first
+  if (sessions.length <= limit) return [];
+
+  const discarded: string[] = [];
+
+  for (const session of sessions.slice(limit)) {
+    if (session.id === protectedId) continue;
+
+    // A scan still being written is not finished data to throw away; it is the one running.
+    if (session.status === 'running' || session.status === 'paused') continue;
+
+    await deleteSession(session.id);
+    discarded.push(session.id);
+  }
+
+  return discarded;
+}

@@ -20,6 +20,7 @@ import {
   type AgentConnection,
   type AgentDrive,
   type AgentFailure,
+  type AgentMoveMethod,
   type AgentScanItem,
   type AgentScanProgress,
   type BrowserDevice,
@@ -265,6 +266,10 @@ const pending = ref<AgentActionPreview | null>(null);
 const pendingItem = ref<AgentScanItem | null>(null);
 const typedName = ref('');
 const moveDestination = ref('');
+
+// Junction by default, because that is what the agent has always done and it is the choice that
+// cannot break anything: every path pointing at the folder keeps working.
+const moveMethod = ref<AgentMoveMethod>('junction');
 const actionProblem = ref<string | null>(null);
 const outcome = ref<AgentActionOutcome | null>(null);
 const isActing = ref(false);
@@ -281,6 +286,7 @@ const warningText = computed(() => (pending.value?.warnings ?? []).map((warning)
     case 'shrank_since_scan': return copy.value.warnShrank;
     case 'high_risk': return copy.value.warnHighRisk;
     case 'junction_left_behind': return copy.value.warnJunction;
+    case 'old_path_will_break': return copy.value.warnNoJunction;
     default: return warning;
   }
 }));
@@ -290,6 +296,7 @@ function closeConfirmation(): void {
   pendingItem.value = null;
   typedName.value = '';
   moveDestination.value = '';
+  moveMethod.value = 'junction';
   actionProblem.value = null;
 }
 
@@ -309,6 +316,7 @@ async function askPreview(item: AgentScanItem, action: 'delete' | 'move'): Promi
     item.id,
     action,
     action === 'move' ? moveDestination.value.trim() : undefined,
+    action === 'move' ? moveMethod.value : undefined,
   );
 
   if ('problem' in asked) {
@@ -321,6 +329,13 @@ async function askPreview(item: AgentScanItem, action: 'delete' | 'move'): Promi
   typedName.value = '';
 }
 
+/**
+ * Asks again whenever anything the approval is bound to changes.
+ *
+ * The agent's fingerprint covers the destination and the method, so a preview read against one of
+ * them cannot be spent on the other. Re-asking here is what keeps the screen showing the step the
+ * user is actually about to approve, rather than leaving them to discover the mismatch on submit.
+ */
 async function refreshPreviewForDestination(): Promise<void> {
   const item = pendingItem.value;
   if (item && pending.value?.action === 'move') await askPreview(item, 'move');
@@ -635,6 +650,36 @@ onMounted(loadDevices);
             <small>{{ copy.confirmDestinationHint }}</small>
           </label>
 
+          <fieldset v-if="pending.action === 'move'" class="agent__field agent__method">
+            <legend>{{ copy.moveMethodLabel }}</legend>
+
+            <label class="agent__choice">
+              <input
+                v-model="moveMethod"
+                type="radio"
+                value="junction"
+                @change="refreshPreviewForDestination"
+              >
+              <span>
+                <strong>{{ copy.moveMethodJunction }}</strong>
+                <small>{{ copy.moveMethodJunctionHint }}</small>
+              </span>
+            </label>
+
+            <label class="agent__choice">
+              <input
+                v-model="moveMethod"
+                type="radio"
+                value="copy"
+                @change="refreshPreviewForDestination"
+              >
+              <span>
+                <strong>{{ copy.moveMethodCopy }}</strong>
+                <small>{{ copy.moveMethodCopyHint }}</small>
+              </span>
+            </label>
+          </fieldset>
+
           <label class="agent__field">
             <span>{{ fill(copy.confirmTypePrompt, { name: pending.confirmationPhrase }) }}</span>
             <input v-model="typedName" type="text" dir="ltr" autocomplete="off">
@@ -836,6 +881,40 @@ onMounted(loadDevices);
 
 .agent__check { display: flex; gap: .55rem; align-items: center; color: var(--muted); cursor: pointer; }
 .agent__check input { accent-color: var(--pine-bright); }
+
+/* The move-method choice. Two options, each with the consequence written under it, because the
+   difference between them is not visible until something that used the old path stops working. */
+.agent__method {
+  margin: 0;
+  padding: .85rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.agent__method legend {
+  padding: 0 .35rem;
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 800;
+}
+.agent__choice {
+  display: flex;
+  gap: .6rem;
+  align-items: start;
+  padding: .5rem .35rem;
+  cursor: pointer;
+}
+.agent__choice + .agent__choice { border-top: 1px solid var(--line); }
+.agent__choice input {
+  width: auto;
+  min-height: 0;
+  margin-top: .2rem;
+  padding: 0;
+  border: 0;
+  accent-color: var(--pine-bright);
+}
+.agent__choice span { display: grid; gap: .2rem; }
+.agent__choice strong { color: var(--ink); font-size: .85rem; }
+.agent__choice small { color: var(--muted); font-size: .74rem; line-height: 1.6; }
 
 .agent__actions { display: flex; gap: .6rem; }
 .agent__stop {

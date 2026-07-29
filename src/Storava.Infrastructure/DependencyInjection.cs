@@ -54,6 +54,10 @@ public static class DependencyInjection
 
         // Schema + settings
         services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
+
+        // Every repository takes its connections from here, which is what keeps database work
+        // off whichever thread happened to ask for it.
+        services.AddSingleton<DatabaseGateway>();
         services.AddSingleton<ISettingsService, SettingsService>();
 
         // Scan storage. The interface defaults to plain persistence; the rules layer replaces

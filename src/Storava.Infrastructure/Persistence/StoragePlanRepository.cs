@@ -17,25 +17,18 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
         "Id, PlanId, RecommendationId, ScanItemId, Path, Title, Action, EstimatedSpace, RiskLevel, " +
         "Category, Technology, Method, MethodHint, Warning, AddedAt, SortOrder, IsFolder, HasNoRule";
 
-    private readonly StoravaDbOptions _options;
-    private readonly IDatabaseInitializer _initializer;
+    private readonly DatabaseGateway _db;
 
-    public StoragePlanRepository(StoravaDbOptions options, IDatabaseInitializer initializer)
-    {
-        _options = options;
-        _initializer = initializer;
-    }
+    public StoragePlanRepository(DatabaseGateway db) => _db = db;
 
-    public async Task<StoragePlan?> GetForSessionAsync(
+    public Task<StoragePlan?> GetForSessionAsync(
         string sessionId,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
 
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(async (connection, _) =>
+        {
 
         StoragePlan plan;
         await using (var command = connection.CreateCommand())
@@ -73,16 +66,15 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
         }
 
         return plan;
+        }, cancellationToken);
     }
 
-    public async Task SaveAsync(StoragePlan plan, CancellationToken cancellationToken = default)
+    public Task SaveAsync(StoragePlan plan, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(async (connection, _) =>
+        {
         await using var transaction = (SqliteTransaction)await connection
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
@@ -173,16 +165,15 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
         }
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
     }
 
-    public async Task DeleteForSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    public Task DeleteForSessionAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
 
-        await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        return _db.RunAsync(async (connection, _) =>
+        {
 
         await using var command = connection.CreateCommand();
         command.CommandText = """
@@ -191,6 +182,7 @@ public sealed class StoragePlanRepository : IStoragePlanRepository
             """;
         command.Parameters.AddWithValue("$s", sessionId);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
     }
 
     private static StoragePlanEntry MapEntry(SqliteDataReader r) => new()

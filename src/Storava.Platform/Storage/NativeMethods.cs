@@ -18,6 +18,13 @@ internal static partial class NativeMethods
     internal const ushort FofNoConfirmMkDir = 0x0200;
     internal const ushort FofNoErrorUi = 0x0400;
 
+    // What SHFileOperation hands back when it refuses. It mixes ordinary Win32 codes with its own
+    // older DE_ ones, so both sets are named here rather than left as numbers at the call site.
+    internal const int ErrorAccessDenied = 0x05;      // ERROR_ACCESS_DENIED
+    internal const int ErrorSharingViolation = 0x20;  // ERROR_SHARING_VIOLATION — a file is open elsewhere
+    internal const int ErrorLockViolation = 0x21;     // ERROR_LOCK_VIOLATION
+    internal const int DeAccessDeniedSrc = 0x78;      // the shell's own "cannot read the source"
+
     // Default packing, not Pack = 1: SHFILEOPSTRUCT is a normally-aligned struct, and forcing byte
     // packing makes the shell read the fields at the wrong offsets and write past the end of it
     // (an access violation, not a managed exception).

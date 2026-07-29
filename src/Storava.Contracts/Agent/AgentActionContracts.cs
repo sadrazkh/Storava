@@ -27,6 +27,31 @@ public sealed class AgentActionRequest
 
     /// <summary>Required for a move, and it has to be on another drive.</summary>
     public string? DestinationPath { get; set; }
+
+    /// <summary>
+    /// How a move should leave the old location: <c>"junction"</c> to put an NTFS directory
+    /// junction there, or <c>"copy"</c> to move the folder and leave nothing behind.
+    /// <para>
+    /// The difference matters more than it sounds. A junction means every path that pointed at the
+    /// folder still works — a build that hard-codes it, a launcher, a config file written years
+    /// ago — because Windows follows the link. A plain move frees exactly the same space and breaks
+    /// all of them. The Agent used to decide this for the user and always chose the junction.
+    /// </para>
+    /// <para>
+    /// Absent means junction, which is what the Agent has always done. Ignored for a delete.
+    /// </para>
+    /// </summary>
+    public string? MoveMethod { get; set; }
+}
+
+/// <summary>The two ways a move can leave the old location, as they travel over the channel.</summary>
+public static class AgentMoveMethods
+{
+    /// <summary>Leave an NTFS directory junction, so the old path keeps working.</summary>
+    public const string Junction = "junction";
+
+    /// <summary>Move it and leave nothing behind.</summary>
+    public const string Copy = "copy";
 }
 
 /// <summary>

@@ -368,6 +368,8 @@
     <sys:String x:Key="Str.Migration.Error.CopyFailed">The folder could not be copied. Your original was left exactly as it was.</sys:String>
     <sys:String x:Key="Str.Migration.Error.VerificationFailed">The copy did not match the original, so the copy was discarded and nothing was removed.</sys:String>
     <sys:String x:Key="Str.Migration.Error.RecycleFailed">The folder could not be sent to the Recycle Bin, so nothing was removed.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleInUse">Another program is still using a file inside this folder, so the original could not be removed. Everything was put back as it was. Close whatever is using it — an editor, a build, a running app — and try again.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleAccessDenied">Windows would not allow the original folder to be removed, so everything was put back as it was. This one will not resolve by trying again.</sys:String>
     <sys:String x:Key="Str.Migration.Error.LinkFailed">The folder was moved and the space was freed, but the link back to the old location could not be created — point the tool at the new path yourself.</sys:String>
     <sys:String x:Key="Str.Migration.Error.NotConfirmed">Type the folder's name exactly to confirm this step.</sys:String>
     <sys:String x:Key="Str.Migration.Error.Stale">Something changed after you confirmed. Confirm again.</sys:String>

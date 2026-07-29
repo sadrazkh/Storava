@@ -368,6 +368,8 @@
     <sys:String x:Key="Str.Migration.Error.CopyFailed">کپی انجام نشد. نسخه‌ی اصلی شما دقیقاً همان‌طور که بود باقی ماند.</sys:String>
     <sys:String x:Key="Str.Migration.Error.VerificationFailed">کپی با نسخه‌ی اصلی مطابقت نداشت، پس کپی دور ریخته شد و چیزی حذف نشد.</sys:String>
     <sys:String x:Key="Str.Migration.Error.RecycleFailed">پوشه به سطل بازیافت فرستاده نشد، پس چیزی حذف نشد.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleInUse">برنامهٔ دیگری هنوز فایلی داخل این پوشه را باز نگه داشته، برای همین پوشهٔ اصلی حذف نشد و همه‌چیز به حالت اول برگشت. هر چیزی که از آن استفاده می‌کند — ویرایشگر، یک بیلد، یا برنامه‌ای که در حال اجراست — ببندید و دوباره امتحان کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.RecycleAccessDenied">ویندوز اجازهٔ حذف پوشهٔ اصلی را نداد، پس همه‌چیز به حالت اول برگشت. این مورد با تکرار کردن حل نمی‌شود.</sys:String>
     <sys:String x:Key="Str.Migration.Error.LinkFailed">پوشه جابه‌جا شد و فضا آزاد شد، اما لینک به مسیر قبلی ساخته نشد — خودتان ابزار را به مسیر جدید معرفی کنید.</sys:String>
     <sys:String x:Key="Str.Migration.Error.NotConfirmed">برای تأیید این گام، نام پوشه را دقیقاً تایپ کنید.</sys:String>
     <sys:String x:Key="Str.Migration.Error.Stale">بعد از تأیید شما چیزی تغییر کرد. دوباره تأیید کنید.</sys:String>
