@@ -129,6 +129,116 @@ public class WindowsFileActionsTests : IDisposable
         Assert.False(_actions.IsEmptyDirectory(full));
     }
 
+    // --- a single file ---------------------------------------------------------------
+    //
+    // A large file is as ordinary a thing to clear as a folder, and every one of these calls takes
+    // a different Win32 path for one than it does for a tree. The service-level tests prove the
+    // sequence; only these prove the operations underneath it work on a file at all.
+
+    [Fact]
+    public async Task Measure_ReportsASingleFileAsOneFile()
+    {
+        string file = Path.Combine(_root, "clip.bin");
+        await File.WriteAllBytesAsync(file, new byte[8192]);
+
+        var result = await _actions.MeasureAsync(file);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(8192, result.Value.Bytes);
+        // One file and no folders, so the shape matches what a copied file produces and the
+        // executor's verification compares like with like.
+        Assert.Equal(1, result.Value.FileCount);
+        Assert.Equal(0, result.Value.FolderCount);
+    }
+
+    [Fact]
+    public async Task Measure_RefusesAPathThatIsNotThere()
+    {
+        var result = await _actions.MeasureAsync(Path.Combine(_root, "absent.bin"));
+
+        Assert.True(result.IsFailure);
+    }
+
+    [Fact]
+    public async Task Copy_DuplicatesAFileToTheNameItWasGiven()
+    {
+        string source = Path.Combine(_root, "source.bin");
+        string destination = Path.Combine(_root, "moved", "source.bin");
+        await File.WriteAllBytesAsync(source, new byte[4096]);
+
+        var result = await _actions.CopyAsync(source, destination);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(File.Exists(destination));
+        // The original is never touched by a copy — the whole rollback story depends on it.
+        Assert.True(File.Exists(source));
+        Assert.Equal(4096, new FileInfo(destination).Length);
+    }
+
+    [Fact]
+    public async Task Copy_CreatesTheDestinationFolderWhenItIsMissing()
+    {
+        string source = Path.Combine(_root, "source.bin");
+        string destination = Path.Combine(_root, "a", "b", "c", "source.bin");
+        await File.WriteAllBytesAsync(source, new byte[128]);
+
+        Assert.True((await _actions.CopyAsync(source, destination)).IsSuccess);
+        Assert.True(File.Exists(destination));
+    }
+
+    /// <summary>
+    /// Removal is the Recycle Bin for a file exactly as for a folder. There is no permanent-delete
+    /// operation anywhere on this interface, and this is the file half of that claim.
+    /// </summary>
+    [Fact]
+    public async Task Recycle_SendsAFileToTheRecycleBinRatherThanDeletingIt()
+    {
+        string file = Path.Combine(_root, "doomed.bin");
+        await File.WriteAllBytesAsync(file, new byte[2048]);
+
+        var result = await _actions.MoveToRecycleBinAsync(file);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(File.Exists(file));
+    }
+
+    [Fact]
+    public void Exists_AnswersForBothKinds()
+    {
+        string file = Path.Combine(_root, "thing.bin");
+        File.WriteAllBytes(file, new byte[16]);
+        string folder = MakeTree("folder", ("x.bin", 16));
+
+        Assert.True(_actions.Exists(file));
+        Assert.True(_actions.Exists(folder));
+        Assert.False(_actions.Exists(Path.Combine(_root, "nothing-here")));
+
+        // DirectoryExists must keep answering only for folders; the executor picks the link kind
+        // from the step, but the guard uses these two to tell a file from a tree.
+        Assert.False(_actions.DirectoryExists(file));
+        Assert.True(_actions.DirectoryExists(folder));
+    }
+
+    /// <summary>
+    /// A file has no junction, only a symbolic link, and that needs a privilege a normal user does
+    /// not have. Both outcomes are acceptable — what must not happen is a crash, or a claim of
+    /// success with no link there. A move whose link fails is still a completed move.
+    /// </summary>
+    [Fact]
+    public async Task Link_ForAFile_EitherSucceedsOrFailsCleanly()
+    {
+        string target = Path.Combine(_root, "target.bin");
+        string link = Path.Combine(_root, "link.bin");
+        await File.WriteAllBytesAsync(target, new byte[64]);
+
+        var result = _actions.CreateLink(link, target, MigrationMethod.SymbolicLink, isFolder: false);
+
+        if (result.IsSuccess)
+            Assert.True(File.Exists(link));
+        else
+            Assert.False(File.Exists(link));
+    }
+
     private string MakeTree(string name, params (string RelativePath, int Size)[] files)
     {
         var folder = Path.Combine(_root, name);

@@ -44,11 +44,23 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- A live figure: the counters on the scan page, which change several times a second.
+
+         Tabular numerals give every digit the same width, so the number stays put as it grows
+         instead of shifting left and right on every update. Proportional digits are right for
+         prose and wrong for a counter — a 1 is narrower than an 8, and at several updates a
+         second that reads as the whole panel twitching. The line height is pinned for the same
+         reason: a value that briefly changes height would move everything below it. -->
     <Style x:Key="Storava.Text.Metric" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{DynamicResource App.FontFamily}" />
         <Setter Property="FontSize" Value="30" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="TextTrimming" Value="None" />
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        <Setter Property="LineHeight" Value="38" />
     </Style>
 
 </ResourceDictionary>

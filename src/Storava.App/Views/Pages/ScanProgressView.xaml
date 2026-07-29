@@ -49,31 +49,31 @@
             <UniformGrid Columns="5" Margin="0,0,0,18">
                 <Border Style="{StaticResource Storava.Card}" Margin="0,0,6,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="{Binding Controller.FilesScanned}" Style="{StaticResource Storava.Text.H1}" />
+                        <TextBlock Text="{Binding Controller.FilesScanned}" Style="{StaticResource Storava.Text.Metric}" />
                         <TextBlock Text="{DynamicResource Str.Progress.Files}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="6,0,6,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="{Binding Controller.FoldersScanned}" Style="{StaticResource Storava.Text.H1}" />
+                        <TextBlock Text="{Binding Controller.FoldersScanned}" Style="{StaticResource Storava.Text.Metric}" />
                         <TextBlock Text="{DynamicResource Str.Progress.Folders}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="6,0,6,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="{Binding Controller.BytesText}" Style="{StaticResource Storava.Text.H1}" />
+                        <TextBlock Text="{Binding Controller.BytesText}" Style="{StaticResource Storava.Text.Metric}" />
                         <TextBlock Text="{DynamicResource Str.Progress.Size}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="6,0,6,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="{Binding Controller.ElapsedText}" Style="{StaticResource Storava.Text.H1}" />
+                        <TextBlock Text="{Binding Controller.ElapsedText}" Style="{StaticResource Storava.Text.Metric}" />
                         <TextBlock Text="{DynamicResource Str.Progress.Elapsed}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Storava.Card}" Margin="6,0,0,0" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="{Binding Controller.ErrorCount}" Style="{StaticResource Storava.Text.H1}" />
+                        <TextBlock Text="{Binding Controller.ErrorCount}" Style="{StaticResource Storava.Text.Metric}" />
                         <TextBlock Text="{DynamicResource Str.Progress.Errors}" Style="{StaticResource Storava.Text.Caption}" />
                     </StackPanel>
                 </Border>
