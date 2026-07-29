@@ -36,6 +36,14 @@ const en = {
   aiLocalBoundary: 'AI recommends signal classes; only you select and confirm a real item.',
   previewBlocked: 'The browser could not open this local file. You can still copy its relative address.',
   resultCount: 'items in this result',
+  bulkTitle: '{count} item(s) selected for removal',
+  bulkBody: '{size} in total. Nothing has been touched yet.',
+  bulkTypeCode: 'Type this code to approve all of it',
+  bulkCodeHint: 'The code belongs to exactly this list. Change the selection and it changes too.',
+  bulkRun: 'Approve and remove',
+  bulkRunning: 'Removing {done} of {total}…',
+  bulkDoneTitle: 'Finished',
+  bulkDoneBody: '{done} removed, {failed} failed. {size} freed.',
 } as const;
 
 type ExplorerMessageKey = keyof typeof en;
@@ -75,6 +83,14 @@ const fa: Record<ExplorerMessageKey, string> = {
   aiLocalBoundary: 'AI نوع نشانه را پیشنهاد می‌دهد؛ انتخاب و تأیید مورد واقعی فقط با شماست.',
   previewBlocked: 'مرورگر نتوانست این فایل محلی را باز کند؛ همچنان می‌توانید نشانی نسبی آن را کپی کنید.',
   resultCount: 'مورد در این نتیجه',
+  bulkTitle: '{count} مورد برای حذف انتخاب شده',
+  bulkBody: 'در مجموع {size}. هنوز به هیچ چیزی دست زده نشده.',
+  bulkTypeCode: 'برای تأیید همه، این کد را تایپ کنید',
+  bulkCodeHint: 'این کد دقیقاً به همین فهرست تعلق دارد. انتخاب را عوض کنید، کد هم عوض می‌شود.',
+  bulkRun: 'تأیید و حذف',
+  bulkRunning: 'در حال حذف {done} از {total}…',
+  bulkDoneTitle: 'تمام شد',
+  bulkDoneBody: '{done} حذف شد، {failed} ناموفق. {size} آزاد شد.',
 };
 
 export function getExplorerMessages(locale: Locale): typeof en | Record<ExplorerMessageKey, string> {

@@ -8,7 +8,7 @@ const databaseMocks = vi.hoisted(() => ({
 
 vi.mock('@/services/scanDatabase', () => databaseMocks);
 
-import { deleteLocalItem, readLocalFile } from '@/services/fileActionService';
+import { deleteLocalItem, deleteLocalItems, readLocalFile } from '@/services/fileActionService';
 
 const session: ScanSession = {
   id: 'native-session',
@@ -89,5 +89,130 @@ describe('local file actions', () => {
     await expect(deleteLocalItem({ ...session, source: 'fallback' }, item))
       .rejects.toMatchObject({ reason: 'unsupported-source' });
     expect(databaseMocks.getDirectoryHandle).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * Removing several items under one approval.
+ *
+ * What matters is that a run is honest about itself: nothing stops halfway, every item reports its
+ * own outcome, and a folder is removed after the things inside it rather than before — otherwise
+ * its children disappear mid-run and come back as failures that never actually happened.
+ */
+describe('removing several items at once', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  /**
+   * A directory handle that answers as any depth of folder.
+   *
+   * It returns itself from getDirectoryHandle, so walking down a path of any length lands on
+   * something that can still remove an entry. A fake that only stood in for one level made a
+   * nested path throw before it ever reached the removal.
+   */
+  function grantedRoot(removeEntry: ReturnType<typeof vi.fn>) {
+    const handle: Record<string, unknown> = {
+      queryPermission: vi.fn().mockResolvedValue('granted'),
+      requestPermission: vi.fn().mockResolvedValue('granted'),
+      removeEntry,
+    };
+    handle.getDirectoryHandle = vi.fn().mockResolvedValue(handle);
+    return handle;
+  }
+
+  function at(relativePath: string, overrides: Partial<ScanItem> = {}): ScanItem {
+    const parts = relativePath.split('/');
+    return {
+      ...item,
+      id: `native-session:${relativePath}`,
+      relativePath,
+      parentPath: parts.slice(0, -1).join('/'),
+      name: parts.at(-1)!,
+      ...overrides,
+    };
+  }
+
+  it('reports every item, and totals what was freed', async () => {
+    const removeEntry = vi.fn().mockResolvedValue(undefined);
+    databaseMocks.getDirectoryHandle.mockResolvedValue(grantedRoot(removeEntry));
+    databaseMocks.removeItemTree.mockResolvedValue({
+      session, deletedFiles: 1, deletedFolders: 0, freedBytes: 42,
+    });
+
+    const result = await deleteLocalItems(session, [at('cache/a.zip'), at('cache/b.zip')]);
+
+    expect(result.succeededCount).toBe(2);
+    expect(result.failedCount).toBe(0);
+    expect(result.freedBytes).toBe(84);
+    expect(result.outcomes.map((outcome) => outcome.relativePath).sort())
+      .toEqual(['cache/a.zip', 'cache/b.zip']);
+  });
+
+  /** One that has already been deleted by hand must not take the others down with it. */
+  it('carries on past a failure and names the one that failed', async () => {
+    const removeEntry = vi.fn()
+      .mockRejectedValueOnce(new DOMException('gone', 'NotFoundError'))
+      .mockResolvedValue(undefined);
+
+    databaseMocks.getDirectoryHandle.mockResolvedValue(grantedRoot(removeEntry));
+    databaseMocks.removeItemTree.mockResolvedValue({
+      session, deletedFiles: 1, deletedFolders: 0, freedBytes: 10,
+    });
+
+    const result = await deleteLocalItems(session, [at('cache/gone.zip'), at('cache/here.zip')]);
+
+    expect(result.succeededCount).toBe(1);
+    expect(result.failedCount).toBe(1);
+
+    const failed = result.outcomes.find((outcome) => !outcome.succeeded)!;
+    expect(failed.relativePath).toBe('cache/gone.zip');
+    expect(failed.reason).toBe('not-found');
+  });
+
+  /**
+   * Deepest first. A folder removed before its contents takes them with it, and every one of them
+   * would then report as missing — failures the user never caused and cannot act on.
+   */
+  it('removes what is inside a folder before the folder itself', async () => {
+    const order: string[] = [];
+    const removeEntry = vi.fn((name: string) => {
+      order.push(name);
+      return Promise.resolve();
+    });
+
+    databaseMocks.getDirectoryHandle.mockResolvedValue(grantedRoot(removeEntry));
+    databaseMocks.removeItemTree.mockResolvedValue({
+      session, deletedFiles: 1, deletedFolders: 0, freedBytes: 1,
+    });
+
+    await deleteLocalItems(session, [
+      at('cache', { kind: 'folder' }),
+      at('cache/deep/inner.zip'),
+    ]);
+
+    expect(order).toEqual(['inner.zip', 'cache']);
+  });
+
+  it('reports progress as it goes', async () => {
+    databaseMocks.getDirectoryHandle.mockResolvedValue(grantedRoot(vi.fn().mockResolvedValue(undefined)));
+    databaseMocks.removeItemTree.mockResolvedValue({
+      session, deletedFiles: 1, deletedFolders: 0, freedBytes: 1,
+    });
+
+    const seen: Array<[number, number]> = [];
+    await deleteLocalItems(session, [at('a.zip'), at('b.zip'), at('c.zip')], (done, total) => {
+      seen.push([done, total]);
+    });
+
+    expect(seen).toEqual([[1, 3], [2, 3], [3, 3]]);
+  });
+
+  it('does nothing at all when nothing was selected', async () => {
+    const removeEntry = vi.fn();
+    databaseMocks.getDirectoryHandle.mockResolvedValue(grantedRoot(removeEntry));
+
+    const result = await deleteLocalItems(session, []);
+
+    expect(result.outcomes).toEqual([]);
+    expect(removeEntry).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,9 @@ import { getExplorerMessages } from '@/localization/explorerMessages';
 import type { AdvisorItemTarget, AdvisorResult, AdvisorReviewTarget } from '@/models/advisor';
 import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 import { detectCapabilities } from '@/services/capabilityService';
-import { deleteLocalItem, readLocalFile } from '@/services/fileActionService';
+import { approves, codeFor } from '@/services/bulkConfirmation';
+import type { BulkRemovalResult } from '@/services/fileActionService';
+import { deleteLocalItem, deleteLocalItems, readLocalFile } from '@/services/fileActionService';
 import { FolderSelectionCancelledError, selectFolder } from '@/services/folderPermissionService';
 import { buildBrowserRelativeAddress } from '@/services/itemAddressService';
 import {
@@ -53,6 +55,78 @@ const deleteConfirmation = ref('');
 const deleteInput = ref<HTMLInputElement | null>(null);
 const isDeleting = ref(false);
 const isOpeningFile = ref(false);
+
+// --- Removing several items under one approval ------------------------------------------------
+// Typing one item's name says nothing about the other eleven, so the set is approved by a code
+// derived from every item in it. Changing the selection changes the code, which is what stops an
+// approval read a moment ago from applying to the set that replaced it.
+
+const removalIds = ref<string[]>([]);
+const removalCode = ref('');
+const removalProgress = ref<[number, number] | null>(null);
+const removalReport = ref<BulkRemovalResult | null>(null);
+
+/**
+ * Whether anything on this scan can be removed at all.
+ *
+ * Only a scan the browser walked itself carries a reusable folder permission; an imported one
+ * describes a machine this page may never have seen.
+ */
+const canRemoveFromThisScan = computed(() => session.value?.source === 'native' && !isActive.value);
+
+const removalItems = computed(() => items.value.filter((item) => removalIds.value.includes(item.id)));
+
+const removalBytes = computed(() =>
+  removalItems.value.reduce((total, item) => total + item.size, 0));
+
+/** Bound to the paths, not the ids: what is being approved is a set of things on disk. */
+const removalKeys = computed(() => removalItems.value.map((item) => item.relativePath));
+
+const removalExpectedCode = computed(() => codeFor(removalKeys.value));
+
+const removalApproved = computed(() => approves(removalKeys.value, removalCode.value));
+
+function toggleForRemoval(item: ScanItem): void {
+  // Any change to the selection invalidates the code shown beside it.
+  removalCode.value = '';
+  removalReport.value = null;
+
+  removalIds.value = removalIds.value.includes(item.id)
+    ? removalIds.value.filter((id) => id !== item.id)
+    : [...removalIds.value, item.id];
+}
+
+function clearRemoval(): void {
+  removalIds.value = [];
+  removalCode.value = '';
+  removalProgress.value = null;
+}
+
+async function runRemoval(): Promise<void> {
+  if (!session.value || !removalApproved.value || removalProgress.value) return;
+
+  const chosen = removalItems.value;
+  removalProgress.value = [0, chosen.length];
+
+  try {
+    const report = await deleteLocalItems(session.value, chosen, (done, total) => {
+      removalProgress.value = [done, total];
+    });
+
+    session.value = report.session;
+    removalReport.value = report;
+    removalIds.value = [];
+    removalCode.value = '';
+    selectedItem.value = null;
+
+    await refreshHistory();
+    await loadItems();
+  } catch {
+    notice.value = explorerCopy.value.actionFailed;
+  } finally {
+    removalProgress.value = null;
+  }
+}
 
 /**
  * What the page is currently fetching, or empty when it is not.
@@ -696,6 +770,66 @@ onBeforeUnmount(() => {
               <span>/</span><button type="button" @click="openFolder(crumb.path)">{{ crumb.name }}</button>
             </template>
           </nav>
+          <!-- Nothing here has touched the disk. This is where it can, and only under a code that
+               belongs to exactly the list above it. -->
+          <section v-if="removalIds.length > 0" class="bulk-remove">
+            <h2>{{ fillText(explorerCopy.bulkTitle, { count: String(removalIds.length) }) }}</h2>
+            <p>{{ fillText(explorerCopy.bulkBody, { size: formatBytes(removalBytes) }) }}</p>
+
+            <ul class="bulk-remove__items">
+              <li v-for="item in removalItems" :key="item.id">
+                <code dir="ltr">{{ item.relativePath }}</code>
+                <span>{{ formatBytes(item.size) }}</span>
+              </li>
+            </ul>
+
+            <label class="bulk-remove__field">
+              <span>{{ explorerCopy.bulkTypeCode }}</span>
+              <code class="bulk-remove__code" dir="ltr">{{ removalExpectedCode }}</code>
+              <input v-model="removalCode" type="text" dir="ltr" autocomplete="off" spellcheck="false">
+              <small>{{ explorerCopy.bulkCodeHint }}</small>
+            </label>
+
+            <p v-if="removalProgress" class="bulk-remove__progress" role="status">
+              {{ fillText(explorerCopy.bulkRunning, {
+                done: String(removalProgress[0]),
+                total: String(removalProgress[1]),
+              }) }}
+            </p>
+
+            <div class="bulk-remove__actions">
+              <button
+                class="button button--danger"
+                type="button"
+                :disabled="!removalApproved || Boolean(removalProgress)"
+                @click="runRemoval"
+              >
+                {{ explorerCopy.bulkRun }}
+              </button>
+              <button class="button button--quiet" type="button" @click="clearRemoval">
+                {{ agentCopy.clearSelection }}
+              </button>
+            </div>
+          </section>
+
+          <section v-if="removalReport" class="bulk-remove bulk-remove--done" role="status">
+            <h2>{{ explorerCopy.bulkDoneTitle }}</h2>
+            <p>
+              {{ fillText(explorerCopy.bulkDoneBody, {
+                done: String(removalReport.succeededCount),
+                failed: String(removalReport.failedCount),
+                size: formatBytes(removalReport.freedBytes),
+              }) }}
+            </p>
+            <ul class="bulk-remove__items">
+              <li v-for="outcome in removalReport.outcomes" :key="outcome.itemId" :class="{ 'is-failed': !outcome.succeeded }">
+                <code dir="ltr">{{ outcome.relativePath }}</code>
+                <span v-if="outcome.succeeded">{{ formatBytes(outcome.freedBytes) }}</span>
+                <em v-else>{{ outcome.reason }}</em>
+              </li>
+            </ul>
+          </section>
+
           <div class="explorer-data">
             <aside class="lazy-tree">
               <h2>{{ t('folderTree') }}</h2>
@@ -703,10 +837,23 @@ onBeforeUnmount(() => {
                 <i aria-hidden="true" /> <span>{{ folder.name }}</span><b>{{ formatBytes(folder.size) }}</b>
               </button>
             </aside>
-            <section class="virtual-table">
+            <section class="virtual-table" :class="{ 'is-selecting': canRemoveFromThisScan }">
               <header><span>{{ t('name') }}</span><span>{{ t('category') }}</span><span>{{ t('size') }}</span><span>{{ t('modified') }}</span><span>{{ t('signals') }}</span></header>
               <div class="virtual-table__viewport" @scroll="scrollTop = ($event.target as HTMLElement).scrollTop">
                 <div :style="{ height: `${items.length * rowHeight}px`, position: 'relative' }">
+                  <!-- The tick sits in a gutter beside the row rather than inside it: the row is a
+                       button, a checkbox cannot live in one, and pressing anywhere on a row to open
+                       its details is worth keeping. -->
+                  <input
+                    v-for="(item, index) in canRemoveFromThisScan ? visibleItems : []"
+                    :key="`pick-${item.id}`"
+                    type="checkbox"
+                    class="virtual-row__pick"
+                    :aria-label="item.relativePath"
+                    :checked="removalIds.includes(item.id)"
+                    :style="{ transform: `translateY(${(visibleStart + index) * rowHeight}px)` }"
+                    @change="toggleForRemoval(item)"
+                  >
                   <button
                     v-for="(item, index) in visibleItems"
                     :key="item.id"
@@ -990,6 +1137,65 @@ onBeforeUnmount(() => {
   background: transparent;
   color: var(--muted);
 }
+
+/* Selecting several items to remove, and the one code that approves the lot. */
+.virtual-table.is-selecting > header,
+.virtual-table.is-selecting .virtual-row {
+  padding-inline-start: 2.6rem;
+}
+
+.virtual-row__pick {
+  position: absolute;
+  inset-inline-start: .9rem;
+  top: 0;
+  height: 54px;
+  accent-color: var(--pine-bright);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.bulk-remove {
+  display: grid;
+  gap: .8rem;
+  margin-bottom: 1rem;
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--pine-bright);
+  background: var(--surface);
+}
+
+.bulk-remove h2 { margin: 0; color: var(--ink); font-size: 1.02rem; }
+.bulk-remove p { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.6; }
+
+.bulk-remove__items { display: grid; gap: .3rem; margin: 0; padding: 0; max-height: 14rem; overflow-y: auto; list-style: none; }
+.bulk-remove__items li {
+  display: flex;
+  gap: .8rem;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: .35rem .55rem;
+  background: var(--paper);
+  font-size: .78rem;
+}
+.bulk-remove__items code { overflow-wrap: anywhere; }
+.bulk-remove__items span { color: var(--muted); white-space: nowrap; }
+.bulk-remove__items li.is-failed { opacity: .75; }
+.bulk-remove__items em { color: var(--muted); font-size: .72rem; font-style: normal; }
+
+.bulk-remove__field { display: grid; gap: .4rem; justify-items: start; }
+.bulk-remove__field span { color: var(--ink); font-size: .84rem; font-weight: 600; }
+.bulk-remove__field small { color: var(--muted); font-size: .74rem; line-height: 1.6; }
+
+/* The code is the whole gate, so it is set apart and easy to copy by eye. */
+.bulk-remove__code {
+  padding: .3rem .7rem;
+  background: color-mix(in srgb, var(--lime), transparent 85%);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .3em;
+}
+
+.bulk-remove__progress { color: var(--pine-bright); }
+.bulk-remove__actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 
 /* The number that governs automatic discarding, on the page that lists what it discards. */
 .retention-bar {

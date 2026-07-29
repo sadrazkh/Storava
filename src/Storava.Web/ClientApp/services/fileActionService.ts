@@ -85,3 +85,81 @@ export async function deleteLocalItem(session: ScanSession, item: ScanItem): Pro
   }
   return removeItemTree(session.id, item.relativePath);
 }
+
+/** What happened to one item in a bulk removal. */
+export interface BulkRemovalOutcome {
+  itemId: string;
+  relativePath: string;
+  succeeded: boolean;
+  freedBytes: number;
+  /** Set when it failed, as one of {@link FileActionFailure} or 'failed' for anything else. */
+  reason: string | null;
+}
+
+export interface BulkRemovalResult {
+  session: ScanSession;
+  outcomes: BulkRemovalOutcome[];
+  succeededCount: number;
+  failedCount: number;
+  freedBytes: number;
+}
+
+/**
+ * Removes several items, and reports what happened to each.
+ *
+ * One failure does not stop the rest. The items are independent, and abandoning nine because the
+ * tenth had already been deleted by hand would leave the user to work out which of two lists they
+ * were now looking at. Every item is attempted and every outcome comes back.
+ *
+ * Deepest paths first, so removing a folder cannot make the items beneath it vanish mid-run and
+ * report as missing — they are gone by the time their parent is reached, which is the same result
+ * described accurately.
+ */
+export async function deleteLocalItems(
+  session: ScanSession,
+  items: readonly ScanItem[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<BulkRemovalResult> {
+  const ordered = [...items].sort(
+    (left, right) => right.relativePath.split('/').length - left.relativePath.split('/').length,
+  );
+
+  const outcomes: BulkRemovalOutcome[] = [];
+  let current = session;
+  let freedBytes = 0;
+  let done = 0;
+
+  for (const item of ordered) {
+    try {
+      const removal = await deleteLocalItem(current, item);
+      current = removal.session;
+      freedBytes += removal.freedBytes;
+      outcomes.push({
+        itemId: item.id,
+        relativePath: item.relativePath,
+        succeeded: true,
+        freedBytes: removal.freedBytes,
+        reason: null,
+      });
+    } catch (error) {
+      outcomes.push({
+        itemId: item.id,
+        relativePath: item.relativePath,
+        succeeded: false,
+        freedBytes: 0,
+        reason: error instanceof FileActionError ? error.reason : 'failed',
+      });
+    }
+
+    done += 1;
+    onProgress?.(done, ordered.length);
+  }
+
+  return {
+    session: current,
+    outcomes,
+    succeededCount: outcomes.filter((outcome) => outcome.succeeded).length,
+    failedCount: outcomes.filter((outcome) => !outcome.succeeded).length,
+    freedBytes,
+  };
+}
