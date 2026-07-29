@@ -607,6 +607,18 @@ onMounted(loadDevices);
             <dt>{{ copy.runningSince }}</dt>
             <dd>{{ formatMoment(connection.status.startedAtUtc) }}</dd>
           </div>
+          <!-- The agent discards its own old scans automatically. Said here because nothing else
+               on the machine says it: the desktop app's setting governs a different database. -->
+          <div>
+            <dt>{{ copy.retentionLabel }}</dt>
+            <dd>
+              {{ fill(copy.retentionValue, {
+                keep: String(connection.status.keepRecentScans),
+                stored: String(connection.status.storedScans),
+              }) }}
+              <small>{{ copy.retentionHint }}</small>
+            </dd>
+          </div>
         </dl>
         <p class="agent__note">{{ copy.notYet }}</p>
       </section>

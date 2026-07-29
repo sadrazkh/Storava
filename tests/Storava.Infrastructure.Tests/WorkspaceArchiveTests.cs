@@ -142,6 +142,127 @@ public sealed class WorkspaceArchiveTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// The advice inside an archive is written in the shape the other editions read.
+    /// <para>
+    /// A round trip through this edition alone cannot show this: the importer understands the old
+    /// shape too, so writing the domain entity would still read back perfectly here while remaining
+    /// unreadable everywhere else. That is exactly what happened — the browser dropped the entry
+    /// for as long as it existed, and nothing on this side noticed.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task Recommendations_AreWrittenInTheShapeOtherEditionsRead()
+    {
+        using var tree = new TestTree();
+        string path = ArchivePath();
+
+        using var host = new TestHost(withRules: true);
+        var scan = await ScanAndAnalyzeAsync(host, tree);
+        await host.Get<IWorkspaceArchiveService>().ExportAsync(scan.SessionId, path, "en-US");
+
+        using var archive = ZipFile.OpenRead(path);
+        using var entry = archive.GetEntry(StoravaArchiveEntries.Recommendations)!.Open();
+
+        var written = JsonSerializer.Deserialize<List<JsonElement>>(entry)!;
+        Assert.NotEmpty(written);
+
+        var first = written[0];
+
+        // The interchange names, exactly. The desktop's own entity spells these ScanItemId,
+        // RiskLevel and EstimatedSpace, and nothing outside this codebase knows those.
+        Assert.True(first.TryGetProperty("itemId", out var itemId));
+        Assert.False(string.IsNullOrEmpty(itemId.GetString()));
+        Assert.True(first.TryGetProperty("reason", out _));
+        Assert.True(first.TryGetProperty("risk", out _));
+        Assert.True(first.TryGetProperty("estimatedBytes", out _));
+        Assert.True(first.TryGetProperty("source", out _));
+
+        // And not the internals of a decision made against one machine's catalog.
+        Assert.False(first.TryGetProperty("Score", out _));
+        Assert.False(first.TryGetProperty("ScanItemId", out _));
+        Assert.False(first.TryGetProperty("SuggestedAction", out _));
+    }
+
+    /// <summary>
+    /// Archives written before recommendations had a shared shape still import their advice.
+    /// <para>
+    /// They hold the desktop's own entity — <c>ScanItemId</c>, <c>RiskLevel</c>,
+    /// <c>EstimatedSpace</c> — whose names differ enough from the interchange shape that reading
+    /// one as the other yields a list of blanks rather than a failure. Importing advice with no
+    /// item and no reason attached would be worse than importing none, so the fallback is real
+    /// rather than assumed.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task Recommendations_WrittenBeforeTheSharedShape_AreStillImported()
+    {
+        using var tree = new TestTree();
+        string path = ArchivePath();
+
+        string sessionId;
+        using (var host = new TestHost(withRules: true))
+        {
+            var scan = await ScanAndAnalyzeAsync(host, tree);
+            sessionId = scan.SessionId;
+            await host.Get<IWorkspaceArchiveService>().ExportAsync(sessionId, path, "en-US");
+
+            // Rewrite the entry the way the desktop used to: its own entity, straight to JSON.
+            var stored = await host.Get<IRecommendationRepository>().GetBySessionAsync(sessionId);
+            Assert.NotEmpty(stored);
+            ReplaceEntry(path, StoravaArchiveEntries.Recommendations,
+                JsonSerializer.SerializeToUtf8Bytes(stored, new JsonSerializerOptions
+                {
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                }));
+        }
+
+        using (var host = new TestHost(withRules: true))
+        {
+            var import = await host.Get<IWorkspaceArchiveService>().ImportAsync(path);
+            Assert.True(import.IsSuccess);
+
+            var imported = await host.Get<IRecommendationRepository>()
+                .GetBySessionAsync(import.Value.SessionId);
+
+            Assert.NotEmpty(imported);
+            Assert.All(imported, r => Assert.False(string.IsNullOrEmpty(r.ScanItemId)));
+            Assert.All(imported, r => Assert.False(string.IsNullOrEmpty(r.Reason)));
+            Assert.Contains(imported, r => r.EstimatedSpace > 0);
+        }
+    }
+
+    /// <summary>
+    /// Swaps one entry's bytes inside an existing archive, and restamps the manifest hash for it.
+    /// <para>
+    /// The manifest hashes every entry and the importer checks them, so a rewritten entry without a
+    /// matching hash is refused before it is ever parsed — which is the format working as intended
+    /// and not what this test is about.
+    /// </para>
+    /// </summary>
+    private static void ReplaceEntry(string archivePath, string entryName, byte[] bytes)
+    {
+        using var stream = new FileStream(archivePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Update);
+
+        archive.GetEntry(entryName)?.Delete();
+        using (var entryStream = archive.CreateEntry(entryName).Open())
+            entryStream.Write(bytes);
+
+        var manifestEntry = archive.GetEntry(StoravaArchiveEntries.Manifest)!;
+
+        StoravaArchiveManifest manifest;
+        using (var reader = manifestEntry.Open())
+            manifest = JsonSerializer.Deserialize<StoravaArchiveManifest>(reader)!;
+
+        manifest.Hashes[entryName] = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(bytes));
+
+        manifestEntry.Delete();
+        using (var rewritten = archive.CreateEntry(StoravaArchiveEntries.Manifest).Open())
+            rewritten.Write(JsonSerializer.SerializeToUtf8Bytes(manifest));
+    }
+
     [Fact]
     public async Task Archive_ContainsNoSettingsAndNoApiKey()
     {
@@ -603,7 +724,11 @@ public sealed class WorkspaceArchiveTests : IDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(fixture)!);
 
             using var tree = new TestTree();
-            tree.AddFile(@"proj\node_modules\pkg\lib.bin", 8192);
+
+            // Over the rule catalog's 50 MB floor on purpose. Below it nothing is a candidate, so
+            // this archive carried no advice at all — which is how the browser edition silently
+            // dropping the recommendations entry went unnoticed for as long as it did.
+            tree.AddFile(@"proj\node_modules\pkg\lib.bin", (int)RecommendationBuilder.MinimumCandidateSize + 4096);
             tree.AddFile(@"docs\notes.txt", 512);
 
             using var writer = new TestHost(withRules: true);

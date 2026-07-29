@@ -2,11 +2,12 @@ import type { AdvisorResult, StoredAdvisorResult } from '@/models/advisor';
 import type { ItemPage, ItemRemovalResult, ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 
 const databaseName = 'storava-web';
-const databaseVersion = 2;
+const databaseVersion = 3;
 const sessionStore = 'scanSessions';
 const itemStore = 'scanItems';
 const directoryHandleStore = 'directoryHandles';
 const advisorResultStore = 'advisorResults';
+const recommendationStore = 'recommendations';
 
 let databasePromise: Promise<IDBDatabase> | null = null;
 
@@ -47,6 +48,13 @@ export function openScanDatabase(): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(advisorResultStore)) {
         database.createObjectStore(advisorResultStore, { keyPath: 'sessionId' });
+      }
+      // Advice that arrived inside a .storava archive. Kept because it is the part of the format
+      // this edition used to throw away: the desktop and the Agent write real recommendations, and
+      // opening one of their archives here silently lost them.
+      if (!database.objectStoreNames.contains(recommendationStore)) {
+        const recommendations = database.createObjectStore(recommendationStore, { keyPath: 'id' });
+        recommendations.createIndex('sessionId', 'sessionId');
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -309,10 +317,11 @@ export async function removeItemTree(sessionId: string, relativePath: string): P
 export async function deleteSession(id: string): Promise<void> {
   const database = await openScanDatabase();
   const transaction = database.transaction(
-    [sessionStore, itemStore, directoryHandleStore, advisorResultStore],
+    [sessionStore, itemStore, directoryHandleStore, advisorResultStore, recommendationStore],
     'readwrite',
   );
   transaction.objectStore(sessionStore).delete(id);
+  deleteBySessionIndex(transaction, recommendationStore, id);
   transaction.objectStore(directoryHandleStore).delete(id);
   transaction.objectStore(advisorResultStore).delete(id);
   const index = transaction.objectStore(itemStore).index('sessionId');
@@ -329,13 +338,14 @@ export async function deleteSession(id: string): Promise<void> {
 export async function clearAllLocalData(): Promise<void> {
   const database = await openScanDatabase();
   const transaction = database.transaction(
-    [sessionStore, itemStore, directoryHandleStore, advisorResultStore],
+    [sessionStore, itemStore, directoryHandleStore, advisorResultStore, recommendationStore],
     'readwrite',
   );
   transaction.objectStore(sessionStore).clear();
   transaction.objectStore(itemStore).clear();
   transaction.objectStore(directoryHandleStore).clear();
   transaction.objectStore(advisorResultStore).clear();
+  transaction.objectStore(recommendationStore).clear();
   await transactionDone(transaction);
 }
 
@@ -371,4 +381,59 @@ export async function applyScanRetention(keep: number, protectedId?: string): Pr
   }
 
   return discarded;
+}
+
+/**
+ * Removes every row of a store belonging to one scan, using its sessionId index.
+ *
+ * Shares the caller's transaction so the deletes land with the rest of them: a scan whose items
+ * went but whose advice stayed would keep answering questions about files that are no longer there.
+ */
+function deleteBySessionIndex(transaction: IDBTransaction, storeName: string, sessionId: string): void {
+  const store = transaction.objectStore(storeName);
+  const cursorRequest = store.index('sessionId').openKeyCursor(IDBKeyRange.only(sessionId));
+  cursorRequest.onsuccess = () => {
+    const cursor = cursorRequest.result;
+    if (!cursor) return;
+    store.delete(cursor.primaryKey);
+    cursor.continue();
+  };
+}
+
+/**
+ * Advice that travelled inside a `.storava` archive, as this edition stores it.
+ *
+ * `itemId` has already been remapped to this browser's own id for the item, because the ids inside
+ * an archive belong to the machine that wrote it.
+ */
+export interface StoredRecommendation {
+  id: string;
+  sessionId: string;
+  itemId: string;
+  path: string;
+  title: string;
+  reason: string;
+  risk: string;
+  estimatedBytes: number;
+  ruleId: string | null;
+  source: string;
+  canDelete: boolean;
+  canMove: boolean;
+}
+
+export async function putRecommendations(recommendations: StoredRecommendation[]): Promise<void> {
+  if (recommendations.length === 0) return;
+
+  const database = await openScanDatabase();
+  const transaction = database.transaction(recommendationStore, 'readwrite');
+  const store = transaction.objectStore(recommendationStore);
+  for (const recommendation of recommendations) store.put(recommendation);
+  await transactionDone(transaction);
+}
+
+export async function getRecommendations(sessionId: string): Promise<StoredRecommendation[]> {
+  const database = await openScanDatabase();
+  const transaction = database.transaction(recommendationStore, 'readonly');
+  const index = transaction.objectStore(recommendationStore).index('sessionId');
+  return requestResult(index.getAll(IDBKeyRange.only(sessionId))) as Promise<StoredRecommendation[]>;
 }

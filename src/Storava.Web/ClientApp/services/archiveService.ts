@@ -25,9 +25,18 @@ import {
   type ArchiveItem,
   type ArchiveManifest,
   type ArchivePathKind,
+  type ArchiveRecommendation,
   type ArchiveScan,
 } from '@/services/archiveFormat';
-import { forEachSessionItem, getSession, putItemsBatch, putSession } from '@/services/scanDatabase';
+import {
+  forEachSessionItem,
+  getRecommendations,
+  getSession,
+  putItemsBatch,
+  putRecommendations,
+  putSession,
+  type StoredRecommendation,
+} from '@/services/scanDatabase';
 
 /** What an archive turned out to hold, before any of it is written to the database. */
 export interface ArchiveSummary {
@@ -240,6 +249,10 @@ export async function importArchive(
   let batch: ScanItem[] = [];
   let imported = 0;
 
+  // The ids inside an archive belong to the machine that wrote it, and this edition mints its own
+  // as it reads. Without this map the advice below would arrive pointing at nothing.
+  const idsFromArchive = new Map<string, string>();
+
   for (const line of lines) {
     if (!line.trim()) continue;
 
@@ -251,6 +264,7 @@ export async function importArchive(
     }
 
     const item = toScanItem(archived, sessionId, summary.pathKind, summary.scan.root);
+    if (archived.id) idsFromArchive.set(archived.id, item.id);
     batch.push(item);
     imported += 1;
 
@@ -280,10 +294,64 @@ export async function importArchive(
   session.categories = [...categoryBytes.values()].sort((a, b) => b.bytes - a.bytes);
   session.topItems = largest.slice(0, 100);
 
+  await putRecommendations(readRecommendations(files, sessionId, idsFromArchive));
+
   await putSession(session);
   onProgress?.(imported, summary.itemCount);
 
   return session;
+}
+
+/**
+ * Reads the advice an archive carries, rebound to this browser's own ids.
+ *
+ * Anything pointing at an item that is not in the archive is dropped rather than kept with a
+ * dangling reference: advice attached to nothing would show up nowhere and confuse anyone reading
+ * the count. A missing or unreadable entry is not an error — plenty of archives genuinely have no
+ * advice in them, and refusing the whole import over it would be worse than importing the scan.
+ */
+function readRecommendations(
+  files: Record<string, Uint8Array>,
+  sessionId: string,
+  idsFromArchive: Map<string, string>,
+): StoredRecommendation[] {
+  const entry = files[ARCHIVE_ENTRIES.recommendations];
+  if (!entry) return [];
+
+  let archived: ArchiveRecommendation[];
+  try {
+    const parsed: unknown = JSON.parse(strFromU8(entry));
+    if (!Array.isArray(parsed)) return [];
+    archived = parsed as ArchiveRecommendation[];
+  } catch {
+    return [];
+  }
+
+  const recommendations: StoredRecommendation[] = [];
+
+  for (const item of archived) {
+    const itemId = idsFromArchive.get(item?.itemId ?? '');
+    if (!itemId) continue;
+
+    recommendations.push({
+      id: crypto.randomUUID(),
+      sessionId,
+      itemId,
+      path: item.path ?? '',
+      title: item.title ?? '',
+      reason: item.reason ?? '',
+      risk: item.risk ?? 'Unknown',
+      estimatedBytes: Number.isFinite(item.estimatedBytes) ? item.estimatedBytes : 0,
+      ruleId: item.ruleId ?? null,
+      source: item.source ?? 'RuleEngine',
+      // Recorded as read, and never acted on here: this edition applies its own rules before it
+      // offers anything, and these describe what was permitted on another machine.
+      canDelete: item.canDelete === true,
+      canMove: item.canMove === true,
+    });
+  }
+
+  return recommendations;
 }
 
 /**
@@ -321,11 +389,28 @@ export async function exportArchive(sessionId: string): Promise<{ blob: Blob; fi
 
   // "\n" and not the platform newline: the .NET side hashes over "\n", and an archive has to read
   // the same wherever it was written.
+  // Advice this scan arrived with travels back out, so a round trip through the browser no longer
+  // costs an archive the part of itself this edition could not previously read. No remapping: the
+  // item ids written above are this browser's own, which is exactly what these already reference.
+  const exported: ArchiveRecommendation[] = (await getRecommendations(sessionId)).map((stored) => ({
+    id: stored.id,
+    itemId: stored.itemId,
+    path: stored.path,
+    title: stored.title,
+    reason: stored.reason,
+    risk: stored.risk,
+    estimatedBytes: stored.estimatedBytes,
+    ruleId: stored.ruleId,
+    source: stored.source,
+    canDelete: stored.canDelete,
+    canMove: stored.canMove,
+  }));
+
   const payload: Record<string, Uint8Array> = {
     [ARCHIVE_ENTRIES.scan]: strToU8(JSON.stringify(scan, null, 2)),
     [ARCHIVE_ENTRIES.items]: strToU8(itemLines.map((line) => `${line}\n`).join('')),
     [ARCHIVE_ENTRIES.categories]: strToU8(JSON.stringify(session.categories, null, 2)),
-    [ARCHIVE_ENTRIES.recommendations]: strToU8('[]'),
+    [ARCHIVE_ENTRIES.recommendations]: strToU8(JSON.stringify(exported, null, 2)),
   };
 
   const hashes: Record<string, string> = {};

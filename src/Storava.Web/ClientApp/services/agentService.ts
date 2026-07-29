@@ -39,6 +39,15 @@ export interface AgentStatus {
   deviceName: string;
   agentVersion: string;
   startedAtUtc: string;
+  /**
+   * How many scans the agent keeps before discarding the older ones.
+   *
+   * Reported because it is otherwise invisible: the agent prunes its own database by itself, and
+   * the desktop app's settings govern a different one on the same machine.
+   */
+  keepRecentScans: number;
+  /** How many it holds now, so the number above can be read in context. */
+  storedScans: number;
 }
 
 export type AgentFailure =

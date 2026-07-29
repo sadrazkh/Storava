@@ -151,6 +151,76 @@ public static class ArchiveItemKinds
     public const string Folder = "folder";
 }
 
+/// <summary>
+/// One piece of advice about one item, as it travels between editions.
+/// <para>
+/// This exists because it did not. The archive has always carried a recommendations entry, but the
+/// desktop wrote its own domain entity straight into it — PascalCase names and internal enums —
+/// which no other edition had any way to read. The browser consequently threw the entry away on
+/// import and wrote an empty one on export, so advice produced by the Agent or the desktop simply
+/// vanished on the way to a browser and never came back.
+/// </para>
+/// <para>
+/// Deliberately narrower than the desktop's own record. What travels is what another edition can
+/// act on: why this item was raised, how large it is, and what the rules where it was scanned
+/// permitted. The score, the confidence and the migration mechanics stay behind, because they
+/// describe a decision made on a machine that is not the one reading this.
+/// </para>
+/// </summary>
+public sealed class ArchiveRecommendation
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The item this is about, by its id in the same archive's item list.
+    /// <para>
+    /// An edition that mints its own ids on import has to remap this as it reads, or the advice
+    /// arrives pointing at nothing.
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("itemId")]
+    public string ItemId { get; set; } = string.Empty;
+
+    /// <summary>Where the item was, in whatever form the manifest declares paths take.</summary>
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = string.Empty;
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Why it was raised. The part a person actually reads.</summary>
+    [JsonPropertyName("reason")]
+    public string Reason { get; set; } = string.Empty;
+
+    /// <summary>"Unknown", "Low", "Medium", "High" or "Protected".</summary>
+    [JsonPropertyName("risk")]
+    public string Risk { get; set; } = "Unknown";
+
+    /// <summary>How much this could free, as measured where it was scanned.</summary>
+    [JsonPropertyName("estimatedBytes")]
+    public long EstimatedBytes { get; set; }
+
+    [JsonPropertyName("ruleId")]
+    public string? RuleId { get; set; }
+
+    /// <summary>
+    /// "RuleEngine" or "Ai", so a reader can tell a deterministic match from a model's suggestion.
+    /// </summary>
+    [JsonPropertyName("source")]
+    public string Source { get; set; } = "RuleEngine";
+
+    /// <summary>
+    /// What the rules permitted on the machine that produced this. Advice, never permission: the
+    /// edition reading it applies its own rules before anything is offered.
+    /// </summary>
+    [JsonPropertyName("canDelete")]
+    public bool CanDelete { get; set; }
+
+    [JsonPropertyName("canMove")]
+    public bool CanMove { get; set; }
+}
+
 /// <summary>The scanned run itself, as it travels.</summary>
 public sealed class ArchiveScan
 {

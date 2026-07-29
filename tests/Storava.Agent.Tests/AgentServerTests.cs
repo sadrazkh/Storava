@@ -137,6 +137,23 @@ public sealed class AgentServerTests : IAsyncLifetime
         Assert.Equal("Test PC", status.DeviceName);
     }
 
+    /// <summary>
+    /// The agent discards its own old scans automatically, on its own database. Nothing else on the
+    /// machine says so — the desktop's Settings page governs a different one — so a page asking for
+    /// status has to be able to find out, or the deletion is invisible to everybody.
+    /// </summary>
+    [Fact]
+    public async Task Status_says_how_many_scans_this_agent_keeps()
+    {
+        using var response = await GetStatusAsync(ValidToken());
+        response.EnsureSuccessStatusCode();
+
+        var status = await response.Content.ReadFromJsonAsync<AgentStatus>();
+
+        Assert.True(status!.KeepRecentScans >= 1, "Keeping none would discard the scan just taken.");
+        Assert.True(status.StoredScans >= 0);
+    }
+
     [Fact]
     public async Task No_pass_at_all_is_refused()
     {

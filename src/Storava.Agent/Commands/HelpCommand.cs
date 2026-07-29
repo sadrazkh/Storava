@@ -37,6 +37,11 @@ internal static class HelpCommand
                     Show this installation's key fingerprint, whether it is paired, and whether it
                     starts at logon.
 
+              retention [--keep <number>]
+                    How many scans this agent keeps. Older ones are discarded automatically once a
+                    new scan finishes, which is why this is worth being able to see. Its scans are
+                    its own; the desktop app keeps a separate database on the same machine.
+
               unpair [--keep-identity]
                     Forget the pairing on this computer. Also remove the device on your account
                     page. --keep-identity keeps the key so the same machine can pair again.

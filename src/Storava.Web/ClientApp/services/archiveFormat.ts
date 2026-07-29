@@ -180,3 +180,31 @@ export function fromSharedRisk(risk: string): 'none' | 'low' | 'medium' | 'high'
     default: return 'none';
   }
 }
+
+/**
+ * One piece of advice about one item, as it travels between editions.
+ *
+ * The archive has always had a place for these, but the desktop used to write its own internal
+ * record into it — different field names, different enums — which this edition had no way to read.
+ * So it dropped the entry on import and wrote an empty one on export, and advice produced by the
+ * Agent or the desktop vanished on the way here.
+ *
+ * `itemId` refers to an id in the same archive's item list. An edition that mints its own ids while
+ * importing has to remap it, or the advice arrives pointing at nothing.
+ */
+export interface ArchiveRecommendation {
+  id: string;
+  itemId: string;
+  path: string;
+  title: string;
+  reason: string;
+  /** "Unknown", "Low", "Medium", "High" or "Protected". */
+  risk: string;
+  estimatedBytes: number;
+  ruleId?: string | null;
+  /** "RuleEngine" or "Ai", so a reader can tell a rule match from a model's suggestion. */
+  source: string;
+  /** What the rules permitted where it was scanned. Advice, never permission. */
+  canDelete: boolean;
+  canMove: boolean;
+}

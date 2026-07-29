@@ -114,8 +114,16 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
                 progress?.Report(new ArchiveProgress("recommendations", itemCount));
                 var stored = await _recommendations.GetBySessionAsync(sessionId, cancellationToken).ConfigureAwait(false);
                 recommendationCount = stored.Count;
+
+                // Written through the shared shape rather than as the domain entity. Serialising
+                // the entity produced PascalCase names and internal enums, which no other edition
+                // could read — so the browser dropped this entry entirely and the advice was lost
+                // on the way out of the desktop.
                 hashes[StoravaArchiveEntries.Recommendations] = await WriteJsonEntryAsync(
-                    archive, StoravaArchiveEntries.Recommendations, stored, cancellationToken).ConfigureAwait(false);
+                    archive,
+                    StoravaArchiveEntries.Recommendations,
+                    stored.Select(ToArchiveRecommendation).ToArray(),
+                    cancellationToken).ConfigureAwait(false);
 
                 manifest = new StoravaArchiveManifest
                 {
@@ -395,41 +403,84 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         if (entry is null)
             return 0;
 
-        var stored = await ReadJsonEntryAsync<List<Recommendation>>(entry, cancellationToken).ConfigureAwait(false);
-        if (stored is null || stored.Count == 0)
+        var stored = await ReadRecommendationsAsync(entry, cancellationToken).ConfigureAwait(false);
+        if (stored.Count == 0)
             return 0;
 
-        // Recommendations reference the session they belong to; rebind them to the imported copy.
+        // Rebound to the imported copy of the scan: the ids inside the archive belong to the
+        // machine that wrote it.
         var rebound = stored.Select(r => new Recommendation
         {
-            Id = r.Id,
+            Id = Guid.NewGuid().ToString("N"),
             SessionId = sessionId,
-            ScanItemId = r.ScanItemId,
+            ScanItemId = r.ItemId,
             Path = r.Path,
             Title = r.Title,
             Reason = r.Reason,
             // Imported advice is still only advice.
             SuggestedAction = SuggestedAction.NoAction,
-            RiskLevel = r.RiskLevel,
-            Category = r.Category,
-            Technology = r.Technology,
+            RiskLevel = Enum.TryParse<RiskLevel>(r.Risk, ignoreCase: true, out var risk) ? risk : RiskLevel.Unknown,
             RuleId = r.RuleId,
-            EstimatedSpace = r.EstimatedSpace,
-            Confidence = r.Confidence,
-            Score = r.Score,
+            EstimatedSpace = r.EstimatedBytes,
             CanDelete = r.CanDelete,
             CanMove = r.CanMove,
-            CanRegenerate = r.CanRegenerate,
-            OfficialMigrationMethod = r.OfficialMigrationMethod,
-            FallbackMigrationMethod = r.FallbackMigrationMethod,
-            OfficialMigrationHint = r.OfficialMigrationHint,
-            Warning = r.Warning,
-            Source = r.Source
+            Source = Enum.TryParse<RecommendationSource>(r.Source, ignoreCase: true, out var source)
+                ? source
+                : RecommendationSource.RuleEngine
         }).ToArray();
 
         await _recommendations.ReplaceForSessionAsync(sessionId, rebound, cancellationToken).ConfigureAwait(false);
         return rebound.Length;
     }
+
+    /// <summary>
+    /// Reads the recommendations entry, in either the shared shape or the one archives used before
+    /// there was a shared shape.
+    /// <para>
+    /// Older archives hold the desktop's own entity, whose field names differ enough that reading
+    /// them as the shared shape yields a list of blanks rather than a failure. Silently importing
+    /// advice with no item and no reason attached would be worse than not importing it, so the
+    /// fallback is explicit: if nothing came back bound to an item, read it the old way.
+    /// </para>
+    /// </summary>
+    private static async Task<IReadOnlyList<ArchiveRecommendation>> ReadRecommendationsAsync(
+        ZipArchiveEntry entry, CancellationToken cancellationToken)
+    {
+        var shared = await ReadJsonEntryAsync<List<ArchiveRecommendation>>(entry, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (shared is { Count: > 0 } && shared.Any(r => !string.IsNullOrEmpty(r.ItemId)))
+            return shared;
+
+        var legacy = await ReadJsonEntryAsync<List<Recommendation>>(entry, cancellationToken)
+            .ConfigureAwait(false);
+
+        return legacy is null or { Count: 0 }
+            ? []
+            : legacy.Select(ToArchiveRecommendation).ToArray();
+    }
+
+    /// <summary>
+    /// Narrows a stored recommendation to what another edition can use.
+    /// <para>
+    /// The score, the confidence and the migration mechanics stay behind. They describe a decision
+    /// reached against one machine's rule catalog, and an edition reading this applies its own.
+    /// </para>
+    /// </summary>
+    private static ArchiveRecommendation ToArchiveRecommendation(Recommendation source) => new()
+    {
+        Id = source.Id,
+        ItemId = source.ScanItemId,
+        Path = source.Path,
+        Title = source.Title,
+        Reason = source.Reason,
+        Risk = source.RiskLevel.ToString(),
+        EstimatedBytes = source.EstimatedSpace,
+        RuleId = source.RuleId,
+        Source = source.Source.ToString(),
+        CanDelete = source.CanDelete,
+        CanMove = source.CanMove
+    };
 
     private static async Task<StoravaArchiveManifest?> ReadManifestAsync(
         ZipArchive archive, CancellationToken cancellationToken)

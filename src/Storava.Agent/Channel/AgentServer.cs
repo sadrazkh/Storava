@@ -151,17 +151,28 @@ public sealed class AgentServer(
             registration.DeviceId,
             Paired: true)));
 
-        app.MapGet(AgentEndpoints.StatusPath, (HttpContext context) =>
+        app.MapGet(AgentEndpoints.StatusPath, async (
+            HttpContext context,
+            ISettingsService settings,
+            IScanSessionRepository sessions,
+            CancellationToken cancellationToken) =>
         {
             var refusal = Authorize(context);
             if (refusal is not null)
                 return refusal;
 
+            // Reported so the retention this agent applies to itself is not invisible. It discards
+            // old scans on its own, on its own database, and nothing else on the machine says so.
+            await settings.LoadAsync(cancellationToken).ConfigureAwait(false);
+            var stored = await sessions.GetRecentAsync(100, cancellationToken).ConfigureAwait(false);
+
             return Results.Json(new AgentStatus(
                 registration.DeviceId,
                 registration.DeviceName,
                 Version(),
-                _startedAt));
+                _startedAt,
+                settings.Current.KeepRecentScans,
+                stored.Count));
         });
 
         // Everything below needs a pass. These are the endpoints that read the machine.

@@ -4,8 +4,15 @@ import { unzipSync, strFromU8 } from 'fflate';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { exportArchive, importArchive, inspectArchive, ArchiveError } from '@/services/archiveService';
 import { ARCHIVE_ENTRIES, type ArchiveItem, type ArchiveManifest } from '@/services/archiveFormat';
-import { clearAllLocalData, putItemsBatch, putSession } from '@/services/scanDatabase';
-import type { ScanItem, ScanSession } from '@/models/scan';
+import {
+  clearAllLocalData,
+  deleteSession,
+  getRecommendations,
+  putItemsBatch,
+  putSession,
+  queryItems,
+} from '@/services/scanDatabase';
+import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 
 /**
  * The fixture is produced by the desktop edition's own test suite, not by this file. Two
@@ -261,3 +268,107 @@ describe('writing an archive the other editions can open', () => {
     expect(reimported.topItems.map((entry) => entry.name).sort()).toEqual(['app.ts', 'node_modules']);
   });
 });
+
+/**
+ * The advice an archive carries, across an edition boundary.
+ *
+ * This is what the shared format exists for and what this edition used to lose. The desktop and
+ * the Agent write real recommendations into every archive; the browser read the items, ignored the
+ * recommendations entry entirely, and wrote an empty one back out. Anyone opening a colleague's
+ * archive here got the measurements and none of the reasoning.
+ *
+ * The fixture is written by the desktop's own test suite, so this reads something the other
+ * implementation actually produced rather than something these tests invented.
+ */
+describe('the advice an archive carries', () => {
+  beforeEach(async () => {
+    await clearAllLocalData();
+  });
+
+  it('survives being imported from a desktop archive', async () => {
+    const imported = await importArchive(await desktopArchive());
+    const advice = await getRecommendations(imported.id);
+
+    expect(advice.length).toBeGreaterThan(0);
+
+    const first = advice[0]!;
+    expect(first.reason.length).toBeGreaterThan(0);
+    expect(first.title.length).toBeGreaterThan(0);
+    expect(first.ruleId).toBeTruthy();
+    expect(first.estimatedBytes).toBeGreaterThan(0);
+  });
+
+  /**
+   * The ids inside an archive belong to the machine that wrote it, and this edition mints its own
+   * while reading. Advice that kept the original id would point at nothing and show up nowhere.
+   */
+  it('arrives pointing at the items as this browser stored them', async () => {
+    const imported = await importArchive(await desktopArchive());
+    const advice = await getRecommendations(imported.id);
+
+    const items = (await queryItems(imported.id, allItems(), 0, 5_000)).items;
+    const ids = new Set(items.map((item) => item.id));
+
+    expect(advice.length).toBeGreaterThan(0);
+    for (const entry of advice) {
+      expect(ids.has(entry.itemId)).toBe(true);
+    }
+  });
+
+  /** It belongs to the scan it came with, and goes when that scan goes. */
+  it('is discarded with the scan it belongs to', async () => {
+    const imported = await importArchive(await desktopArchive());
+    expect((await getRecommendations(imported.id)).length).toBeGreaterThan(0);
+
+    await deleteSession(imported.id);
+
+    expect(await getRecommendations(imported.id)).toEqual([]);
+  });
+
+  /**
+   * And travels back out. A round trip through this edition used to cost an archive the whole
+   * entry, so a file that went browser-ward and came back was quietly poorer than the original.
+   */
+  it('is written back out when the scan is exported again', async () => {
+    const imported = await importArchive(await desktopArchive());
+    const original = await getRecommendations(imported.id);
+
+    const { blob } = await exportArchive(imported.id);
+    const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+    const written = JSON.parse(strFromU8(files[ARCHIVE_ENTRIES.recommendations]!)) as Array<{
+      reason: string;
+      itemId: string;
+    }>;
+
+    expect(written).toHaveLength(original.length);
+    expect(written[0]!.reason).toBe(original[0]!.reason);
+    expect(written[0]!.itemId).toBe(original[0]!.itemId);
+  });
+
+  /**
+   * A browser-native scan has no advice of its own to carry, and the entry has to stay well-formed
+   * rather than absent — the other editions read it unconditionally.
+   */
+  it('is an empty list, not a missing entry, for a scan that has none', async () => {
+    await putSession(session());
+    await putItemsBatch([item()]);
+
+    const { blob } = await exportArchive('session-1');
+    const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+
+    expect(JSON.parse(strFromU8(files[ARCHIVE_ENTRIES.recommendations]!))).toEqual([]);
+  });
+});
+
+function allItems(): ScanFilters {
+  return {
+    query: '',
+    category: 'all',
+    kind: 'all',
+    risk: 'all',
+    recommendation: 'all',
+    aiRuleIds: [],
+    sort: 'size-desc',
+    parentPath: null,
+  };
+}

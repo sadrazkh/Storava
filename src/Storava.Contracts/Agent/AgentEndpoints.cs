@@ -49,4 +49,14 @@ public sealed record AgentStatus(
     Guid DeviceId,
     string DeviceName,
     string AgentVersion,
-    DateTimeOffset StartedAtUtc);
+    DateTimeOffset StartedAtUtc,
+    /// <summary>
+    /// How many scans this agent keeps before discarding the older ones.
+    /// <para>
+    /// Reported because it is otherwise invisible: the agent discards old scans by itself, on its
+    /// own database, and the desktop's Settings page governs a different one on the same machine.
+    /// </para>
+    /// </summary>
+    int KeepRecentScans,
+    /// <summary>How many it is holding now, so the number above can be read in context.</summary>
+    int StoredScans);

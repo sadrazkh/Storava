@@ -27,6 +27,9 @@ const en = {
   connectedBody: 'This page is talking to {name} on 127.0.0.1:{port}. Nothing has been read yet.',
   agentVersion: 'Agent version',
   runningSince: 'Running since',
+  retentionLabel: 'Scans it keeps',
+  retentionValue: 'the {keep} most recent ({stored} stored now)',
+  retentionHint: 'Older ones are discarded once a new scan finishes. Change it with storava-agent retention --keep <number>.',
 
   permissionTitle: 'Your browser is asking before it reaches this machine',
   permissionBody:
@@ -173,6 +176,9 @@ const fa: Record<AgentMessageKey, string> = {
   connectedBody: 'این صفحه با {name} روی ‎127.0.0.1:{port}‎ در ارتباط است. هنوز چیزی خوانده نشده است.',
   agentVersion: 'نسخهٔ Agent',
   runningSince: 'در حال اجرا از',
+  retentionLabel: 'اسکن‌هایی که نگه می‌دارد',
+  retentionValue: '{keep} تای آخر ({stored} تا الان ذخیره شده)',
+  retentionHint: 'بعد از پایان هر اسکن تازه، قدیمی‌ترها خودکار حذف می‌شوند. با «storava-agent retention --keep <عدد>» عوض می‌شود.',
 
   permissionTitle: 'مرورگر شما پیش از رسیدن به این دستگاه اجازه می‌خواهد',
   permissionBody:

@@ -248,6 +248,8 @@ describe('using a connected agent', () => {
       deviceName: 'Workshop PC',
       agentVersion: '1.0.0.0',
       startedAtUtc: '2026-07-27T10:00:00Z',
+      keepRecentScans: 3,
+      storedScans: 1,
     },
   };
 
@@ -405,6 +407,8 @@ describe('acting on what the agent found', () => {
       deviceName: 'Workshop PC',
       agentVersion: '1.0.0.0',
       startedAtUtc: '2026-07-27T10:00:00Z',
+      keepRecentScans: 3,
+      storedScans: 1,
     },
   };
 

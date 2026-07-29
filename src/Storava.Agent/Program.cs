@@ -50,6 +50,7 @@ try
         "status" => StatusCommand.Run(keys, registrations, autoStart),
         "unpair" => UnpairCommand.Run(command, keys, registrations, autoStart),
         "autostart" => AutoStartCommand.Run(command, autoStart),
+        "retention" => await RetentionCommand.RunAsync(command, CancellationToken.None),
         "help" or "--help" or "-h" => HelpCommand.Run(),
         _ => HelpCommand.Unknown(command.Verb)
     };
