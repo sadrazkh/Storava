@@ -133,7 +133,7 @@ which is the thing the browser edition can never show you.
 Measured on a real run: 8,392 files and 1,237 folders across 183 MB, walked and classified in 0.6
 seconds, with every path shown in full.
 
-From those results the Agent can act, and only through the same gate the desktop Migration Center
+From those results the Agent can act, and only through the same gate the desktop Cleanup page
 uses. The rule catalog decides what is even offered — `node_modules` can be deleted but not
 relocated, an ordinary folder neither — and the page renders no button the rules deny. Choosing an
 action re-measures the folder as it is now and shows exactly what would happen; nothing is touched
@@ -201,8 +201,9 @@ with 19 unreadable paths skipped and no interruption.
   `NoAction`. Protected paths can never produce a recommendation.
 - **Analysis page**: custom squarified treemap (drill-down, hover, tooltips, colour by category
   or risk), donut category breakdown and top consumers.
-- **Recommendations page**: ranked cards with risk badge, reason, reclaimable space, confidence,
-  official method and warnings.
+- **Cleanup page**: ranked cards with risk badge, reason, reclaimable space, confidence,
+  official method and warnings — alongside everything else the scan measured, because most of a
+  real disk is not in the catalog.
 
 Category bytes are attributed to the outermost classified folder, so a `node_modules` subtree
 counts as package cache rather than thousands of unrecognised files. On a real developer tree
@@ -238,11 +239,32 @@ this moved identification from 4% to 99% of scanned bytes.
 - Sanitisation itself has no off switch, by design. The two settings that do exist —
   unrecognised-folder analysis and the narrative report — each change what is actually sent.
 
-**Phase 5 — Migration Center**
+**Phase 5 — Cleanup**
 
-The first and only page that changes your files. Everything before it produced documents.
+The one page that changes your files, and the only one that ever could.
 
-- **Dry run first.** Every step of the saved plan is re-checked against the disk as it is *now* —
+It began as three — advice, a plan document, and a separate place to carry the plan out. That was
+defensible on paper and wrong in use: seven pages stood between finishing a scan and freeing a
+byte, with a Save in the middle that looked like the end, so people stopped at the plan and never
+found the page that could act on it. Choosing and doing now happen in one place.
+
+What the split never provided was the safety. All of that is below, unchanged.
+
+- **Anything you select, not only what a rule knows.** The catalog recognises about three dozen
+  things; a real drive is mostly game installs, virtual machine images and video files it has
+  never heard of, and none of that could previously be planned at all. Silence from the catalog is
+  no longer read as a refusal. What the catalog *does* forbid still stands — a rule saying a folder
+  must not be deleted knows something you do not — and protected paths, drive roots and links are
+  refused however they were chosen. A row with no rule behind it says so, twice: in the list, and
+  again in the confirmation.
+- **One folder for everything being moved**, with a per-item override. Two folders both called
+  `node_modules` cannot land in the same place, so the second borrows the name of the folder it
+  came from rather than colliding.
+- **Files, not just folders.** A single large file can be cleared like anything else. A file has no
+  junction, only a symbolic link, and that needs a privilege most users lack — so a file move can
+  succeed and still leave no link. That is recorded as a warning on a completed step, never a
+  rollback: the space really was freed and the data really is safe.
+- **Dry run first.** Every step is re-checked against the disk as it is *now* —
   the folder still exists, is not a junction, is not protected, and measures however much it
   measures today rather than whatever the scan recorded. Blocked steps are listed with the reason
   rather than quietly dropped, and the reclaimable figure shown is the freshly measured one.
@@ -305,8 +327,8 @@ The first and only page that changes your files. Everything before it produced d
   earlier copy rather than adding a second one, and when the id belongs to a scan measured *here*,
   the confirmation says plainly that a local scan will be overwritten.
 - **An imported scan is labelled as somebody else's disk.** It is fully browsable, comparable and
-  reportable, but the Storage Plan and Migration Center will not fall back to it — a path from
-  another machine that happens to exist here too would name a folder the scan never looked at.
+  reportable, but Cleanup will not offer it — a path from another machine that happens to exist
+  here too would name a folder the scan never looked at.
 - **A scan that stopped partway can be carried on.** Cancel a scan, close the app, come back: the
   History page offers to continue it. Because the walk keeps an explicit stack, what is outstanding
   is exactly the chain of folders still on it, and that is what gets stored — with the totals each

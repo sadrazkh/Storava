@@ -345,8 +345,8 @@ Decisions worth stating:
 - **Version 1 archives still open.** Only the desktop wrote them and nothing writes them now, but
   an archive that outlives its release is the entire point of having one.
 - **Absolute paths are kept as they are on import.** They describe a real machine; rewriting them
-  would be inventing a folder structure. Such a scan is marked imported, and the Storage Plan and
-  Migration Center already refuse to fall back to an imported scan.
+  would be inventing a folder structure. Such a scan is marked imported, and the desktop Cleanup
+  page already refuses to offer an imported scan.
 - **The browser asserts nothing about what may be removed.** It exports `canDelete` and `canMove`
   as false, because it has no rule catalog qualified to judge another machine.
 - **Item lines are separated by `
