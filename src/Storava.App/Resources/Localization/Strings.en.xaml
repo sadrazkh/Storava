@@ -535,4 +535,8 @@
     <sys:String x:Key="Str.Cleanup.Method.Plain">Nothing will be left at the old path. Anything that expects the folder there will stop finding it.</sys:String>
     <sys:String x:Key="Str.Cleanup.AiTag">AI</sys:String>
     <sys:String x:Key="Str.Cleanup.AiFilter">Mentioned by the AI</sys:String>
+    <sys:String x:Key="Str.Common.Loading">Loading…</sys:String>
+    <sys:String x:Key="Str.Common.Loading.Scan">Reading the scan. A scan of a whole drive is millions of records, so this can take a moment.</sys:String>
+    <sys:String x:Key="Str.Common.Loading.History">Reading your earlier scans…</sys:String>
+    <sys:String x:Key="Str.Common.Loading.Report">Building the report…</sys:String>
 </ResourceDictionary>

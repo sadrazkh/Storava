@@ -535,4 +535,8 @@
     <sys:String x:Key="Str.Cleanup.Method.Plain">هیچ‌چیز در مسیر قدیمی نمی‌ماند. هر چیزی که انتظار دارد پوشه آنجا باشد دیگر پیدایش نمی‌کند.</sys:String>
     <sys:String x:Key="Str.Cleanup.AiTag">هوش مصنوعی</sys:String>
     <sys:String x:Key="Str.Cleanup.AiFilter">اشاره‌شده توسط هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Common.Loading">در حال بارگذاری…</sys:String>
+    <sys:String x:Key="Str.Common.Loading.Scan">در حال خواندن اسکن. اسکن یک درایو کامل میلیون‌ها رکورد دارد، پس ممکن است کمی طول بکشد.</sys:String>
+    <sys:String x:Key="Str.Common.Loading.History">در حال خواندن اسکن‌های قبلی…</sys:String>
+    <sys:String x:Key="Str.Common.Loading.Report">در حال ساخت گزارش…</sys:String>
 </ResourceDictionary>

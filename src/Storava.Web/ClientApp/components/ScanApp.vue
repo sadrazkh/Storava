@@ -53,6 +53,32 @@ const deleteConfirmation = ref('');
 const deleteInput = ref<HTMLInputElement | null>(null);
 const isDeleting = ref(false);
 const isOpeningFile = ref(false);
+
+/**
+ * What the page is currently fetching, or empty when it is not.
+ *
+ * Reading a scan back out of IndexedDB is thousands of records, and until now the page simply sat
+ * there while it happened — pressing a scan in the history looked like pressing a button that did
+ * nothing. One message rather than a boolean, so the wait says what it is waiting for.
+ */
+const loadingMessage = ref('');
+const isLoadingData = computed(() => loadingMessage.value.length > 0);
+
+/**
+ * Runs work with the page marked as busy, and clears it however the work ends.
+ *
+ * A wrapper rather than a pair of assignments, because the half that matters is the one that runs
+ * when something throws — and that is the half people forget. A page left spinning over a failure
+ * it never mentions is worse than no indicator at all.
+ */
+async function whileLoading<T>(message: string, work: () => Promise<T>): Promise<T> {
+  loadingMessage.value = message;
+  try {
+    return await work();
+  } finally {
+    loadingMessage.value = '';
+  }
+}
 const rowHeight = 54;
 const viewportHeight = 540;
 const filters = ref<ScanFilters>({
@@ -248,6 +274,17 @@ async function loadItems(): Promise<void> {
     items.value = [];
     return;
   }
+
+  // Not wrapped while a scan is running: the rows are arriving in batches and the page is already
+  // showing progress for that. An indicator on top of it would say the page had stopped.
+  if (isActive.value) return void (await readItems());
+
+  await whileLoading(t('loadingItems'), readItems);
+}
+
+async function readItems(): Promise<void> {
+  if (!session.value) return;
+
   items.value = (await queryItems(session.value.id, filters.value, 0, 2_000)).items;
   treeFolders.value = (await queryItems(
     session.value.id,
@@ -274,15 +311,17 @@ async function openFolder(path: string): Promise<void> {
 }
 
 async function openHistorySession(id: string): Promise<void> {
-  const stored = await getSession(id);
-  if (!stored) return;
-  session.value = stored;
-  advisorResult.value = await getAdvisorResult(id) ?? null;
-  currentFolder.value = '';
-  filters.value.parentPath = null;
-  resetRecommendationFilter();
-  activeView.value = 'overview';
-  await loadItems();
+  await whileLoading(t('loadingScan'), async () => {
+    const stored = await getSession(id);
+    if (!stored) return;
+    session.value = stored;
+    advisorResult.value = await getAdvisorResult(id) ?? null;
+    currentFolder.value = '';
+    filters.value.parentPath = null;
+    resetRecommendationFilter();
+    activeView.value = 'overview';
+    await readItems();
+  });
 }
 
 async function handleAdvisorResult(result: AdvisorResult): Promise<void> {
@@ -796,6 +835,16 @@ onBeforeUnmount(() => {
         </footer>
       </section>
     </div>
+
+    <!-- Shown while the page is reading a scan back out of local storage.
+         Over the page rather than instead of it, so reopening a scan you have already seen keeps
+         that scan visible while the newer data arrives. -->
+    <div v-if="isLoadingData" class="loading-veil" role="status" aria-live="polite">
+      <div class="loading-veil__card">
+        <span class="loading-veil__spinner" aria-hidden="true" />
+        <p>{{ loadingMessage }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -913,6 +962,46 @@ onBeforeUnmount(() => {
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
+}
+
+/* Covers the page while it reads a scan back. Translucent, so what is already on screen stays
+   visible underneath and the wait reads as a refresh rather than as the page being thrown away. */
+.loading-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--paper), transparent 22%);
+}
+
+.loading-veil__card {
+  display: grid;
+  gap: .8rem;
+  justify-items: center;
+  max-width: 22rem;
+  padding: 1.4rem 1.8rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: center;
+}
+
+.loading-veil__card p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.6; }
+
+.loading-veil__spinner {
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 2px solid color-mix(in srgb, var(--pine-bright), transparent 70%);
+  border-top-color: var(--pine-bright);
+  border-radius: 50%;
+  animation: loading-veil-spin .8s linear infinite;
+}
+
+@keyframes loading-veil-spin { to { transform: rotate(360deg); } }
+
+/* Someone who has asked for less motion still needs to know the page is working. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-veil__spinner { animation-duration: 2.4s; }
 }
 
 .drawer-advisor-tag {

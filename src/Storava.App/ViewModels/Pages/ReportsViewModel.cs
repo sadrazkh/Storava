@@ -158,6 +158,8 @@ public sealed partial class ReportsViewModel : ViewModelBase, IDisposable
 
     private async Task LoadAsync()
     {
+        using var loading = BeginLoading("Str.Common.Loading.Report");
+
         _sessionId = await ResolveSessionIdAsync().ConfigureAwait(true);
         HasSession = _sessionId is not null;
         if (_sessionId is null)

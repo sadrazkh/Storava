@@ -17,6 +17,25 @@
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
+    <!-- Shown over a page while it is fetching something.
+
+         Translucent rather than opaque on purpose: coming back to a page you have already seen
+         keeps that page visible underneath while the newer data arrives, so the wait reads as the
+         page refreshing rather than as the page having been thrown away. -->
+    <Style x:Key="Storava.LoadingVeil" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Storava.Brush.Veil}" />
+        <Setter Property="Panel.ZIndex" Value="50" />
+        <!-- Nothing underneath should be clickable while it is covered: a button pressed against
+             data that is about to be replaced acts on the old data. -->
+        <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+
+    <Style x:Key="Storava.LoadingCard" TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="MaxWidth" Value="320" />
+    </Style>
+
     <!-- Navigation rail item -->
     <Style x:Key="Storava.NavItem" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />

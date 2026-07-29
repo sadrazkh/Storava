@@ -6,6 +6,7 @@
 
     <!-- Shared converters -->
     <conv:LocKeyConverter x:Key="Conv.LocKey" />
+    <conv:LocKeyOrDefaultConverter x:Key="Conv.LocKeyOrDefault" />
     <conv:HexToBrushConverter x:Key="Conv.Hex" />
     <conv:LanguageNameConverter x:Key="Conv.LangName" />
     <conv:ThemeNameConverter x:Key="Conv.ThemeName" />

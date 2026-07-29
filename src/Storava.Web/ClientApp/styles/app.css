@@ -2272,6 +2272,8 @@ html[dir='rtl'] .privacy-flow__track > i {
 /* Local analysis workspace */
 
 .workspace-shell {
+  /* Containing block for the loading veil that covers this page while it reads a scan. */
+  position: relative;
   min-height: 100vh;
   background:
     linear-gradient(rgb(104 213 203 / 5%) 1px, transparent 1px),

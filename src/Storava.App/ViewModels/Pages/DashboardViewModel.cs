@@ -106,6 +106,8 @@ public sealed partial class DashboardViewModel : ViewModelBase, IDisposable
     /// </summary>
     private async Task LoadLastScanAsync()
     {
+        using var loading = BeginLoading("Str.Common.Loading.History");
+
         var recent = await _sessions.GetRecentAsync(1).ConfigureAwait(true);
         if (recent.Count == 0)
         {

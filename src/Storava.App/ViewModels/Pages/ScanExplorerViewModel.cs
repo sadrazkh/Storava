@@ -51,6 +51,8 @@ public sealed partial class ScanExplorerViewModel : ViewModelBase, IDisposable
 
     private async Task LoadAsync()
     {
+        using var loading = BeginLoading("Str.Common.Loading.Scan");
+
         // Prefer the scan from this session; otherwise fall back to the most recent persisted
         // one so results remain browsable after a restart.
         var sessionId = _controller.CurrentSessionId;

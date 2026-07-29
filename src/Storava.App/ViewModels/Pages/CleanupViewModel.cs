@@ -90,7 +90,6 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
     partial void OnPhaseChanged(CleanupPhase value) => RebuildPhases();
 
-    [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _hasSession;
     [ObservableProperty] private string _rootPathText = string.Empty;
 
@@ -269,7 +268,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         if (IsLoading)
             return;
 
-        IsLoading = true;
+        using var loading = BeginLoading("Str.Common.Loading.Scan");
         try
         {
             await BuildScanListAsync().ConfigureAwait(true);
@@ -292,10 +291,6 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         {
             _logger.LogError(ex, "Loading the cleanup page failed.");
             ErrorMessage = _localization["Str.Cleanup.Error.Load"];
-        }
-        finally
-        {
-            IsLoading = false;
         }
     }
 

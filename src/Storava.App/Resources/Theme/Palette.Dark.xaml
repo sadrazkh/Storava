@@ -91,6 +91,9 @@
     <SolidColorBrush x:Key="Storava.Brush.Step.Text" Color="#5EEAD4" />
     <SolidColorBrush x:Key="Storava.Brush.Step.Edge" Color="#2A8079" />
 
+    <!-- Dims a page while it loads, without hiding what is already on it. -->
+    <SolidColorBrush x:Key="Storava.Brush.Veil" Color="#C4101418" />
+
     <!-- Hero gradient. Every stop is dark enough to carry white text: the teal it started from
          read at 2.55:1 under the headline it was behind, which is the page's largest type and
          the first thing anyone sees. -->

@@ -59,6 +59,8 @@ public sealed partial class AnalysisViewModel : ViewModelBase, IDisposable
 
     private async Task LoadAsync()
     {
+        using var loading = BeginLoading("Str.Common.Loading.Scan");
+
         var sessionId = _controller.CurrentSessionId;
         if (string.IsNullOrEmpty(sessionId))
         {

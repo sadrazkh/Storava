@@ -34,7 +34,6 @@ public sealed partial class HistoryViewModel : ViewModelBase, IDisposable
     private readonly INavigationService _navigation;
     private readonly ILogger<HistoryViewModel> _logger;
 
-    [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _hasSessions;
     [ObservableProperty] private string? _errorMessage;
 
@@ -116,7 +115,7 @@ public sealed partial class HistoryViewModel : ViewModelBase, IDisposable
         if (IsLoading)
             return;
 
-        IsLoading = true;
+        using var loading = BeginLoading("Str.Common.Loading.History");
         ErrorMessage = null;
 
         try
@@ -145,10 +144,6 @@ public sealed partial class HistoryViewModel : ViewModelBase, IDisposable
         {
             _logger.LogError(ex, "Loading history failed.");
             ErrorMessage = _localization["Str.History.Error.Load"];
-        }
-        finally
-        {
-            IsLoading = false;
         }
     }
 

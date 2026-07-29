@@ -108,8 +108,24 @@
                 </Grid>
             </Border>
 
-            <!-- Page host -->
-            <ContentControl Content="{Binding CurrentPage}" />
+            <!-- Page host.
+                 The indicator lives here rather than on each page so that no page can be added
+                 without one. It sits over the page instead of replacing it, so returning to a
+                 page you have already seen keeps showing it while the newer data is fetched. -->
+            <Grid>
+                <ContentControl Content="{Binding CurrentPage}" />
+
+                <Border Style="{StaticResource Storava.LoadingVeil}"
+                        Visibility="{Binding CurrentPage.IsLoading, Converter={StaticResource Conv.BoolVis}, FallbackValue=Collapsed}">
+                    <StackPanel Style="{StaticResource Storava.LoadingCard}">
+                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                     Value="0" IsIndeterminate="True" Width="34" Height="34" />
+                        <TextBlock Style="{StaticResource Storava.Text.Body}" Margin="0,12,0,0"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   Text="{Binding CurrentPage.LoadingMessageKey, Converter={StaticResource Conv.LocKeyOrDefault}}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
         </DockPanel>
     </Grid>
 </Window>
