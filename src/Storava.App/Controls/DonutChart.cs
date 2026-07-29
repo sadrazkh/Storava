@@ -19,6 +19,18 @@ public sealed class DonutSlice
 /// </summary>
 public sealed class DonutChart : FrameworkElement
 {
+
+    /// <summary>
+    /// Pins left-to-right on this control, whatever the shell is using.
+    /// <para>
+    /// Right-to-left is implemented as a mirror transform that descendants inherit. That is
+    /// correct for laid-out content and wrong for drawn geometry: under Persian the arcs and tiles
+    /// came out mirror-imaged, and the labels with them. A chart is anchored to its numbers, not
+    /// to reading order.
+    /// </para>
+    /// </summary>
+    public DonutChart() => FlowDirection = FlowDirection.LeftToRight;
+
     private const double Thickness = 26;
     private const double GapDegrees = 1.5;
 
@@ -63,6 +75,14 @@ public sealed class DonutChart : FrameworkElement
         InvalidateVisual();
     }
 
+    /// <summary>
+    /// Draws the ring.
+    /// <para>
+    /// The control forces left-to-right on itself in its constructor. Inheriting the shell's
+    /// right-to-left flow would mirror the whole visual, and an arc that sweeps the wrong way is
+    /// not a translation of the chart — it is a different chart.
+    /// </para>
+    /// </summary>
     protected override void OnRender(DrawingContext context)
     {
         base.OnRender(context);

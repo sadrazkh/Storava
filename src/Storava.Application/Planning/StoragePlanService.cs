@@ -80,10 +80,13 @@ public sealed class StoragePlanService
     public Result<StoragePlanEntry> Include(
         StoragePlan plan,
         Recommendation recommendation,
-        SuggestedAction action)
+        SuggestedAction action,
+        MigrationMethod? method = null)
     {
         ArgumentNullException.ThrowIfNull(recommendation);
-        return Include(plan, PlanCandidate.FromRecommendation(recommendation), action);
+
+        var candidate = PlanCandidate.FromRecommendation(recommendation);
+        return Include(plan, method is null ? candidate : candidate with { RequestedMethod = method }, action);
     }
 
     /// <summary>
@@ -102,11 +105,16 @@ public sealed class StoragePlanService
     /// <see cref="StoragePlan.TryAdd"/>'s wrong-session check into something that always agrees
     /// with itself.
     /// </param>
+    /// <param name="method">
+    /// How a move should be carried out. Null leaves it to the catalog; a value is the user having
+    /// chosen whether a junction is left at the old path.
+    /// </param>
     public Result<StoragePlanEntry> Include(
         StoragePlan plan,
         ScanItemView item,
         string sessionId,
-        SuggestedAction action)
+        SuggestedAction action,
+        MigrationMethod? method = null)
     {
         ArgumentNullException.ThrowIfNull(item);
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
@@ -117,7 +125,7 @@ public sealed class StoragePlanService
             return Result.Failure<StoragePlanEntry>(PlanErrors.ProtectedPath);
         }
 
-        return Include(plan, ToCandidate(item, sessionId), action);
+        return Include(plan, ToCandidate(item, sessionId) with { RequestedMethod = method }, action);
     }
 
     private Result<StoragePlanEntry> Include(

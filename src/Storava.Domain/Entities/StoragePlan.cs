@@ -102,15 +102,22 @@ public sealed class StoragePlan
         if (FindByScanItem(candidate.ScanItemId) is not null)
             return Result.Failure<StoragePlanEntry>(PlanErrors.AlreadyInPlan);
 
-        var method = candidate.OfficialMigrationMethod != MigrationMethod.None
-            ? candidate.OfficialMigrationMethod
-            : candidate.FallbackMigrationMethod;
+        // What the user asked for wins. They were shown the difference between leaving a
+        // junction and not leaving one, and that is the question the catalog cannot answer for
+        // them — it knows what is possible, not what the old path still needs to work.
+        var method = candidate.RequestedMethod
+            ?? (candidate.OfficialMigrationMethod != MigrationMethod.None
+                ? candidate.OfficialMigrationMethod
+                : candidate.FallbackMigrationMethod);
 
         // Nothing in the catalog said how to relocate this, because nothing in the catalog knows
-        // it. A junction is the mechanism that needs no privilege, so it is what a user-chosen
-        // move falls back to.
-        if (action == SuggestedAction.Move && method == MigrationMethod.None)
+        // it. A junction is the mechanism that needs no privilege, so it is what a move with no
+        // stated preference falls back to.
+        if (action == SuggestedAction.Move && method == MigrationMethod.None
+            && candidate.RequestedMethod is null)
+        {
             method = MigrationMethod.Junction;
+        }
 
         var entry = new StoragePlanEntry
         {

@@ -54,6 +54,13 @@ public sealed record PlanCandidate
     /// <summary>A folder that is really a pointer somewhere else. Never actionable, either way.</summary>
     public bool IsReparsePoint { get; init; }
 
+    /// <summary>
+    /// The mechanism the user asked for, when they were offered the choice. It overrides what the
+    /// catalog would have picked — the catalog knows what is possible, the user knows what they
+    /// want the old path to do afterwards.
+    /// </summary>
+    public MigrationMethod? RequestedMethod { get; init; }
+
     public MigrationMethod OfficialMigrationMethod { get; init; } = MigrationMethod.None;
     public MigrationMethod FallbackMigrationMethod { get; init; } = MigrationMethod.None;
 

@@ -44,16 +44,56 @@ public class CleanupItemModelTests
         CanRegenerate: false);
 
     [Fact]
-    public void AnUnrecognisedItem_OffersBothActionsWithReadableLabels()
+    public void AnUnrecognisedItem_OffersEveryActionWithReadableLabels()
     {
         var model = CleanupItemModel.FromItem(Item(), Culture, new StubLocalization());
 
-        Assert.Equal(2, model.AvailableActions.Count);
         Assert.All(model.AvailableActions, option => Assert.False(string.IsNullOrWhiteSpace(option.Label)));
 
         // Moving is offered first because it is the one that keeps the data.
         Assert.Equal(SuggestedAction.Move, model.AvailableActions[0].Action);
         Assert.Contains(SuggestedAction.Delete, model.AvailableActions.Select(option => option.Action));
+    }
+
+    /// <summary>
+    /// The two ways to move are different outcomes, not a wording preference: one leaves a junction
+    /// at the old path and one leaves nothing there. A picker that offered only one of them would
+    /// be deciding that for the user.
+    /// </summary>
+    [Fact]
+    public void AMovableItem_OffersBothWithAndWithoutAJunction()
+    {
+        var model = CleanupItemModel.FromItem(Item(), Culture, new StubLocalization());
+
+        var moves = model.AvailableActions.Where(option => option.Action == SuggestedAction.Move).ToList();
+
+        Assert.Equal(2, moves.Count);
+        Assert.Contains(moves, option => option.Method == MigrationMethod.Junction);
+        Assert.Contains(moves, option => option.Method == MigrationMethod.None);
+
+        // Distinct labels, or the two are indistinguishable in the list.
+        Assert.Equal(2, moves.Select(option => option.Label).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>The junction comes first: it is the one that keeps everything working.</summary>
+    [Fact]
+    public void TheJunctionIsWhatARowStartsOn()
+    {
+        var model = CleanupItemModel.FromItem(Item(), Culture, new StubLocalization());
+
+        Assert.Equal(MigrationMethod.Junction, model.Method);
+    }
+
+    /// <summary>A delete carries no mechanism, because there is nothing left to point at.</summary>
+    [Fact]
+    public void ChoosingDelete_CarriesNoMechanism()
+    {
+        var model = CleanupItemModel.FromItem(Item(), Culture, new StubLocalization());
+
+        model.SelectedAction = model.AvailableActions
+            .First(option => option.Action == SuggestedAction.Delete);
+
+        Assert.Null(model.Method);
     }
 
     /// <summary>

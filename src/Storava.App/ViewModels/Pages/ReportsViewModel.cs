@@ -33,6 +33,10 @@ public sealed partial class ReportsViewModel : ViewModelBase, IDisposable
     private readonly CsvReportWriter _csvWriter;
     private readonly AiAdvisorService _advisor;
     private readonly IScanSessionRepository _sessions;
+
+    /// <summary>Where the AI's findings are kept once it has produced them.</summary>
+    private readonly IRecommendationRepository _recommendations;
+
     private readonly ISettingsService _settings;
     private readonly ISecretStore _secrets;
     private readonly ILocalizationService _localization;
@@ -88,6 +92,7 @@ public sealed partial class ReportsViewModel : ViewModelBase, IDisposable
         CsvReportWriter csvWriter,
         AiAdvisorService advisor,
         IScanSessionRepository sessions,
+        IRecommendationRepository recommendations,
         ISettingsService settings,
         ISecretStore secrets,
         ILocalizationService localization,
@@ -101,6 +106,7 @@ public sealed partial class ReportsViewModel : ViewModelBase, IDisposable
         _csvWriter = csvWriter;
         _advisor = advisor;
         _sessions = sessions;
+        _recommendations = recommendations;
         _settings = settings;
         _secrets = secrets;
         _localization = localization;
@@ -257,6 +263,16 @@ public sealed partial class ReportsViewModel : ViewModelBase, IDisposable
             }
 
             ApplyAiResult(result.Value);
+
+            // Kept, so the rest of the app can show it. Applying it only to this page is what left
+            // the AI with nothing to say on the page where the user actually acts.
+            if (_sessionId is { Length: > 0 } sessionId)
+            {
+                await _recommendations
+                    .ReplaceAiAdviceAsync(sessionId, result.Value.Accepted)
+                    .ConfigureAwait(true);
+            }
+
             await BuildReportAsync().ConfigureAwait(true);
         }
         catch (OperationCanceledException)

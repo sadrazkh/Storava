@@ -233,6 +233,24 @@
                                                TextWrapping="Wrap" Margin="0,4,0,0" Opacity="0.85"
                                                Visibility="{Binding HasReason, Converter={StaticResource Conv.BoolVis}}" />
 
+                                    <!-- What the AI said, beside what the rules said rather than
+                                         instead of it. Marked, because one is deterministic and
+                                         the other is a model's suggestion. -->
+                                    <Grid Margin="0,6,0,0"
+                                          Visibility="{Binding HasAiNote, Converter={StaticResource Conv.BoolVis}}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Style="{StaticResource Storava.Badge.Info}"
+                                                VerticalAlignment="Top" Margin="0,1,8,0">
+                                            <TextBlock Text="{DynamicResource Str.Cleanup.AiTag}"
+                                                       Style="{StaticResource Storava.Badge.Text}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" Text="{Binding AiNote}"
+                                                   Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap" />
+                                    </Grid>
+
                                     <!-- A Grid, not a horizontal StackPanel: a StackPanel gives its
                                          children unlimited width, so this never wrapped and was
                                          cut off mid-sentence. -->
@@ -382,6 +400,11 @@
                                        Style="{StaticResource Storava.SectionLabel}" Margin="0,0,0,4" />
                             <TextBlock Text="{Binding StepDestination}" Style="{StaticResource Storava.Text.Body}"
                                        TextWrapping="Wrap" Margin="0,0,0,8" />
+
+                            <!-- What the old path will do afterwards, which is the reason the
+                                 choice between the two kinds of move exists. -->
+                            <TextBlock Text="{Binding CurrentStep.MethodText}" TextWrapping="Wrap"
+                                       Style="{StaticResource Storava.Text.Caption}" Margin="0,0,0,8" />
                             <Button Command="{Binding PickStepDestinationCommand}"
                                     Style="{StaticResource MaterialDesignFlatButton}" Height="34" Padding="10,0"
                                     HorizontalAlignment="Left"

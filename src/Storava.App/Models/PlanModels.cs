@@ -8,8 +8,14 @@ using Storava.Domain.ValueObjects;
 
 namespace Storava.App.Models;
 
-/// <summary>One choosable action, with the label shown in the picker.</summary>
-public sealed record PlanActionOption(SuggestedAction Action, string Label)
+/// <summary>
+/// One choosable action, with the label shown in the picker.
+/// </summary>
+/// <param name="Method">
+/// How a move should be carried out, when the user is being offered the choice. Null leaves it to
+/// whatever the rule catalog knows, which is right for advice and for anything that is not a move.
+/// </param>
+public sealed record PlanActionOption(SuggestedAction Action, string Label, MigrationMethod? Method = null)
 {
     /// <summary>
     /// The label, because this is what a ComboBox shows when nothing else tells it otherwise.

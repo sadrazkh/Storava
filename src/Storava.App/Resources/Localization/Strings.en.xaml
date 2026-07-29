@@ -521,4 +521,12 @@
     <sys:String x:Key="Str.Cleanup.FilterBy">Show</sys:String>
     <sys:String x:Key="Str.Cleanup.AllRisks">All</sys:String>
     <sys:String x:Key="Str.Cleanup.NothingCanRun">Nothing here can run. Each step below says why it was refused — the folder may have gone, be a link, or be somewhere Storava will not touch. Go back and choose something else.</sys:String>
+    <sys:String x:Key="Str.Plan.Action.MoveLinked">Move, leave a junction</sys:String>
+    <sys:String x:Key="Str.Plan.Action.MovePlain">Move, no junction</sys:String>
+    <sys:String x:Key="Str.Cleanup.JunctionNote">A junction leaves a pointer at the old path, so anything that expects the folder there keeps working. Without one, the old path simply stops existing.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.Junction">An NTFS junction will be left at the old path, so anything that expects the folder there keeps working.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.SymbolicLink">A symbolic link will be left at the old path. It needs administrator rights or Developer Mode; if it cannot be created the move still stands and this is reported.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.Plain">Nothing will be left at the old path. Anything that expects the folder there will stop finding it.</sys:String>
+    <sys:String x:Key="Str.Cleanup.AiTag">AI</sys:String>
+    <sys:String x:Key="Str.Cleanup.AiFilter">Mentioned by the AI</sys:String>
 </ResourceDictionary>

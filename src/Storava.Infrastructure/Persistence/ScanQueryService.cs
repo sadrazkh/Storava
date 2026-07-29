@@ -103,34 +103,40 @@ public sealed class ScanQueryService : IScanQueryService
     {
         await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"""
-            SELECT Path, Name, Size, Depth, Category
-            FROM ScanItems
-            WHERE SessionId = $s AND ItemType = {(int)ItemType.Folder} AND Depth <= $d AND Size > 0
-            ORDER BY Size DESC
-            LIMIT $n;
-            """;
-        command.Parameters.AddWithValue("$s", sessionId);
-        command.Parameters.AddWithValue("$d", maxDepth);
-        command.Parameters.AddWithValue("$n", limit);
-
-        var folders = new List<FolderSize>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        // Off the caller's thread: see QueryAsync for why awaiting this provider
+        // does not on its own leave the UI free.
+        return await Task.Run(async () =>
         {
-            folders.Add(new FolderSize(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.GetInt64(2),
-                reader.GetInt32(3),
-                (StorageCategory)reader.GetInt32(4)));
-        }
+            await using var connection = new SqliteConnection(_options.ConnectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        return folders;
+            await using var command = connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT Path, Name, Size, Depth, Category
+                FROM ScanItems
+                WHERE SessionId = $s AND ItemType = {(int)ItemType.Folder} AND Depth <= $d AND Size > 0
+                ORDER BY Size DESC
+                LIMIT $n;
+                """;
+            command.Parameters.AddWithValue("$s", sessionId);
+            command.Parameters.AddWithValue("$d", maxDepth);
+            command.Parameters.AddWithValue("$n", limit);
+
+            var folders = new List<FolderSize>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                folders.Add(new FolderSize(
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetInt64(2),
+                    reader.GetInt32(3),
+                    (StorageCategory)reader.GetInt32(4)));
+            }
+
+            return folders;
+    
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<CategoryUsage>> GetCategoryUsageAsync(
@@ -138,57 +144,63 @@ public sealed class ScanQueryService : IScanQueryService
     {
         await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-
-        long scannedTotal = await GetScannedTotalAsync(connection, sessionId, cancellationToken).ConfigureAwait(false);
-
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"""
-            SELECT Path, Size, Category, ItemType
-            FROM ScanItems
-            WHERE SessionId = $s AND Category <> {(int)StorageCategory.Unknown} AND Size > 0
-            ORDER BY Depth ASC, Size DESC;
-            """;
-        command.Parameters.AddWithValue("$s", sessionId);
-
-        var totals = new Dictionary<StorageCategory, (long Size, int Count)>();
-        var claimedFolders = new List<string>();
-        long classified = 0;
-
-        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+        // Off the caller's thread: see QueryAsync for why awaiting this provider
+        // does not on its own leave the UI free.
+        return await Task.Run(async () =>
         {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            await using var connection = new SqliteConnection(_options.ConnectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+
+            long scannedTotal = await GetScannedTotalAsync(connection, sessionId, cancellationToken).ConfigureAwait(false);
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT Path, Size, Category, ItemType
+                FROM ScanItems
+                WHERE SessionId = $s AND Category <> {(int)StorageCategory.Unknown} AND Size > 0
+                ORDER BY Depth ASC, Size DESC;
+                """;
+            command.Parameters.AddWithValue("$s", sessionId);
+
+            var totals = new Dictionary<StorageCategory, (long Size, int Count)>();
+            var claimedFolders = new List<string>();
+            long classified = 0;
+
+            await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
             {
-                string path = reader.GetString(0);
-                long size = reader.GetInt64(1);
-                var category = (StorageCategory)reader.GetInt32(2);
-                bool isFolder = (ItemType)reader.GetInt32(3) == ItemType.Folder;
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    string path = reader.GetString(0);
+                    long size = reader.GetInt64(1);
+                    var category = (StorageCategory)reader.GetInt32(2);
+                    bool isFolder = (ItemType)reader.GetInt32(3) == ItemType.Folder;
 
-                // Rows are ordered shallowest first, so an ancestor is always claimed before
-                // its descendants are considered.
-                if (IsInsideClaimedFolder(path, claimedFolders))
-                    continue;
+                    // Rows are ordered shallowest first, so an ancestor is always claimed before
+                    // its descendants are considered.
+                    if (IsInsideClaimedFolder(path, claimedFolders))
+                        continue;
 
-                var current = totals.TryGetValue(category, out var existing) ? existing : default;
-                totals[category] = (current.Size + size, current.Count + 1);
-                classified += size;
+                    var current = totals.TryGetValue(category, out var existing) ? existing : default;
+                    totals[category] = (current.Size + size, current.Count + 1);
+                    classified += size;
 
-                if (isFolder)
-                    claimedFolders.Add(path);
+                    if (isFolder)
+                        claimedFolders.Add(path);
+                }
             }
-        }
 
-        var result = totals
-            .Select(kv => new CategoryUsage(kv.Key, kv.Value.Size, kv.Value.Count))
-            .OrderByDescending(u => u.TotalSize)
-            .ToList();
+            var result = totals
+                .Select(kv => new CategoryUsage(kv.Key, kv.Value.Size, kv.Value.Count))
+                .OrderByDescending(u => u.TotalSize)
+                .ToList();
 
-        long remainder = scannedTotal - classified;
-        if (remainder > 0)
-            result.Add(new CategoryUsage(StorageCategory.Unknown, remainder, 0));
+            long remainder = scannedTotal - classified;
+            if (remainder > 0)
+                result.Add(new CategoryUsage(StorageCategory.Unknown, remainder, 0));
 
-        return result;
+            return result;
+    
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static bool IsInsideClaimedFolder(string path, List<string> claimedFolders)
@@ -256,18 +268,27 @@ public sealed class ScanQueryService : IScanQueryService
     {
         await _initializer.EnsureCreatedAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var connection = new SqliteConnection(_options.ConnectionString);
-        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        // Run on a pool thread rather than the caller's.
+        //
+        // This provider's async methods are synchronous underneath: SQLite has no async file I/O,
+        // so ExecuteReaderAsync and ReadAsync complete inline and awaiting them never yields. A
+        // page that awaits a query is therefore running the whole query on the UI thread, and on a
+        // scan of a full drive that means mapping hundreds of thousands of rows between repaints.
+        return await Task.Run<IReadOnlyList<ScanItemView>>(async () =>
+        {
+            await using var connection = new SqliteConnection(_options.ConnectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        bind(command);
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            bind(command);
 
-        var result = new List<ScanItemView>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            result.Add(Map(reader));
-        return result;
+            var result = new List<ScanItemView>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                result.Add(Map(reader));
+            return result;
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private static ScanItemView Map(SqliteDataReader r) => new(

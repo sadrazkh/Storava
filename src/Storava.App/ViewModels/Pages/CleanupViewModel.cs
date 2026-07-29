@@ -382,11 +382,34 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         var culture = _localization.CurrentCulture;
         var advice = await _planning.GetCandidatesAsync(_sessionId).ConfigureAwait(true);
 
+        // The catalog's advice and the AI's are kept apart on the way in: an item the AI also
+        // commented on should gain a note, not a second row saying the same thing twice.
+        var fromRules = advice.Where(item => item.Source != RecommendationSource.Ai).ToList();
+        var fromAi = advice
+            .Where(item => item.Source == RecommendationSource.Ai)
+            .ToDictionary(item => item.ScanItemId, StringComparer.Ordinal);
+
+        var byScanItem = new Dictionary<string, CleanupItemModel>(StringComparer.Ordinal);
         var covered = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var recommendation in advice)
+
+        foreach (var recommendation in fromRules)
         {
-            AllItems.Add(CleanupItemModel.FromAdvice(recommendation, culture, _localization));
+            var row = CleanupItemModel.FromAdvice(recommendation, culture, _localization);
+            AllItems.Add(row);
+            byScanItem[recommendation.ScanItemId] = row;
             covered.Add(recommendation.ScanItemId);
+        }
+
+        // Anything the AI raised that the catalog did not is a row in its own right.
+        foreach (var (scanItemId, recommendation) in fromAi)
+        {
+            if (covered.Contains(scanItemId))
+                continue;
+
+            var row = CleanupItemModel.FromAdvice(recommendation, culture, _localization);
+            AllItems.Add(row);
+            byScanItem[scanItemId] = row;
+            covered.Add(scanItemId);
         }
 
         var largest = await _query
@@ -401,6 +424,13 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
                 continue;
 
             AllItems.Add(CleanupItemModel.FromItem(item, culture, _localization));
+        }
+
+        // The AI's opinion lands on whichever row the item ended up as, however it got there.
+        foreach (var (scanItemId, recommendation) in fromAi)
+        {
+            if (byScanItem.TryGetValue(scanItemId, out var row))
+                row.AttachAiNote(recommendation.Reason);
         }
 
         foreach (var model in AllItems)
@@ -521,8 +551,8 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         foreach (var model in AllItems.Where(item => item.IsSelected))
         {
             var result = model.Advice is { } advice
-                ? _planning.Include(_plan, advice, model.Action)
-                : _planning.Include(_plan, model.Item!, _sessionId, model.Action);
+                ? _planning.Include(_plan, advice, model.Action, model.Method)
+                : _planning.Include(_plan, model.Item!, _sessionId, model.Action, model.Method);
 
             if (result.IsFailure)
             {
@@ -793,7 +823,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             _step.SourcePath,
             _localization[$"Str.Plan.Action.{_step.Action}"],
             new ByteSize(_step.MeasuredBytes).Humanize(culture),
-            _localization[$"Str.Migration.Method.{_step.Method}"],
+            DescribeMechanism(_step),
             _step.Action == SuggestedAction.Move,
             _step.HasNoRule,
             string.Format(culture, _localization["Str.Migration.StepPosition"], position, _execution.Steps.Count),
@@ -807,6 +837,25 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
         OnPropertyChanged(nameof(IsNameConfirmed));
     }
+
+    /// <summary>
+    /// What will happen to the old path, in the user's words.
+    /// <para>
+    /// Keyed on the action as well as the mechanism. The mechanism alone is ambiguous: a move that
+    /// leaves nothing behind and a delete both carry <see cref="MigrationMethod.None"/>, and the
+    /// text for one is badly wrong for the other.
+    /// </para>
+    /// </summary>
+    private string DescribeMechanism(PlanExecutionStep step) => _localization[
+        step.Action != SuggestedAction.Move
+            ? "Str.Migration.Method.None"
+            : step.Method switch
+            {
+                MigrationMethod.Junction => "Str.Cleanup.Method.Junction",
+                MigrationMethod.SymbolicLink => "Str.Cleanup.Method.SymbolicLink",
+                MigrationMethod.OfficialSetting => "Str.Migration.Method.OfficialSetting",
+                _ => "Str.Cleanup.Method.Plain"
+            }];
 
     /// <summary>
     /// Where this step lands under the run's destination folder, avoiding anywhere an earlier step

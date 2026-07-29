@@ -64,7 +64,16 @@ public sealed partial class CleanupItemModel : ObservableObject
 
         var options = new List<PlanActionOption>();
         if (canMove)
-            options.Add(new PlanActionOption(SuggestedAction.Move, localization["Str.Plan.Action.Move"]));
+        {
+            // Two ways to move, and the difference is what the old path does afterwards. The
+            // junction comes first because it is the one that keeps everything working.
+            options.Add(new PlanActionOption(
+                SuggestedAction.Move, localization["Str.Plan.Action.MoveLinked"], MigrationMethod.Junction));
+
+            options.Add(new PlanActionOption(
+                SuggestedAction.Move, localization["Str.Plan.Action.MovePlain"], MigrationMethod.None));
+        }
+
         if (canDelete)
             options.Add(new PlanActionOption(SuggestedAction.Delete, localization["Str.Plan.Action.Delete"]));
 
@@ -97,6 +106,25 @@ public sealed partial class CleanupItemModel : ObservableObject
 
     public bool HasReason => Reason.Length > 0;
 
+    /// <summary>
+    /// What the AI said about this item, when it was asked and had something to say.
+    /// <para>
+    /// Held next to the catalog's reason rather than replacing it. They are two opinions from two
+    /// different kinds of source, and collapsing them would hide which is which.
+    /// </para>
+    /// </summary>
+    public string AiNote { get; private set; } = string.Empty;
+
+    public bool HasAiNote => AiNote.Length > 0;
+
+    /// <summary>Attaches the AI's opinion to a row that already exists.</summary>
+    public void AttachAiNote(string note)
+    {
+        AiNote = note?.Trim() ?? string.Empty;
+        OnPropertyChanged(nameof(AiNote));
+        OnPropertyChanged(nameof(HasAiNote));
+    }
+
     public bool CanDelete { get; }
     public bool CanMove { get; }
 
@@ -104,6 +132,9 @@ public sealed partial class CleanupItemModel : ObservableObject
 
     /// <summary>The action itself, for the caller that has to build a plan step from this row.</summary>
     public SuggestedAction Action => SelectedAction?.Action ?? SuggestedAction.Delete;
+
+    /// <summary>How a move should be carried out, when the user has said.</summary>
+    public MigrationMethod? Method => SelectedAction?.Method;
 
     /// <summary>
     /// What this row says when there is no rule behind it. Shown instead of a reason, because the

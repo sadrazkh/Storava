@@ -21,9 +21,26 @@ public sealed class RecommendationRepository : IRecommendationRepository
         _initializer = initializer;
     }
 
-    public async Task ReplaceForSessionAsync(
+    public Task ReplaceForSessionAsync(
         string sessionId,
         IEnumerable<Recommendation> recommendations,
+        CancellationToken cancellationToken = default) =>
+        ReplaceAsync(sessionId, recommendations, onlyAi: false, cancellationToken);
+
+    public Task ReplaceAiAdviceAsync(
+        string sessionId,
+        IEnumerable<Recommendation> recommendations,
+        CancellationToken cancellationToken = default) =>
+        ReplaceAsync(sessionId, recommendations, onlyAi: true, cancellationToken);
+
+    /// <param name="onlyAi">
+    /// Narrows the delete to rows the AI produced. Without it, saving what the AI said would take
+    /// the rule catalog's advice with it.
+    /// </param>
+    private async Task ReplaceAsync(
+        string sessionId,
+        IEnumerable<Recommendation> recommendations,
+        bool onlyAi,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
@@ -39,7 +56,9 @@ public sealed class RecommendationRepository : IRecommendationRepository
         await using (var delete = connection.CreateCommand())
         {
             delete.Transaction = transaction;
-            delete.CommandText = "DELETE FROM Recommendations WHERE SessionId = $s;";
+            delete.CommandText = onlyAi
+                ? $"DELETE FROM Recommendations WHERE SessionId = $s AND Source = {(int)RecommendationSource.Ai};"
+                : "DELETE FROM Recommendations WHERE SessionId = $s;";
             delete.Parameters.AddWithValue("$s", sessionId);
             await delete.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }

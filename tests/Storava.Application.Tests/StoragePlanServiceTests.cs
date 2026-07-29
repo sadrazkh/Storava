@@ -187,5 +187,10 @@ public class StoragePlanServiceTests
             string sessionId,
             IEnumerable<Recommendation> recommendations,
             CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task ReplaceAiAdviceAsync(
+            string sessionId,
+            IEnumerable<Recommendation> recommendations,
+            CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

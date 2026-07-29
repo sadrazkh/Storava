@@ -521,4 +521,12 @@
     <sys:String x:Key="Str.Cleanup.FilterBy">نمایش</sys:String>
     <sys:String x:Key="Str.Cleanup.AllRisks">همه</sys:String>
     <sys:String x:Key="Str.Cleanup.NothingCanRun">هیچ‌کدام قابل اجرا نیست. زیر هر گام نوشته چرا رد شده — ممکن است پوشه دیگر نباشد، لینک باشد، یا جایی باشد که استوراوا دست نمی‌زند. برگردید و چیز دیگری انتخاب کنید.</sys:String>
+    <sys:String x:Key="Str.Plan.Action.MoveLinked">جابه‌جایی + Junction</sys:String>
+    <sys:String x:Key="Str.Plan.Action.MovePlain">جابه‌جایی بدون پیوند</sys:String>
+    <sys:String x:Key="Str.Cleanup.JunctionNote">Junction یک اشاره‌گر در مسیر قدیمی جا می‌گذارد، پس هر چیزی که انتظار دارد پوشه همان‌جا باشد به کار کردن ادامه می‌دهد. بدون آن، مسیر قدیمی دیگر وجود ندارد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.Junction">یک NTFS junction در مسیر قدیمی جا می‌ماند، پس هر چیزی که انتظار دارد پوشه همان‌جا باشد به کار کردن ادامه می‌دهد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.SymbolicLink">یک symbolic link در مسیر قدیمی جا می‌ماند. به دسترسی ادمین یا Developer Mode نیاز دارد؛ اگر ساخته نشود جابه‌جایی سر جایش می‌ماند و همین گزارش می‌شود.</sys:String>
+    <sys:String x:Key="Str.Cleanup.Method.Plain">هیچ‌چیز در مسیر قدیمی نمی‌ماند. هر چیزی که انتظار دارد پوشه آنجا باشد دیگر پیدایش نمی‌کند.</sys:String>
+    <sys:String x:Key="Str.Cleanup.AiTag">هوش مصنوعی</sys:String>
+    <sys:String x:Key="Str.Cleanup.AiFilter">اشاره‌شده توسط هوش مصنوعی</sys:String>
 </ResourceDictionary>

@@ -15,6 +15,19 @@ namespace Storava.App.Controls;
 /// </summary>
 public sealed class TreemapControl : FrameworkElement
 {
+
+    /// <summary>
+    /// Which way a label's text runs, from the culture rather than from the control.
+    /// <para>
+    /// The control itself is pinned left-to-right so its geometry is not mirrored; that says
+    /// nothing about the text drawn on it, which still has to follow the language.
+    /// </para>
+    /// </summary>
+    private static FlowDirection LabelFlow =>
+        CultureInfo.CurrentCulture.TextInfo.IsRightToLeft
+            ? FlowDirection.RightToLeft
+            : FlowDirection.LeftToRight;
+
     private const double MinLabelWidth = 54;
     private const double MinLabelHeight = 22;
 
@@ -32,6 +45,12 @@ public sealed class TreemapControl : FrameworkElement
         ToolTipService.SetInitialShowDelay(this, 150);
         ToolTipService.SetShowDuration(this, 30000);
         ClipToBounds = true;
+
+        // Pinned left-to-right whatever the shell is using. Right-to-left is implemented as a
+        // mirror transform that descendants inherit, which is correct for laid-out content and
+        // wrong for drawn geometry: under Persian the tiles came out mirror-imaged. A treemap is
+        // anchored to its numbers, not to reading order.
+        FlowDirection = FlowDirection.LeftToRight;
     }
 
     public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(
@@ -129,7 +148,9 @@ public sealed class TreemapControl : FrameworkElement
         var text = new FormattedText(
             item.Label,
             CultureInfo.CurrentCulture,
-            FlowDirection.LeftToRight,
+            // The tile is not mirrored, but its label still has to read the right way round: a
+            // Persian name laid out left-to-right renders its words in the wrong order.
+            LabelFlow,
             LabelTypeface,
             12,
             brush,
@@ -153,7 +174,7 @@ public sealed class TreemapControl : FrameworkElement
             var detailText = new FormattedText(
                 detail,
                 CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
+                LabelFlow,
                 LabelTypeface,
                 11,
                 detailBrush,

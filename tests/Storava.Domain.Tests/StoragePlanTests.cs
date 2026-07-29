@@ -416,4 +416,79 @@ public class StoragePlanTests
         Assert.False(result.Value.HasNoRule);
         Assert.NotNull(result.Value.RecommendationId);
     }
+
+    // --- how a move is carried out ---------------------------------------------------
+    //
+    // A junction left at the old path is usually the whole reason for moving a folder rather than
+    // deleting it: everything hard-coded to that path keeps working. Whether one is left is the
+    // user's call, so what they chose has to survive into the step.
+
+    [Fact]
+    public void AskingForAJunction_PlansAJunction()
+    {
+        var plan = NewPlan();
+        var candidate = Chosen() with { RequestedMethod = MigrationMethod.Junction };
+
+        var result = plan.TryAdd(candidate, SuggestedAction.Move, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(MigrationMethod.Junction, result.Value.Method);
+    }
+
+    /// <summary>
+    /// A move with no junction asked for must leave nothing behind. Falling back to a junction
+    /// here would quietly do the opposite of what was chosen.
+    /// </summary>
+    [Fact]
+    public void AskingForNoJunction_PlansNoLink()
+    {
+        var plan = NewPlan();
+        var candidate = Chosen() with { RequestedMethod = MigrationMethod.None };
+
+        var result = plan.TryAdd(candidate, SuggestedAction.Move, NextEntryId());
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(MigrationMethod.None, result.Value.Method);
+    }
+
+    /// <summary>The user's choice outranks what the catalog would have picked.</summary>
+    [Fact]
+    public void TheRequestedMechanism_OverridesTheCatalogs()
+    {
+        var plan = NewPlan();
+        var candidate = Chosen() with
+        {
+            IsIdentified = true,
+            CanMove = true,
+            OfficialMigrationMethod = MigrationMethod.OfficialSetting,
+            RequestedMethod = MigrationMethod.Junction
+        };
+
+        var result = plan.TryAdd(candidate, SuggestedAction.Move, NextEntryId());
+
+        Assert.Equal(MigrationMethod.Junction, result.Value.Method);
+    }
+
+    /// <summary>Saying nothing still falls back to the mechanism that needs no privilege.</summary>
+    [Fact]
+    public void SayingNothing_StillFallsBackToAJunction()
+    {
+        var plan = NewPlan();
+
+        var result = plan.TryAdd(Chosen(), SuggestedAction.Move, NextEntryId());
+
+        Assert.Equal(MigrationMethod.Junction, result.Value.Method);
+    }
+
+    /// <summary>A delete has nothing to leave behind whatever was asked for.</summary>
+    [Fact]
+    public void ADelete_NeverCarriesAMechanism()
+    {
+        var plan = NewPlan();
+        var candidate = Chosen() with { RequestedMethod = MigrationMethod.Junction };
+
+        var result = plan.TryAdd(candidate, SuggestedAction.Delete, NextEntryId());
+
+        Assert.Equal(MigrationMethod.None, result.Value.Method);
+    }
 }
