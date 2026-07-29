@@ -1,5 +1,6 @@
 import type {
   AdvisorFinding,
+  AdvisorItemTarget,
   AdvisorPriority,
   AdvisorReviewTarget,
   AdvisorResponse,
@@ -62,6 +63,23 @@ const advisorResponseSchema = {
         required: ['signal', 'disposition', 'rationale', 'confidence'],
       },
     },
+    // One remark about one folder, addressed by the reference it was given. The model has no other
+    // way to name a folder: it was never told any name, extension or path.
+    itemTargets: {
+      type: 'array',
+      maxItems: 12,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          ref: { type: 'string', minLength: 1, maxLength: 12 },
+          disposition: { type: 'string', enum: ['cleanup-candidate', 'archive-candidate', 'investigate'] },
+          rationale: { type: 'string', minLength: 1, maxLength: 500 },
+          confidence: { type: 'number', minimum: 0, maximum: 1 },
+        },
+        required: ['ref', 'disposition', 'rationale', 'confidence'],
+      },
+    },
     cautions: {
       type: 'array',
       maxItems: 6,
@@ -70,7 +88,10 @@ const advisorResponseSchema = {
     disclaimer: { type: 'string', minLength: 1, maxLength: 600 },
     privacyNote: { type: 'string', minLength: 1, maxLength: 400 },
   },
-  required: ['title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'cautions', 'disclaimer', 'privacyNote'],
+  required: [
+    'title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'itemTargets',
+    'cautions', 'disclaimer', 'privacyNote',
+  ],
 } as const;
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -143,6 +164,26 @@ function parseReviewTarget(value: unknown): AdvisorReviewTarget {
   };
 }
 
+function parseItemTarget(value: unknown): AdvisorItemTarget {
+  if (!isRecord(value)) throw new Error('Advisor item target is not an object.');
+  assertExactKeys(value, ['ref', 'disposition', 'rationale', 'confidence'], 'Advisor item target');
+  if (
+    value.disposition !== 'cleanup-candidate'
+    && value.disposition !== 'archive-candidate'
+    && value.disposition !== 'investigate'
+  ) {
+    throw new Error('Advisor item target disposition is invalid.');
+  }
+  return {
+    // Not checked against the inventory here. The page that minted the references is the only
+    // thing that knows them, and it drops any it does not recognise rather than guessing.
+    ref: requiredString(value.ref, 'Advisor item target reference', 12),
+    disposition: value.disposition,
+    rationale: requiredString(value.rationale, 'Advisor item target rationale', 500),
+    confidence: confidence(value.confidence, 'Advisor item target confidence'),
+  };
+}
+
 function parseStringArray(value: unknown, label: string, maximumItems: number, maximumLength: number): string[] {
   if (!Array.isArray(value) || value.length > maximumItems) throw new Error(`${label} is invalid.`);
   return value.map((item) => requiredString(item, label, maximumLength));
@@ -152,7 +193,10 @@ export function parseAdvisorResponse(value: unknown): AdvisorResponse {
   if (!isRecord(value)) throw new Error('Advisor response is not an object.');
   assertExactKeys(
     value,
-    ['title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'cautions', 'disclaimer', 'privacyNote'],
+    [
+      'title', 'executiveSummary', 'findings', 'priorities', 'reviewTargets', 'itemTargets',
+      'cautions', 'disclaimer', 'privacyNote',
+    ],
     'Advisor response',
   );
   if (!Array.isArray(value.findings) || value.findings.length > 8) throw new Error('Advisor findings are invalid.');
@@ -160,12 +204,16 @@ export function parseAdvisorResponse(value: unknown): AdvisorResponse {
   if (!Array.isArray(value.reviewTargets) || value.reviewTargets.length > 6) {
     throw new Error('Advisor review targets are invalid.');
   }
+  if (!Array.isArray(value.itemTargets) || value.itemTargets.length > 12) {
+    throw new Error('Advisor item targets are invalid.');
+  }
   return {
     title: requiredString(value.title, 'Advisor title', 120),
     executiveSummary: requiredString(value.executiveSummary, 'Advisor summary', 1_500),
     findings: value.findings.map(parseFinding),
     priorities: value.priorities.map(parsePriority),
     reviewTargets: value.reviewTargets.map(parseReviewTarget),
+    itemTargets: value.itemTargets.map(parseItemTarget),
     cautions: parseStringArray(value.cautions, 'Advisor caution', 6, 400),
     disclaimer: requiredString(value.disclaimer, 'Advisor disclaimer', 600),
     privacyNote: requiredString(value.privacyNote, 'Advisor privacy note', 400),
@@ -203,7 +251,7 @@ export function buildOpenRouterRequest(
     messages: [
       {
         role: 'system',
-        content: `You are Storava's senior, read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata and do not rely on unstated assumptions. Never infer file contents, identities, personal paths, secrets, projects, or business purpose. Never claim to have inspected files. Do not issue delete, move, rename, execute, shell, or automated cleanup commands. Priorities are ordered human-review plans, not file-operation instructions. Separate measured evidence from interpretation; include exact counts and byte totals or bucket values in each finding when available. Compare signals against the whole scan so that a large count with negligible bytes is not overstated. Highlight access errors and incomplete scans as coverage limitations. Use confidence below 0.7 whenever evidence is indirect or incomplete. reviewTargets may reference only rule signals present in ruleMatches or ruleEvidence; they identify aggregate classes for local human review and never individual files. Use cleanup-candidate only for strong aggregate evidence of regeneratable or redundant data; otherwise prefer investigate or archive-candidate. Avoid repeating the same point across findings and priorities. ${profileInstruction} State uncertainty, make the privacy boundary explicit, and use the required JSON schema.`,
+        content: `You are Storava's senior, read-only storage advisor. Reply in ${language}. Analyze only the supplied aggregate metadata and do not rely on unstated assumptions. Never infer file contents, identities, personal paths, secrets, projects, or business purpose. Never claim to have inspected files. Do not issue delete, move, rename, execute, shell, or automated cleanup commands. Priorities are ordered human-review plans, not file-operation instructions. Separate measured evidence from interpretation; include exact counts and byte totals or bucket values in each finding when available. Compare signals against the whole scan so that a large count with negligible bytes is not overstated. Highlight access errors and incomplete scans as coverage limitations. Use confidence below 0.7 whenever evidence is indirect or incomplete. reviewTargets may reference only rule signals present in ruleMatches or ruleEvidence; they identify aggregate classes for local human review and never individual files. itemTargets may reference only the ref values present in inventory, and only when an inventory was supplied; each addresses one anonymous entry described solely by category, size, depth, risk, matched rules and age bucket. You have not been told any file or folder name, extension or path, so never guess, invent or describe one, and never state what an entry is called or is for; reason only from the figures given. Return an empty itemTargets array when no inventory was supplied. Use cleanup-candidate only for strong aggregate evidence of regeneratable or redundant data; otherwise prefer investigate or archive-candidate. Avoid repeating the same point across findings and priorities. ${profileInstruction} State uncertainty, make the privacy boundary explicit, and use the required JSON schema.`,
       },
       {
         role: 'user',

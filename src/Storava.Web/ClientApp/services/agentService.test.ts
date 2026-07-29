@@ -9,7 +9,9 @@ import {
   listDevices,
   executeAction,
   listDrives,
+  executePlan,
   previewAction,
+  previewPlan,
   readPageCredentials,
   requestAccessToken,
   startScan,
@@ -530,5 +532,100 @@ describe('acting on what the agent found', () => {
     stubFetch(() => new Response(null, { status: 404 }));
 
     expect(await executeAction(connection, preview, 'node_modules')).toBeNull();
+  });
+});
+
+/**
+ * Acting on several folders under one approval.
+ *
+ * The single-folder path asks the user to type that folder's own name. For twelve folders that
+ * gate does nothing, so the agent derives a code from every step in the plan and the page has to
+ * send back exactly what it was given — a code the page invented, or one echoed with a stale
+ * fingerprint, must not be able to approve anything.
+ */
+describe('acting on a whole plan', () => {
+  const connection = { port: 47615, baseAddress: 'http://127.0.0.1:47615', token: 'tok' } as AgentConnection;
+
+  const preview = {
+    planId: 'plan-1',
+    steps: [
+      {
+        stepId: 'step-1',
+        itemId: 'item-1',
+        action: 'delete' as const,
+        sourcePath: 'C:\\one\\node_modules',
+        destinationPath: null,
+        measuredBytes: 4096,
+        warnings: [],
+        refusedReason: null,
+        refusedMessage: null,
+        canRun: true,
+      },
+    ],
+    totalBytes: 4096,
+    runnableCount: 1,
+    confirmationPhrase: 'HK7QRD',
+    fingerprint: 'abc123',
+    warnings: ['recycle_bin'],
+  };
+
+  it('asks what a plan would do without asking for it to happen', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse(preview));
+
+    const asked = await previewPlan(connection, 'scan-1', [
+      { itemId: 'item-1', action: 'delete' },
+      { itemId: 'item-2', action: 'move', destinationPath: 'D:\\moved', moveMethod: 'copy' },
+    ]);
+
+    expect(asked).toEqual({ preview });
+
+    const [url, init] = fetchSpy.mock.calls[0]!;
+    expect(addressOf(url)).toBe('http://127.0.0.1:47615/v1/plans/preview');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      scanId: 'scan-1',
+      items: [
+        { itemId: 'item-1', action: 'delete', destinationPath: null, moveMethod: null },
+        { itemId: 'item-2', action: 'move', destinationPath: 'D:\\moved', moveMethod: 'copy' },
+      ],
+    });
+  });
+
+  it('surfaces the agent’s reason for refusing a plan', async () => {
+    stubFetch(() => jsonResponse(
+      { reason: 'nothing_runnable', message: 'None of these folders can be acted on.' },
+      400,
+    ));
+
+    const asked = await previewPlan(connection, 'scan-1', [{ itemId: 'item-1', action: 'delete' }]);
+
+    expect(asked).toEqual({
+      problem: { reason: 'nothing_runnable', message: 'None of these folders can be acted on.' },
+    });
+  });
+
+  /** The fingerprint is what binds an approval to a plan, so it is echoed, never recomputed. */
+  it('echoes back the plan and fingerprint it was given', async () => {
+    const fetchSpy = stubFetch(() => jsonResponse({
+      planId: 'plan-1', steps: [], succeededCount: 1, failedCount: 0, skippedCount: 0, totalBytesFreed: 4096,
+    }));
+
+    await executePlan(connection, preview, 'hk7qrd');
+
+    const sent = JSON.parse(fetchSpy.mock.calls[0]![1]?.body as string) as Record<string, string>;
+    expect(sent).toEqual({ planId: 'plan-1', fingerprint: 'abc123', typedPhrase: 'hk7qrd' });
+  });
+
+  /**
+   * A refused approval is one answer for three causes: no such plan, a stale fingerprint, and a
+   * mistyped code. Nothing was touched in any of them, and telling them apart would only help
+   * somebody guessing at the code.
+   */
+  it('reports a refused approval as nothing having happened', async () => {
+    stubFetch(() => jsonResponse(
+      { reason: 'not_approved', message: 'That plan is not waiting for approval.' },
+      404,
+    ));
+
+    expect(await executePlan(connection, preview, 'WRONG1')).toBeNull();
   });
 });

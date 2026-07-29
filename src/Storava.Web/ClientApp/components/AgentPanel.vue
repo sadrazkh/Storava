@@ -12,7 +12,9 @@ import {
   getScanItems,
   listDevices,
   listDrives,
+  executePlan,
   previewAction,
+  previewPlan,
   readPageCredentials,
   startScan,
   type AgentActionOutcome,
@@ -21,6 +23,8 @@ import {
   type AgentDrive,
   type AgentFailure,
   type AgentMoveMethod,
+  type AgentPlanOutcome,
+  type AgentPlanPreview,
   type AgentScanItem,
   type AgentScanProgress,
   type BrowserDevice,
@@ -270,6 +274,125 @@ const moveDestination = ref('');
 // Junction by default, because that is what the agent has always done and it is the choice that
 // cannot break anything: every path pointing at the folder keeps working.
 const moveMethod = ref<AgentMoveMethod>('junction');
+
+// --- Acting on several folders at once --------------------------------------------------------
+// One approval covers the whole list, which is only safe because the code that grants it is
+// derived from every folder in it. Selecting or deselecting anything invalidates a plan already
+// prepared, so the code on screen can never belong to a set other than the one being looked at.
+
+const selectedIds = ref<string[]>([]);
+const plan = ref<AgentPlanPreview | null>(null);
+const planPhrase = ref('');
+const planProblem = ref<string | null>(null);
+const planOutcome = ref<AgentPlanOutcome | null>(null);
+const isPlanning = ref(false);
+const planDestination = ref('');
+const planAction = ref<'delete' | 'move'>('delete');
+
+const selectable = computed(() => results.value.filter((item) => item.canDelete || item.canMove));
+
+const selectedItems = computed(() =>
+  selectable.value.filter((item) => selectedIds.value.includes(item.id)));
+
+const selectedBytes = computed(() =>
+  selectedItems.value.reduce((total, item) => total + item.size, 0));
+
+const allSelected = computed(() =>
+  selectable.value.length > 0 && selectedIds.value.length === selectable.value.length);
+
+const planCodeSatisfied = computed(() =>
+  plan.value !== null
+  && planPhrase.value.trim().toUpperCase() === plan.value.confirmationPhrase.toUpperCase());
+
+/** Warnings about the plan as a whole, on top of whatever each step carries. */
+const planWarnings = computed(() => (plan.value?.warnings ?? []).map((warning) => {
+  switch (warning) {
+    case 'some_steps_refused': return copy.value.planSomeRefused;
+    case 'recycle_bin': return copy.value.planRecycleBin;
+    default: return warning;
+  }
+}));
+
+function toggleSelection(item: AgentScanItem): void {
+  discardPlan();
+  selectedIds.value = selectedIds.value.includes(item.id)
+    ? selectedIds.value.filter((id) => id !== item.id)
+    : [...selectedIds.value, item.id];
+}
+
+function toggleAll(): void {
+  discardPlan();
+  selectedIds.value = allSelected.value ? [] : selectable.value.map((item) => item.id);
+}
+
+/**
+ * Throws away a prepared plan.
+ *
+ * Called whenever the selection, the action or the destination changes. The agent would refuse a
+ * stale approval anyway — its fingerprint covers every step — but leaving a code on screen that no
+ * longer approves what is listed beside it would be a lie in the meantime.
+ */
+function discardPlan(): void {
+  plan.value = null;
+  planPhrase.value = '';
+  planProblem.value = null;
+}
+
+async function preparePlan(): Promise<void> {
+  const current = connection.value;
+  const finished = scan.value;
+  if (!current || !finished || selectedItems.value.length === 0) return;
+
+  isPlanning.value = true;
+  planProblem.value = null;
+  planOutcome.value = null;
+
+  try {
+    const asked = await previewPlan(current, finished.scanId, selectedItems.value.map((item) => ({
+      itemId: item.id,
+      action: planAction.value,
+      destinationPath: planAction.value === 'move' ? planDestination.value.trim() : null,
+      moveMethod: planAction.value === 'move' ? moveMethod.value : null,
+    })));
+
+    if ('problem' in asked) {
+      plan.value = null;
+      planProblem.value = asked.problem.message;
+      return;
+    }
+
+    plan.value = asked.preview;
+    planPhrase.value = '';
+  } finally {
+    isPlanning.value = false;
+  }
+}
+
+async function runPlan(): Promise<void> {
+  const current = connection.value;
+  const prepared = plan.value;
+  if (!current || !prepared || !planCodeSatisfied.value) return;
+
+  isPlanning.value = true;
+  planProblem.value = null;
+
+  try {
+    const outcome = await executePlan(current, prepared, planPhrase.value.trim());
+
+    if (outcome === null) {
+      planProblem.value = copy.value.planRefused;
+      return;
+    }
+
+    planOutcome.value = outcome;
+    plan.value = null;
+    planPhrase.value = '';
+    selectedIds.value = [];
+    resultsAreStale.value = true;
+  } finally {
+    isPlanning.value = false;
+  }
+}
 const actionProblem = ref<string | null>(null);
 const outcome = ref<AgentActionOutcome | null>(null);
 const isActing = ref(false);
@@ -581,6 +704,15 @@ onMounted(loadDevices);
           <table v-else>
             <thead>
               <tr>
+                <th scope="col" class="agent__pick">
+                  <input
+                    type="checkbox"
+                    :checked="allSelected"
+                    :aria-label="copy.selectAll"
+                    :disabled="selectable.length === 0"
+                    @change="toggleAll"
+                  >
+                </th>
                 <th scope="col">{{ copy.colPath }}</th>
                 <th scope="col">{{ copy.colKind }}</th>
                 <th scope="col">{{ copy.colSize }}</th>
@@ -588,7 +720,16 @@ onMounted(loadDevices);
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in results" :key="item.id">
+              <tr v-for="item in results" :key="item.id" :class="{ 'is-picked': selectedIds.includes(item.id) }">
+                <td class="agent__pick">
+                  <input
+                    v-if="item.canDelete || item.canMove"
+                    type="checkbox"
+                    :checked="selectedIds.includes(item.id)"
+                    :aria-label="item.path"
+                    @change="toggleSelection(item)"
+                  >
+                </td>
                 <td>
                   <code dir="ltr">{{ item.path }}</code>
                   <em v-if="item.isProtected">{{ copy.protectedItem }}</em>
@@ -624,6 +765,133 @@ onMounted(loadDevices);
             <strong>{{ copy.actionDoneTitle }}</strong> {{ outcomeText }}
           </p>
           <p v-if="resultsAreStale" class="agent__note">{{ copy.resultsStale }}</p>
+        </section>
+
+        <!-- Several folders at once. Still two steps: this prepares and shows exactly what would
+             happen, and nothing is touched until the code below it is typed back. -->
+        <section v-if="selectedIds.length > 0" class="agent__plan">
+          <h2>{{ fill(copy.planTitle, { count: String(selectedIds.length) }) }}</h2>
+          <p class="agent__note">{{ fill(copy.planSubtitle, { size: formatBytes(selectedBytes) }) }}</p>
+
+          <div v-if="!plan" class="agent__plan-setup">
+            <label class="agent__field">
+              <span>{{ copy.planAction }}</span>
+              <select v-model="planAction" @change="discardPlan">
+                <option value="delete">{{ copy.actDelete }}</option>
+                <option value="move">{{ copy.actMove }}</option>
+              </select>
+            </label>
+
+            <label v-if="planAction === 'move'" class="agent__field">
+              <span>{{ copy.confirmDestination }}</span>
+              <input
+                v-model="planDestination"
+                type="text"
+                dir="ltr"
+                :placeholder="copy.folderPlaceholder"
+                @change="discardPlan"
+              >
+              <small>{{ copy.confirmDestinationHint }}</small>
+            </label>
+
+            <fieldset v-if="planAction === 'move'" class="agent__field agent__method">
+              <legend>{{ copy.moveMethodLabel }}</legend>
+              <label class="agent__choice">
+                <input v-model="moveMethod" type="radio" value="junction" @change="discardPlan">
+                <span>
+                  <strong>{{ copy.moveMethodJunction }}</strong>
+                  <small>{{ copy.moveMethodJunctionHint }}</small>
+                </span>
+              </label>
+              <label class="agent__choice">
+                <input v-model="moveMethod" type="radio" value="copy" @change="discardPlan">
+                <span>
+                  <strong>{{ copy.moveMethodCopy }}</strong>
+                  <small>{{ copy.moveMethodCopyHint }}</small>
+                </span>
+              </label>
+            </fieldset>
+
+            <div class="agent__actions">
+              <button
+                type="button"
+                class="button"
+                :disabled="isPlanning || (planAction === 'move' && planDestination.trim().length === 0)"
+                @click="preparePlan"
+              >
+                {{ copy.planReview }}
+              </button>
+              <button type="button" class="button button--quiet" @click="selectedIds = []">
+                {{ copy.clearSelection }}
+              </button>
+            </div>
+          </div>
+
+          <!-- What was prepared, in full. This is the list the code below approves. -->
+          <div v-else class="agent__plan-review">
+            <ul class="agent__plan-steps">
+              <li v-for="step in plan.steps" :key="step.stepId" :class="{ 'is-refused': !step.canRun }">
+                <code dir="ltr">{{ step.sourcePath }}</code>
+                <span v-if="step.canRun">{{ formatBytes(step.measuredBytes) }}</span>
+                <em v-else>{{ step.refusedMessage }}</em>
+              </li>
+            </ul>
+
+            <p class="agent__plan-total">
+              {{ fill(copy.planTotal, {
+                count: String(plan.runnableCount),
+                size: formatBytes(plan.totalBytes),
+              }) }}
+            </p>
+
+            <ul v-if="planWarnings.length > 0" class="agent__warnings">
+              <li v-for="warning in planWarnings" :key="warning">{{ warning }}</li>
+            </ul>
+
+            <label class="agent__field">
+              <span>{{ copy.planTypeCode }}</span>
+              <code class="agent__plan-code" dir="ltr">{{ plan.confirmationPhrase }}</code>
+              <input v-model="planPhrase" type="text" dir="ltr" autocomplete="off" spellcheck="false">
+              <small>{{ copy.planCodeHint }}</small>
+            </label>
+
+            <p v-if="planProblem" class="agent__scan-problem" role="alert">{{ planProblem }}</p>
+
+            <div class="agent__actions">
+              <button
+                type="button"
+                class="button button--danger"
+                :disabled="!planCodeSatisfied || isPlanning"
+                @click="runPlan"
+              >
+                {{ copy.planRun }}
+              </button>
+              <button type="button" class="button button--quiet" @click="discardPlan">
+                {{ copy.cancel }}
+              </button>
+            </div>
+          </div>
+
+          <p v-if="planProblem && !plan" class="agent__scan-problem" role="alert">{{ planProblem }}</p>
+        </section>
+
+        <section v-if="planOutcome" class="agent__outcome" role="status">
+          <strong>{{ copy.planDoneTitle }}</strong>
+          <p>
+            {{ fill(copy.planDoneBody, {
+              done: String(planOutcome.succeededCount),
+              failed: String(planOutcome.failedCount),
+              skipped: String(planOutcome.skippedCount),
+              size: formatBytes(planOutcome.totalBytesFreed),
+            }) }}
+          </p>
+          <ul class="agent__plan-steps">
+            <li v-for="step in planOutcome.steps" :key="step.stepId" :class="{ 'is-refused': !step.succeeded }">
+              <code dir="ltr">{{ step.sourcePath }}</code>
+              <span v-if="step.succeeded">{{ formatBytes(step.bytesFreed) }}</span>
+              <em v-else>{{ step.errorMessage }}</em>
+            </li>
+          </ul>
         </section>
 
         <!-- Nothing above this point has touched the disk. This is where it can. -->
@@ -915,6 +1183,50 @@ onMounted(loadDevices);
 .agent__choice span { display: grid; gap: .2rem; }
 .agent__choice strong { color: var(--ink); font-size: .85rem; }
 .agent__choice small { color: var(--muted); font-size: .74rem; line-height: 1.6; }
+
+/* Acting on several folders at once. */
+.agent__pick { width: 2.4rem; text-align: center; }
+.agent__pick input { accent-color: var(--pine-bright); cursor: pointer; }
+tr.is-picked { background: color-mix(in srgb, var(--lime), transparent 92%); }
+
+.agent__plan {
+  display: grid;
+  gap: .9rem;
+  padding: 1.2rem;
+  border: 1px solid var(--pine-bright);
+  background: var(--surface);
+}
+.agent__plan h2 { margin: 0; color: var(--ink); font-size: 1.05rem; }
+.agent__plan-setup, .agent__plan-review { display: grid; gap: .9rem; }
+
+.agent__plan-steps { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.agent__plan-steps li {
+  display: flex;
+  gap: .8rem;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: .4rem .55rem;
+  background: var(--paper);
+  font-size: .8rem;
+}
+.agent__plan-steps code { overflow-wrap: anywhere; }
+.agent__plan-steps span { color: var(--muted); white-space: nowrap; }
+/* A folder that will be left alone, and why. Listed rather than hidden: one quietly missing from
+   the list is worse than one shown with its reason. */
+.agent__plan-steps li.is-refused { opacity: .75; }
+.agent__plan-steps em { color: var(--muted); font-size: .74rem; font-style: normal; text-align: end; }
+
+.agent__plan-total { margin: 0; color: var(--ink); font-weight: 700; }
+
+/* The code is the whole gate, so it is set apart and made easy to copy by eye. */
+.agent__plan-code {
+  justify-self: start;
+  padding: .3rem .7rem;
+  background: color-mix(in srgb, var(--lime), transparent 85%);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .32em;
+}
 
 .agent__actions { display: flex; gap: .6rem; }
 .agent__stop {

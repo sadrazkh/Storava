@@ -15,6 +15,10 @@ export function createDefaultAdvisorSettings(locale: Locale): AdvisorSettings {
     timeoutMs: 45_000,
     preferredLanguage: locale,
     includePathShape: true,
+    // Off unless asked for. It is the only setting here that sends anything per folder, and
+    // somebody who agreed to the aggregates-only version of this should not find that agreement
+    // quietly widened by an update.
+    includeItemInventory: false,
     allowUnknownFolderAnalysis: false,
     allowReportGeneration: true,
     requireZeroDataRetention: true,
@@ -85,6 +89,7 @@ export function normalizeAdvisorSettings(value: unknown, locale: Locale): Adviso
     timeoutMs: Math.round(finiteNumber(value.timeoutMs, defaults.timeoutMs, 10_000, 120_000)),
     preferredLanguage,
     includePathShape: booleanValue(value.includePathShape, defaults.includePathShape),
+    includeItemInventory: booleanValue(value.includeItemInventory, defaults.includeItemInventory),
     allowUnknownFolderAnalysis: booleanValue(value.allowUnknownFolderAnalysis, defaults.allowUnknownFolderAnalysis),
     allowReportGeneration: booleanValue(value.allowReportGeneration, defaults.allowReportGeneration),
     requireZeroDataRetention: booleanValue(value.requireZeroDataRetention, defaults.requireZeroDataRetention),

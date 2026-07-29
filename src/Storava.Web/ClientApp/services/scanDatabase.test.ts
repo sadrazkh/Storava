@@ -84,6 +84,7 @@ describe('scan IndexedDB persistence', () => {
         rationale: 'Review large items',
         confidence: 0.8,
       }],
+      itemTargets: [],
       cautions: [],
       disclaimer: 'Confirm every action.',
       privacyNote: 'Aggregates only.',

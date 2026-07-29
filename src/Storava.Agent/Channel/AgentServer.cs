@@ -121,6 +121,7 @@ public sealed class AgentServer(
         builder.Services.AddStoravaMigrations();
         builder.Services.AddSingleton<AgentScanService>();
         builder.Services.AddSingleton<AgentActionService>();
+        builder.Services.AddSingleton<AgentPlanService>();
 
         var app = builder.Build();
         // Before CORS, which answers a preflight and stops: a header added afterwards would never
@@ -295,6 +296,50 @@ public sealed class AgentServer(
             return outcome is null
                 ? Results.Json(
                     new AgentProblem("unknown_step", "That step is no longer waiting for approval."),
+                    statusCode: StatusCodes.Status404NotFound)
+                : Results.Json(outcome);
+        });
+
+        // The same two steps for several folders at once, under a single approval. Kept apart from
+        // the pair above rather than folded into them: a page that knows only how to act on one
+        // folder must keep working exactly as it did.
+
+        app.MapPost(AgentPlanPaths.Preview, async (
+            HttpContext context,
+            AgentPlanRequest request,
+            AgentPlanService plans,
+            CancellationToken cancellationToken) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var prepared = await plans.PrepareAsync(request, cancellationToken);
+            return prepared.Problem is { } problem
+                ? Results.Json(problem, statusCode: StatusCodes.Status400BadRequest)
+                : Results.Json(prepared.Preview);
+        });
+
+        app.MapPost(AgentPlanPaths.Execute, async (
+            HttpContext context,
+            AgentPlanConfirmation confirmation,
+            AgentPlanService plans,
+            CancellationToken cancellationToken) =>
+        {
+            var refusal = Authorize(context);
+            if (refusal is not null)
+                return refusal;
+
+            var outcome = await plans.ExecuteAsync(confirmation, cancellationToken);
+
+            // One reply for a plan nobody prepared, a fingerprint that no longer matches and a
+            // mistyped code. They are the same thing from here: this approval does not authorise
+            // anything, and saying which part failed would only help someone guessing at it.
+            return outcome is null
+                ? Results.Json(
+                    new AgentProblem(
+                        "not_approved",
+                        "That plan is not waiting for approval, or the code did not match what it shows."),
                     statusCode: StatusCodes.Status404NotFound)
                 : Results.Json(outcome);
         });

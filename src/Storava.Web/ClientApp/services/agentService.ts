@@ -507,3 +507,123 @@ export async function executeAction(
 
   return (await response.json()) as AgentActionOutcome;
 }
+
+// --- Acting on several folders under one approval ---------------------------------------------
+//
+// The single-folder calls ask the user to type that folder's own name. For twelve folders that
+// gate does nothing — typing one name says nothing about the other eleven — so a plan is approved
+// by a short code the agent derives from every step in it. Add a folder, change a destination,
+// switch a move between a junction and a plain one, and the code changes, which makes an approval
+// impossible to spend on a set other than the one that was read.
+
+export interface AgentPlanItemRequest {
+  itemId: string;
+  action: 'delete' | 'move';
+  destinationPath?: string | null;
+  moveMethod?: AgentMoveMethod | null;
+}
+
+export interface AgentPlanStep {
+  stepId: string;
+  itemId: string;
+  action: 'delete' | 'move' | '';
+  sourcePath: string;
+  destinationPath: string | null;
+  measuredBytes: number;
+  warnings: string[];
+  /** Set when this folder cannot be acted on. It is listed anyway, with the reason. */
+  refusedReason: string | null;
+  refusedMessage: string | null;
+  canRun: boolean;
+}
+
+export interface AgentPlanPreview {
+  planId: string;
+  steps: AgentPlanStep[];
+  totalBytes: number;
+  runnableCount: number;
+  /** The code shown on the panel, which the user types back. */
+  confirmationPhrase: string;
+  fingerprint: string;
+  warnings: string[];
+}
+
+export interface AgentPlanStepOutcome {
+  stepId: string;
+  itemId: string;
+  sourcePath: string;
+  succeeded: boolean;
+  status: string;
+  bytesFreed: number;
+  recycledPath: string | null;
+  linkPath: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+}
+
+export interface AgentPlanOutcome {
+  planId: string;
+  steps: AgentPlanStepOutcome[];
+  succeededCount: number;
+  failedCount: number;
+  skippedCount: number;
+  totalBytesFreed: number;
+}
+
+/**
+ * Asks what a whole plan would do. Every folder is measured as it is now; nothing is touched.
+ */
+export async function previewPlan(
+  connection: AgentConnection,
+  scanId: string,
+  items: AgentPlanItemRequest[],
+): Promise<{ preview: AgentPlanPreview } | { problem: AgentProblem }> {
+  const response = await agentFetch(connection, '/v1/plans/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      scanId,
+      items: items.map((item) => ({
+        itemId: item.itemId,
+        action: item.action,
+        destinationPath: item.destinationPath ?? null,
+        moveMethod: item.moveMethod ?? null,
+      })),
+    }),
+  });
+
+  if (response.ok) return { preview: (await response.json()) as AgentPlanPreview };
+
+  try {
+    return { problem: (await response.json()) as AgentProblem };
+  } catch {
+    return { problem: { reason: 'failed', message: `The agent replied ${response.status}.` } };
+  }
+}
+
+/**
+ * Spends the approval on the plan it was granted for.
+ *
+ * Returns null when the agent refuses it, which is one answer for three causes: no such plan, a
+ * fingerprint that no longer matches, and a mistyped code. The agent does not distinguish them and
+ * neither does this — telling them apart would only help somebody guessing at the code.
+ */
+export async function executePlan(
+  connection: AgentConnection,
+  preview: AgentPlanPreview,
+  typedPhrase: string,
+): Promise<AgentPlanOutcome | null> {
+  const response = await agentFetch(connection, '/v1/plans/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      planId: preview.planId,
+      fingerprint: preview.fingerprint,
+      typedPhrase,
+    }),
+  });
+
+  if (!response.ok) return null;
+
+  return (await response.json()) as AgentPlanOutcome;
+}

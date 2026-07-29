@@ -17,6 +17,7 @@ const summary: SanitizedScanSummary = {
     containsAbsolutePaths: false,
     containsRelativePaths: false,
     containsApiKeys: false,
+    containsAnonymousInventory: false,
   },
   scan: {
     status: 'completed',
@@ -39,6 +40,7 @@ const validAdvice = {
   findings: [{ title: 'Document share', evidence: 'One aggregate document entry.', risk: 'low', confidence: 0.9 }],
   priorities: [{ title: 'Review growth later', reason: 'Current pressure is low.', confidence: 0.8 }],
   reviewTargets: [],
+  itemTargets: [],
   cautions: ['Metadata cannot determine whether a file is useful.'],
   disclaimer: 'Review evidence yourself before any file action.',
   privacyNote: 'Only aggregate metadata was analyzed.',
@@ -113,5 +115,90 @@ describe('OpenRouter advisor provider', () => {
     const serialized = JSON.stringify(buildOpenRouterRequest(createDefaultAdvisorSettings('en-US'), summary));
     expect(serialized).not.toContain('sk-or-v1-private-test-key');
     expect(serialized).not.toContain('Authorization');
+  });
+});
+
+/**
+ * The advisor may now be given an anonymous inventory, so it can say something about one folder
+ * rather than about every folder matching a rule.
+ *
+ * What matters here is the boundary. The model is handed reference numbers and figures and nothing
+ * that identifies anything, and its answers come back addressed by those same references — so the
+ * only thing that can turn one back into a folder is the page that minted it.
+ */
+describe('advising on individual items', () => {
+  const withInventory = {
+    ...validAdvice,
+    itemTargets: [
+      { ref: 'f1', disposition: 'cleanup-candidate', rationale: 'Large and regenerable.', confidence: 0.8 },
+    ],
+  };
+
+  it('accepts advice addressed to an inventory reference', () => {
+    const parsed = parseAdvisorResponse(withInventory);
+
+    expect(parsed.itemTargets).toEqual([
+      { ref: 'f1', disposition: 'cleanup-candidate', rationale: 'Large and regenerable.', confidence: 0.8 },
+    ]);
+  });
+
+  /**
+   * The mapping back is the page's, and it is what keeps the reference meaningless to everyone
+   * else. A parser that quietly accepted an item id would let the model address a folder directly.
+   */
+  it('refuses an item target carrying anything beyond its four fields', () => {
+    expect(() => parseAdvisorResponse({
+      ...validAdvice,
+      itemTargets: [{
+        ref: 'f1',
+        itemId: 'real-scan-item-id',
+        disposition: 'cleanup-candidate',
+        rationale: 'Large and regenerable.',
+        confidence: 0.8,
+      }],
+    })).toThrow(/unsupported/i);
+  });
+
+  it('refuses an item target with an invalid disposition', () => {
+    expect(() => parseAdvisorResponse({
+      ...validAdvice,
+      itemTargets: [{ ref: 'f1', disposition: 'delete-now', rationale: 'No.', confidence: 0.8 }],
+    })).toThrow(/disposition/i);
+  });
+
+  it('refuses more item targets than the schema allows', () => {
+    expect(() => parseAdvisorResponse({
+      ...validAdvice,
+      itemTargets: Array.from({ length: 13 }, (_, index) => ({
+        ref: `f${index + 1}`,
+        disposition: 'investigate',
+        rationale: 'Worth a look.',
+        confidence: 0.5,
+      })),
+    })).toThrow(/item targets/i);
+  });
+
+  /** An answer with the field missing altogether is malformed, not an answer with no targets. */
+  it('refuses a response that omits item targets', () => {
+    const withoutItemTargets = { ...validAdvice };
+    delete (withoutItemTargets as Partial<typeof validAdvice>).itemTargets;
+
+    expect(() => parseAdvisorResponse(withoutItemTargets)).toThrow();
+  });
+
+  /**
+   * The model is told, in the request itself, that it has no names to work from. Without this it
+   * has every incentive to invent one — a rationale reading "your node_modules folder" would be a
+   * guess presented as knowledge.
+   */
+  it('tells the model it has no names, extensions or paths to reason from', () => {
+    const request = buildOpenRouterRequest(
+      { ...createDefaultAdvisorSettings('en-US'), includeItemInventory: true },
+      summary,
+    );
+    const system = JSON.stringify(request).toLowerCase();
+
+    expect(system).toContain('itemtargets may reference only the ref values present in inventory');
+    expect(system).toContain('never guess, invent or describe one');
   });
 });

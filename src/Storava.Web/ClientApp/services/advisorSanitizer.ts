@@ -1,4 +1,4 @@
-import type { AdvisorSettings, SanitizedScanSummary } from '@/models/advisor';
+import type { AdvisorSettings, SanitizedInventoryEntry, SanitizedScanSummary } from '@/models/advisor';
 import type { RiskLevel, ScanItem, ScanSession } from '@/models/scan';
 import { forEachSessionItem } from '@/services/scanDatabase';
 
@@ -11,7 +11,22 @@ interface BucketState {
   bytes: number;
 }
 
+/**
+ * The largest folders and files, kept while the walk streams past.
+ *
+ * Bounded on purpose. The point of the inventory is to let the advisor name something worth acting
+ * on, and the things worth acting on are the large ones — sending a hundred thousand rows would
+ * cost the user tokens to describe files nobody will ever look at.
+ */
+const inventoryLimit = 60;
+
+interface InventoryCandidate {
+  itemId: string;
+  entry: Omit<SanitizedInventoryEntry, 'ref'>;
+}
+
 interface SummaryState {
+  inventory: InventoryCandidate[];
   riskCounts: Record<RiskLevel, number>;
   ruleCounts: Map<string, number>;
   sizeDistribution: BucketState[];
@@ -35,6 +50,7 @@ function boundedInteger(value: number, maximum = Number.MAX_SAFE_INTEGER): numbe
 
 function createState(): SummaryState {
   return {
+    inventory: [],
     riskCounts: { none: 0, low: 0, medium: 0, high: 0 },
     ruleCounts: new Map<string, number>(),
     sizeDistribution: [
@@ -93,6 +109,9 @@ function addItem(state: SummaryState, item: ScanItem, settings: AdvisorSettings,
     state.ruleEvidence.set(rule, evidence);
   }
 
+  if (settings.includeItemInventory)
+    rememberForInventory(state, item, now);
+
   const depth = boundedInteger(item.depth, 10_000);
   state.maximumDepth = Math.max(state.maximumDepth, depth);
   state.depthTotal += depth;
@@ -122,6 +141,47 @@ function addItem(state: SummaryState, item: ScanItem, settings: AdvisorSettings,
   }
 }
 
+/**
+ * Keeps one anonymous row for a folder, if it is among the largest seen so far.
+ *
+ * Nothing here reads the name, the extension or the path. Everything it does record is either a
+ * classification the local rules already made or a figure the summary reports in aggregate anyway.
+ */
+function rememberForInventory(state: SummaryState, item: ScanItem, now: number): void {
+  const bytes = boundedInteger(item.size);
+  if (bytes <= 0) return;
+
+  state.inventory.push({
+    itemId: item.id,
+    entry: {
+      kind: item.kind,
+      category: item.category,
+      bytes,
+      depth: boundedInteger(item.depth, 10_000),
+      risk: item.risk,
+      rules: item.ruleIds.filter((rule) => permittedRules.has(rule)),
+      ageBucket: ageBucketFor(item.modifiedAt, now),
+    },
+  });
+
+  // Trimmed as it grows rather than at the end, so a walk of a very large drive does not hold
+  // every row it has ever seen in memory just to throw nearly all of them away.
+  if (state.inventory.length > inventoryLimit * 4) {
+    state.inventory.sort((left, right) => right.entry.bytes - left.entry.bytes);
+    state.inventory.length = inventoryLimit;
+  }
+}
+
+function ageBucketFor(modifiedAt: number | null, now: number): string {
+  if (typeof modifiedAt !== 'number' || !Number.isFinite(modifiedAt) || modifiedAt <= 0) return 'unknown';
+
+  const ageDays = Math.max(0, (now - modifiedAt) / 86_400_000);
+  if (ageDays < 30) return 'under-30-days';
+  if (ageDays < 180) return '30-to-180-days';
+  if (ageDays < 365) return '180-to-365-days';
+  return 'over-365-days';
+}
+
 function finishSummary(
   session: ScanSession,
   settings: AdvisorSettings,
@@ -147,6 +207,7 @@ function finishSummary(
       containsAbsolutePaths: false,
       containsRelativePaths: false,
       containsApiKeys: false,
+      containsAnonymousInventory: settings.includeItemInventory,
     },
     scan: {
       status: session.status,
@@ -195,7 +256,42 @@ function finishSummary(
       }))
       .sort((left, right) => right.bytes - left.bytes);
   }
+
+  if (settings.includeItemInventory) {
+    // Largest first, and only as many as the limit allows. The reference is minted here, so it is
+    // a position in this list and nothing else — it cannot be traced to anything without the
+    // mapping, which never leaves the browser.
+    summary.inventory = [...state.inventory]
+      .sort((left, right) => right.entry.bytes - left.entry.bytes)
+      .slice(0, inventoryLimit)
+      .map((candidate, index) => ({ ref: `f${index + 1}`, ...candidate.entry }));
+  }
+
   return summary;
+}
+
+/**
+ * Turns the advisor's references back into rows.
+ *
+ * Built the same way {@link finishSummary} mints them, from the same ordering, so the two cannot
+ * drift apart. Kept out of the summary itself on purpose: this is the half that must not be sent.
+ */
+function buildReferenceMap(state: SummaryState, settings: AdvisorSettings): Map<string, string> {
+  if (!settings.includeItemInventory) return new Map();
+
+  return new Map([...state.inventory]
+    .sort((left, right) => right.entry.bytes - left.entry.bytes)
+    .slice(0, inventoryLimit)
+    .map((candidate, index) => [`f${index + 1}`, candidate.itemId] as const));
+}
+
+/**
+ * What was built: the summary that will be sent, and the mapping that will not.
+ */
+export interface SanitizedPayload {
+  summary: SanitizedScanSummary;
+  /** Reference to scan item id, for turning the advisor's answer back into rows on screen. */
+  references: Map<string, string>;
 }
 
 export function createSanitizedSummaryForTest(
@@ -209,12 +305,23 @@ export function createSanitizedSummaryForTest(
   return finishSummary(session, settings, state);
 }
 
+export function createSanitizedPayloadForTest(
+  session: ScanSession,
+  settings: AdvisorSettings,
+  items: Iterable<ScanItem>,
+  now = Date.now(),
+): SanitizedPayload {
+  const state = createState();
+  for (const item of items) addItem(state, item, settings, now);
+  return { summary: finishSummary(session, settings, state), references: buildReferenceMap(state, settings) };
+}
+
 export async function buildSanitizedSummary(
   session: ScanSession,
   settings: AdvisorSettings,
   now = Date.now(),
-): Promise<SanitizedScanSummary> {
+): Promise<SanitizedPayload> {
   const state = createState();
   await forEachSessionItem(session.id, (item) => addItem(state, item, settings, now));
-  return finishSummary(session, settings, state);
+  return { summary: finishSummary(session, settings, state), references: buildReferenceMap(state, settings) };
 }

@@ -26,6 +26,15 @@ const explorerCopy = computed(() => getExplorerMessages(locale.value));
 const settings = ref(loadAdvisorSettings(locale.value));
 const apiKey = ref('');
 const payload = ref<SanitizedScanSummary | null>(null);
+
+/**
+ * Reference to scan item id for the inventory that was sent.
+ *
+ * Deliberately not part of {@link payload}: the payload is what goes over the wire and is shown in
+ * full for review, and this is the half that turns the advisor's answers back into rows. It never
+ * leaves the browser.
+ */
+const inventoryReferences = ref<Map<string, string>>(new Map());
 const payloadAccepted = ref(false);
 const previewFingerprint = ref('');
 const result = ref<AdvisorResult | null>(null);
@@ -78,10 +87,13 @@ async function preparePreview(): Promise<void> {
   payloadAccepted.value = false;
   try {
     const normalized = normalizeAdvisorSettings(settings.value, settings.value.preferredLanguage);
-    payload.value = await buildSanitizedSummary(props.session, normalized);
+    const built = await buildSanitizedSummary(props.session, normalized);
+    payload.value = built.summary;
+    inventoryReferences.value = built.references;
     previewFingerprint.value = JSON.stringify(normalized);
   } catch (previewError) {
     payload.value = null;
+    inventoryReferences.value = new Map();
     error.value = `${copy.value.previewFailed}: ${previewError instanceof Error ? previewError.message : ''}`;
   } finally {
     isPreparing.value = false;
@@ -102,8 +114,20 @@ async function requestAdvice(): Promise<void> {
   result.value = null;
   try {
     const advice = await provider.analyze(apiKey.value, settings.value, payload.value);
-    result.value = advice;
-    emit('result', advice);
+
+    // The reference numbers mean nothing outside the request that minted them, so they are turned
+    // back into rows here, while the mapping still exists. What is emitted and stored is already
+    // pointing at folders.
+    const resolved: AdvisorResult = {
+      ...advice,
+      itemTargets: advice.itemTargets
+        .map((target) => ({ ...target, itemId: inventoryReferences.value.get(target.ref) }))
+        // A reference nobody minted is dropped rather than guessed at.
+        .filter((target) => target.itemId !== undefined),
+    };
+
+    result.value = resolved;
+    emit('result', resolved);
   } catch (requestError) {
     error.value = `${copy.value.requestFailed}: ${requestError instanceof Error ? requestError.message : ''}`;
   } finally {
@@ -264,6 +288,7 @@ onBeforeUnmount(() => {
 
           <div class="advisor-toggles">
             <label><input v-model="settings.includePathShape" type="checkbox"><span><strong>{{ copy.includePathShape }}</strong><small>{{ copy.includePathShapeBody }}</small></span></label>
+            <label><input v-model="settings.includeItemInventory" type="checkbox"><span><strong>{{ copy.includeInventory }}</strong><small>{{ copy.includeInventoryBody }}</small></span></label>
             <label><input v-model="settings.allowUnknownFolderAnalysis" type="checkbox"><span><strong>{{ copy.allowUnknown }}</strong><small>{{ copy.allowUnknownBody }}</small></span></label>
             <label><input v-model="settings.allowReportGeneration" type="checkbox"><span><strong>{{ copy.allowReports }}</strong><small>{{ copy.allowReportsBody }}</small></span></label>
             <label><input v-model="settings.requireZeroDataRetention" type="checkbox"><span><strong>{{ copy.requireZdr }}</strong><small>{{ copy.requireZdrBody }}</small></span></label>
@@ -278,6 +303,12 @@ onBeforeUnmount(() => {
           </article>
           <article>
             <b>✓</b><div><strong>{{ copy.sentAfterConsent }}</strong><p>{{ copy.sentAfterConsentList }}</p></div>
+          </article>
+          <!-- Shown only while the setting is on, because it describes something that is only sent
+               then. A permanent line about data the user has switched off would be a false alarm,
+               and a missing one about data being sent would be worse. -->
+          <article v-if="settings.includeItemInventory" class="advisor-boundary__inventory">
+            <b>✓</b><div><strong>{{ copy.inventorySent }}</strong><p>{{ copy.inventorySentList }}</p></div>
           </article>
           <button class="button button--primary" type="button" :disabled="isPreparing || !session" @click="preparePreview">
             {{ isPreparing ? copy.preparing : payload ? copy.resetPreview : copy.preparePreview }}

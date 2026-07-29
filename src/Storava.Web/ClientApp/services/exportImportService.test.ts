@@ -38,6 +38,7 @@ describe('versioned scan transfer', () => {
         rationale: 'Confirm whether archives are still needed.',
         confidence: 0.8,
       }],
+      itemTargets: [],
       cautions: ['Review locally.'],
       disclaimer: 'No automatic action.',
       privacyNote: 'Aggregates only.',

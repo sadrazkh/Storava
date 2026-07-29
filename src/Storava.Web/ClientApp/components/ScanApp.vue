@@ -9,7 +9,7 @@ import { usePreferences } from '@/composables/usePreferences';
 import { getAdvisorMessages } from '@/localization/advisorMessages';
 import { getAgentMessages } from '@/localization/agentMessages';
 import { getExplorerMessages } from '@/localization/explorerMessages';
-import type { AdvisorResult, AdvisorReviewTarget } from '@/models/advisor';
+import type { AdvisorItemTarget, AdvisorResult, AdvisorReviewTarget } from '@/models/advisor';
 import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 import { detectCapabilities } from '@/services/capabilityService';
 import { deleteLocalItem, readLocalFile } from '@/services/fileActionService';
@@ -186,6 +186,30 @@ function ruleLabel(ruleId: string): string {
 
 function matchingAdvisorTarget(item: ScanItem): AdvisorReviewTarget | undefined {
   return advisorResult.value?.reviewTargets.find((target) => item.ruleIds.includes(target.signal));
+}
+
+/**
+ * What the advisor said about this folder in particular.
+ *
+ * Only ever present when the anonymous inventory was sent, which is the only way the model can
+ * address one folder rather than a class of them. Absent otherwise, and the rule-level remark
+ * below is what is shown instead.
+ */
+function matchingAdvisorItem(item: ScanItem): AdvisorItemTarget | undefined {
+  return advisorResult.value?.itemTargets.find((target) => target.itemId === item.id);
+}
+
+/**
+ * Says what the AI's remark actually covers.
+ *
+ * The advisor is sent counts and sizes per signal and nothing else — no file names, no folder
+ * names, no paths, which is what the consent screen promises. So it never saw this folder, and
+ * what it wrote is about every folder carrying the same signal. Showing its words next to one row
+ * without saying so reads as a judgement on that row, which is a claim the model was not in a
+ * position to make.
+ */
+function advisorScopeNote(target: AdvisorReviewTarget): string {
+  return explorerCopy.value.aiScope.replaceAll('{signal}', ruleLabel(target.signal));
 }
 
 function itemAddress(item: ScanItem): string {
@@ -634,7 +658,7 @@ onBeforeUnmount(() => {
                     v-for="(item, index) in visibleItems"
                     :key="item.id"
                     class="virtual-row"
-                    :class="{ 'is-ai-targeted': Boolean(matchingAdvisorTarget(item)) }"
+                    :class="{ 'is-ai-targeted': Boolean(matchingAdvisorItem(item) ?? matchingAdvisorTarget(item)) }"
                     type="button"
                     :style="{ transform: `translateY(${(visibleStart + index) * rowHeight}px)` }"
                     @click="selectedItem = item"
@@ -642,7 +666,7 @@ onBeforeUnmount(() => {
                     <span class="item-name"><i :data-kind="item.kind" /> <span><strong>{{ item.name }}</strong><small>{{ item.relativePath }}</small></span></span>
                     <span>{{ categoryLabel(item.category) }}</span><span>{{ formatBytes(item.size) }}</span><span>{{ formatDate(item.modifiedAt) }}</span>
                     <span class="row-signals">
-                      <b v-if="matchingAdvisorTarget(item)" class="recommendation-pill" data-testid="ai-recommendation-tag">{{ explorerCopy.aiTag }}</b>
+                      <b v-if="matchingAdvisorItem(item) ?? matchingAdvisorTarget(item)" class="recommendation-pill" data-testid="ai-recommendation-tag">{{ explorerCopy.aiTag }}</b>
                       <b v-else-if="item.ruleIds.length" class="recommendation-pill recommendation-pill--local">{{ explorerCopy.localTag }}</b>
                       <b v-if="item.risk !== 'none'" class="risk-pill" :data-risk="item.risk">{{ t(`risk${item.risk[0]?.toUpperCase()}${item.risk.slice(1)}` as Parameters<typeof t>[0]) }}</b>
                       <span v-else-if="!item.ruleIds.length">—</span>
@@ -703,9 +727,21 @@ onBeforeUnmount(() => {
       >
         <button type="button" :aria-label="t('closeDetails')" @click="selectedItem = null">×</button>
         <p class="kicker">{{ t('itemDetails') }}</p><h2>{{ selectedItem.name }}</h2>
-        <div v-if="matchingAdvisorTarget(selectedItem)" class="drawer-advisor-tag">
+        <!-- The AI never saw this folder. It was shown counts and sizes per signal and nothing
+             else — no names, no paths — so what it said is about every folder carrying this
+             signal, not about this one. Presenting it as a remark on the selected row would claim
+             a judgement the model was not in a position to make. -->
+        <!-- What the AI said about this folder, when it was given enough to say anything about
+             one folder at all. No scope note here: this remark really is about this row. -->
+        <div v-if="matchingAdvisorItem(selectedItem)" class="drawer-advisor-tag">
+          <strong>{{ explorerCopy.aiTag }}</strong>
+          <span>{{ matchingAdvisorItem(selectedItem)?.rationale }}</span>
+        </div>
+
+        <div v-else-if="matchingAdvisorTarget(selectedItem)" class="drawer-advisor-tag">
           <strong>{{ explorerCopy.aiTag }}</strong>
           <span>{{ matchingAdvisorTarget(selectedItem)?.rationale }}</span>
+          <small>{{ advisorScopeNote(matchingAdvisorTarget(selectedItem)!) }}</small>
         </div>
         <dl><div><dt>{{ explorerCopy.itemAddress }}</dt><dd>{{ itemAddress(selectedItem) }}<small>{{ explorerCopy.addressLimitation }}</small></dd></div><div><dt>{{ t('size') }}</dt><dd>{{ formatBytes(selectedItem.size) }}</dd></div><div><dt>{{ t('modified') }}</dt><dd>{{ formatDate(selectedItem.modifiedAt) }}</dd></div><div><dt>{{ t('category') }}</dt><dd>{{ categoryLabel(selectedItem.category) }}</dd></div></dl>
         <ul v-if="selectedItem.ruleIds.length"><li v-for="rule in selectedItem.ruleIds" :key="rule">{{ ruleLabel(rule) }}</li></ul>
@@ -898,6 +934,16 @@ onBeforeUnmount(() => {
   color: var(--muted);
   font-size: .82rem;
   line-height: 1.5;
+}
+
+/* What the remark covers. Quieter than the remark, but present: without it the AI's words read as
+   a judgement on the selected folder, which is not something it was shown enough to make. */
+.drawer-advisor-tag small {
+  padding-top: .35rem;
+  border-top: 1px solid color-mix(in srgb, var(--pine-bright), transparent 75%);
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.55;
 }
 
 .drawer-actions {
