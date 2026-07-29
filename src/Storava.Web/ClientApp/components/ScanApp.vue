@@ -5,7 +5,7 @@ import AgentPanel from '@/components/AgentPanel.vue';
 import BrandMark from '@/components/BrandMark.vue';
 import PreferenceControls from '@/components/PreferenceControls.vue';
 import TreemapCanvas from '@/components/TreemapCanvas.vue';
-import { usePreferences } from '@/composables/usePreferences';
+import { KEEP_SCAN_OPTIONS, usePreferences } from '@/composables/usePreferences';
 import { getAdvisorMessages } from '@/localization/advisorMessages';
 import { getAgentMessages } from '@/localization/agentMessages';
 import { getExplorerMessages } from '@/localization/explorerMessages';
@@ -29,7 +29,7 @@ import { downloadExport, importSession } from '@/services/exportImportService';
 import { ScannerService } from '@/services/scannerService';
 import { createOfflineReport } from '@/services/reportService';
 
-const { t, locale } = usePreferences();
+const { t, locale, keepScans, setKeepScans } = usePreferences();
 const advisorCopy = computed(() => getAdvisorMessages(locale.value));
 const agentCopy = computed(() => getAgentMessages(locale.value));
 const explorerCopy = computed(() => getExplorerMessages(locale.value));
@@ -112,8 +112,22 @@ const scanner = new ScannerService({
   onRetention: (discarded) => {
     void refreshHistory();
     compareIds.value = compareIds.value.filter((id) => !discarded.includes(id));
+    retentionNotice.value = fillText(t('retentionRemoved'), { count: String(discarded.length) });
   },
+  // Read when a scan finishes rather than when this was built, so changing the setting takes
+  // effect on the next scan without anything having to tell the scanner.
+  keepScans: () => keepScans.value,
 });
+
+/** Says what retention just did, so scans do not simply disappear from the list unannounced. */
+const retentionNotice = ref('');
+
+function fillText(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, value),
+    template,
+  );
+}
 
 const isActive = computed(() => session.value?.status === 'running' || session.value?.status === 'paused');
 const canManageSelectedItem = computed(() =>
@@ -722,6 +736,19 @@ onBeforeUnmount(() => {
             <div><p class="kicker">{{ t('localDatabase') }}</p><h1>{{ t('scanHistory') }}</h1><p>{{ t('historyBody') }}</p></div>
             <div><button class="button button--quiet" type="button" @click="importInput?.click()">{{ t('importScan') }}</button><button class="button button--danger" type="button" @click="clearData">{{ t('clearLocalData') }}</button></div>
           </header>
+
+          <!-- Old scans are discarded automatically, so the number that governs it is on the same
+               page as the list it prunes. Saying nothing would mean scans vanishing unexplained. -->
+          <section class="retention-bar">
+            <label>
+              <span>{{ t('keepScansLabel') }}</span>
+              <select :value="keepScans" @change="setKeepScans(Number(($event.target as HTMLSelectElement).value))">
+                <option v-for="option in KEEP_SCAN_OPTIONS" :key="option" :value="option">{{ option }}</option>
+              </select>
+            </label>
+            <p>{{ t('keepScansHint') }}</p>
+            <p v-if="retentionNotice" class="retention-bar__notice" role="status">{{ retentionNotice }}</p>
+          </section>
           <input ref="importInput" class="visually-hidden" type="file" accept=".storava,.storava-web,application/zip,application/x-ndjson" @change="importFile">
           <section class="history-grid">
             <article v-for="stored in sessions" :key="stored.id" class="history-card">
@@ -963,6 +990,22 @@ onBeforeUnmount(() => {
   background: transparent;
   color: var(--muted);
 }
+
+/* The number that governs automatic discarding, on the page that lists what it discards. */
+.retention-bar {
+  display: grid;
+  gap: .5rem;
+  margin-bottom: 1rem;
+  padding: .9rem 1.1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.retention-bar label { display: flex; gap: .6rem; align-items: center; }
+.retention-bar label span { color: var(--ink); font-size: .85rem; font-weight: 600; }
+.retention-bar select { padding: .25rem .5rem; }
+.retention-bar p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+.retention-bar__notice { color: var(--pine-bright); }
 
 /* Covers the page while it reads a scan back. Translucent, so what is already on screen stays
    visible underneath and the wait reads as a refresh rather than as the page being thrown away. */

@@ -112,14 +112,21 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "agent status exited $LASTEXITCODE`n$output" }
           $output
 
-      - name: Build the agent installer
-        run: dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj
+      # Both installers, on every run. The release workflow builds them too, but only from a tag —
+      # and an installer that stops building is something to hear about from the commit that broke
+      # it rather than from the release nobody can cut.
+      - name: Build the installers
+        run: |
+          dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj
+          dotnet build src/Storava.App.Installer/Storava.App.Installer.wixproj
 
       # ALLUSERS=2 reads like the careful choice and silently produces a machine-wide install on
       # an administrator's machine. The marker is only visible by reading the built package.
-      - name: Verify the installer is per-user
+      - name: Verify both installers are per-user
         shell: pwsh
-        run: ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi
+        run: |
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/Storava.msi
 
       - uses: actions/upload-artifact@v4
         with:
@@ -128,6 +135,7 @@ jobs:
             artifacts/agent/win-x64/storava-agent.exe
             artifacts/desktop/win-x64/Storava.exe
             artifacts/installers/StoravaAgent.msi
+            artifacts/installers/Storava.msi
           if-no-files-found: error
           retention-days: 14
 

@@ -2,14 +2,6 @@ import type { FolderSelection } from '@/models/capabilities';
 import type { CategoryAggregate, ScanItem, ScanMetrics, ScanSession, ScanStatus, WorkerEvent } from '@/models/scan';
 import { applyScanRetention, putDirectoryHandle, putItemsBatch, putSession } from '@/services/scanDatabase';
 
-/**
- * How many scans are kept once a new one finishes.
- *
- * Three: enough to compare a folder against how it looked last time, few enough that the browser's
- * storage stays small. The desktop edition keeps the same number for the same reason.
- */
-export const KEEP_RECENT_SCANS = 3;
-
 export interface ScanCallbacks {
   onSession(session: ScanSession): void;
   onBatch(items: ScanItem[], session: ScanSession): void;
@@ -17,6 +9,14 @@ export interface ScanCallbacks {
 
   /** Called when older scans were discarded, so the history on screen can catch up. */
   onRetention?(discardedIds: string[]): void;
+
+  /**
+   * How many scans to keep, read at the moment a scan finishes rather than when this was built.
+   *
+   * A function and not a number, so changing the setting takes effect on the next scan without
+   * anything having to remember to tell the scanner. Absent means the default.
+   */
+  keepScans?(): number;
 }
 
 export class ScannerService {
@@ -106,7 +106,7 @@ export class ScannerService {
         // by the caller: the scan is finished and saved by this point, and nothing on screen is
         // waiting for the tidying up. The scan just taken is named so it can never be the one
         // discarded, however the clock behaved.
-        .then(() => applyScanRetention(KEEP_RECENT_SCANS, completed.id))
+        .then(() => applyScanRetention(this.callbacks.keepScans?.() ?? 3, completed.id))
         .then((discarded) => {
           if (discarded.length > 0) this.callbacks.onRetention?.(discarded);
         })
