@@ -202,6 +202,21 @@ export interface ArchiveRecommendation {
   risk: string;
   estimatedBytes: number;
   ruleId?: string | null;
+  /** The shared storage-purpose vocabulary, such as "PackageCaches". */
+  category?: string;
+  technology?: string | null;
+  /**
+   * How the tool itself supports relocating this, and what to do when it does not.
+   *
+   * Facts about the technology rather than about the machine that wrote them, which is why they
+   * travel: a reader that loses them moves a folder by a mechanism the tool never documented. This
+   * edition cannot move anything, but it must not be the step that quietly drops them from an
+   * archive on its way somewhere that can.
+   */
+  officialMethod?: string;
+  fallbackMethod?: string;
+  methodHint?: string | null;
+  warning?: string | null;
   /** "RuleEngine" or "Ai", so a reader can tell a rule match from a model's suggestion. */
   source: string;
   /** What the rules permitted where it was scanned. Advice, never permission. */

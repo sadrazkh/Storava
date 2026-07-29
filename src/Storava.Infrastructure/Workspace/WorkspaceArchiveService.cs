@@ -422,6 +422,14 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
             RiskLevel = Enum.TryParse<RiskLevel>(r.Risk, ignoreCase: true, out var risk) ? risk : RiskLevel.Unknown,
             RuleId = r.RuleId,
             EstimatedSpace = r.EstimatedBytes,
+            Category = Enum.TryParse<StorageCategory>(r.Category, ignoreCase: true, out var category)
+                ? category
+                : StorageCategory.Unknown,
+            Technology = r.Technology,
+            OfficialMigrationMethod = ParseMethod(r.OfficialMethod),
+            FallbackMigrationMethod = ParseMethod(r.FallbackMethod),
+            OfficialMigrationHint = r.MethodHint,
+            Warning = r.Warning,
             CanDelete = r.CanDelete,
             CanMove = r.CanMove,
             Source = Enum.TryParse<RecommendationSource>(r.Source, ignoreCase: true, out var source)
@@ -461,6 +469,18 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
     }
 
     /// <summary>
+    /// Reads a migration method by name, defaulting to none rather than guessing.
+    /// <para>
+    /// An unrecognised name means an archive from a version that knows a mechanism this one does
+    /// not. Treating it as none is the answer that cannot do anything unexpected to a folder.
+    /// </para>
+    /// </summary>
+    private static MigrationMethod ParseMethod(string? name) =>
+        Enum.TryParse<MigrationMethod>(name, ignoreCase: true, out var method)
+            ? method
+            : MigrationMethod.None;
+
+    /// <summary>
     /// Narrows a stored recommendation to what another edition can use.
     /// <para>
     /// The score, the confidence and the migration mechanics stay behind. They describe a decision
@@ -477,6 +497,12 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
         Risk = source.RiskLevel.ToString(),
         EstimatedBytes = source.EstimatedSpace,
         RuleId = source.RuleId,
+        Category = source.Category.ToString(),
+        Technology = source.Technology,
+        OfficialMethod = source.OfficialMigrationMethod.ToString(),
+        FallbackMethod = source.FallbackMigrationMethod.ToString(),
+        MethodHint = source.OfficialMigrationHint,
+        Warning = source.Warning,
         Source = source.Source.ToString(),
         CanDelete = source.CanDelete,
         CanMove = source.CanMove

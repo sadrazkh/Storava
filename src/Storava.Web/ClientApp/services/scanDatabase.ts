@@ -416,6 +416,13 @@ export interface StoredRecommendation {
   risk: string;
   estimatedBytes: number;
   ruleId: string | null;
+  category: string;
+  technology: string | null;
+  /** Kept verbatim so an archive leaving here carries what it arrived with. */
+  officialMethod: string;
+  fallbackMethod: string;
+  methodHint: string | null;
+  warning: string | null;
   source: string;
   canDelete: boolean;
   canMove: boolean;

@@ -346,6 +346,40 @@ describe('the advice an archive carries', () => {
   });
 
   /**
+   * What decides how a folder would be moved travels through here untouched.
+   *
+   * This edition cannot move anything, which is exactly why it matters: an archive that passed
+   * through a browser and lost npm's documented setting would reach a desktop that can act on it
+   * and quietly use a different mechanism instead. Being unable to use a fact is no reason to be
+   * the step that drops it.
+   */
+  it('carries the migration facts in and back out again', async () => {
+    const imported = await importArchive(await desktopArchive());
+    const advice = await getRecommendations(imported.id);
+
+    const first = advice[0]!;
+    expect(first.officialMethod).toBe('OfficialSetting');
+    expect(first.methodHint).toBeTruthy();
+    expect(first.warning).toBeTruthy();
+    expect(first.category).toBe('PackageCaches');
+    expect(first.technology).toBe('npm');
+
+    const { blob } = await exportArchive(imported.id);
+    const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+    const written = JSON.parse(strFromU8(files[ARCHIVE_ENTRIES.recommendations]!)) as Array<{
+      officialMethod: string;
+      methodHint: string;
+      warning: string;
+      technology: string;
+    }>;
+
+    expect(written[0]!.officialMethod).toBe(first.officialMethod);
+    expect(written[0]!.methodHint).toBe(first.methodHint);
+    expect(written[0]!.warning).toBe(first.warning);
+    expect(written[0]!.technology).toBe(first.technology);
+  });
+
+  /**
    * A browser-native scan has no advice of its own to carry, and the entry has to stay well-formed
    * rather than absent — the other editions read it unconditionally.
    */

@@ -5,6 +5,7 @@ using Storava.Application.Abstractions;
 using Storava.Application.Scanning;
 using Storava.Application.Services;
 using Storava.Contracts.Workspace;
+using Storava.Domain.Entities;
 using Storava.Domain.Enums;
 using Storava.Rules;
 
@@ -139,6 +140,59 @@ public sealed class WorkspaceArchiveTests : IDisposable
 
             Assert.NotEmpty(stored);
             Assert.All(stored, r => Assert.Equal(SuggestedAction.NoAction, r.SuggestedAction));
+        }
+    }
+
+    /// <summary>
+    /// An archive keeps what decides how a folder is moved.
+    /// <para>
+    /// The migration methods are facts about the technology, not about the machine that wrote them:
+    /// npm's cache honours a path setting wherever that folder is read. Narrowing them out of the
+    /// shared shape made a plan built from an imported archive fall back to a different mechanism
+    /// than the catalog documented — quietly, on the very desktop that produced the archive.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task Recommendations_KeepWhatDecidesHowAFolderIsMoved()
+    {
+        using var tree = new TestTree();
+        string path = ArchivePath();
+
+        Recommendation original;
+
+        using (var host = new TestHost(withRules: true))
+        {
+            var scan = await ScanAndAnalyzeAsync(host, tree);
+            var stored = await host.Get<IRecommendationRepository>().GetBySessionAsync(scan.SessionId);
+
+            // Something the catalog has an opinion about beyond "this can go".
+            original = Assert.Single(stored, r => r.OfficialMigrationMethod != MigrationMethod.None
+                || r.FallbackMigrationMethod != MigrationMethod.None
+                || r.Category != StorageCategory.Unknown);
+
+            await host.Get<IWorkspaceArchiveService>().ExportAsync(scan.SessionId, path, "en-US");
+        }
+
+        using (var host = new TestHost(withRules: true))
+        {
+            var import = await host.Get<IWorkspaceArchiveService>().ImportAsync(path);
+            var imported = await host.Get<IRecommendationRepository>()
+                .GetBySessionAsync(import.Value.SessionId);
+
+            var same = Assert.Single(imported, r => r.RuleId == original.RuleId);
+
+            Assert.Equal(original.OfficialMigrationMethod, same.OfficialMigrationMethod);
+            Assert.Equal(original.FallbackMigrationMethod, same.FallbackMigrationMethod);
+            Assert.Equal(original.OfficialMigrationHint, same.OfficialMigrationHint);
+            Assert.Equal(original.Category, same.Category);
+            Assert.Equal(original.Technology, same.Technology);
+            Assert.Equal(original.Warning, same.Warning);
+
+            // And the plan built from it reaches the same conclusion, which is the point of all of
+            // the above: the fields exist so that this decision comes out the same way.
+            Assert.Equal(
+                PlanCandidate.FromRecommendation(original).OfficialMigrationMethod,
+                PlanCandidate.FromRecommendation(same).OfficialMigrationMethod);
         }
     }
 

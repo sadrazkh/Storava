@@ -161,10 +161,16 @@ public static class ArchiveItemKinds
 /// vanished on the way to a browser and never came back.
 /// </para>
 /// <para>
-/// Deliberately narrower than the desktop's own record. What travels is what another edition can
-/// act on: why this item was raised, how large it is, and what the rules where it was scanned
-/// permitted. The score, the confidence and the migration mechanics stay behind, because they
-/// describe a decision made on a machine that is not the one reading this.
+/// Narrower than the desktop's own record, but only where narrowing is safe. The score and the
+/// confidence stay behind: they rank one machine's advice against itself and mean nothing to a
+/// reader applying its own catalog.
+/// </para>
+/// <para>
+/// The migration fields travel, and it took a regression to notice they had to. They are facts
+/// about the technology — npm's cache honours a path setting, and that is true wherever the folder
+/// is read — not judgements about the machine that wrote them. Dropping them made a plan built from
+/// an imported archive fall back to a different way of moving a folder than the one the catalog
+/// documented, silently, on the desktop that produced it in the first place.
 /// </para>
 /// </summary>
 public sealed class ArchiveRecommendation
@@ -203,6 +209,37 @@ public sealed class ArchiveRecommendation
 
     [JsonPropertyName("ruleId")]
     public string? RuleId { get; set; }
+
+    /// <summary>The shared storage-purpose vocabulary, such as "PackageCaches".</summary>
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = "Unknown";
+
+    /// <summary>What produced it, when the catalog recognised a tool. Shown, never acted on.</summary>
+    [JsonPropertyName("technology")]
+    public string? Technology { get; set; }
+
+    /// <summary>
+    /// How the tool itself supports relocating this, if it does — "None", "Junction",
+    /// "SymbolicLink" or whatever the catalog recorded.
+    /// <para>
+    /// A property of the technology rather than of the machine, which is why it travels: losing it
+    /// makes a move fall back to a mechanism the tool never documented.
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("officialMethod")]
+    public string OfficialMethod { get; set; } = "None";
+
+    /// <summary>What to do when the tool offers nothing of its own.</summary>
+    [JsonPropertyName("fallbackMethod")]
+    public string FallbackMethod { get; set; } = "None";
+
+    /// <summary>How the official method is actually configured, in the tool's own terms.</summary>
+    [JsonPropertyName("methodHint")]
+    public string? MethodHint { get; set; }
+
+    /// <summary>Anything the catalog wants read before this is acted on.</summary>
+    [JsonPropertyName("warning")]
+    public string? Warning { get; set; }
 
     /// <summary>
     /// "RuleEngine" or "Ai", so a reader can tell a deterministic match from a model's suggestion.
