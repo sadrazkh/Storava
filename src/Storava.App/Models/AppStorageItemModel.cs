@@ -32,7 +32,7 @@ public sealed class AppStorageItemModel
             ? (entry.Exists ? string.Empty : localization["Str.Settings.Storage.Item.Empty"])
             : localization[$"Str.Settings.Storage.Item.{entry.Kind}.Kept"];
 
-        HasWhyNot = WhyNotClearable.Length > 0 && !WhyNotClearable.StartsWith("Str.", StringComparison.Ordinal);
+        HasWhyNot = WhyNotClearable.Length > 0;
     }
 
     public AppStorageKind Kind { get; }

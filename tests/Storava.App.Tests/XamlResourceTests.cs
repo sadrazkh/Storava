@@ -79,6 +79,41 @@ public class XamlResourceTests
         Assert.True(missing.Count == 0, $"Undefined string keys: {string.Join(", ", missing.Distinct(StringComparer.Ordinal))}");
     }
 
+    /// <summary>
+    /// The same check for the keys asked for in code. A view model that builds a message reaches the
+    /// dictionary through the indexer, which answers a missing key with the key itself — so a typo
+    /// there is not an exception but a dialog whose title reads
+    /// "Str.Settings.Storage.ClearScans.Title".
+    /// <para>
+    /// Only literal keys, which is all a regex can see. Keys composed at runtime are covered by
+    /// <c>LocalizationResourceTests.Dictionary_NamesEveryStorageStore</c>.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void EveryLocalizedResourceKeyUsedInCodeExists()
+    {
+        var defined = LocalizationKeys();
+        var reference = new Regex(@"""(?<key>Str\.[A-Za-z0-9_.]+)""", RegexOptions.Compiled);
+
+        var missing = new List<string>();
+
+        foreach (string file in Directory.EnumerateFiles(AppDirectory(), "*.cs", SearchOption.AllDirectories))
+        {
+            // Generated sources under obj mirror what is already checked above.
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                continue;
+
+            foreach (Match match in reference.Matches(File.ReadAllText(file)))
+            {
+                string key = match.Groups["key"].Value;
+                if (!defined.Contains(key))
+                    missing.Add($"{Path.GetFileName(file)}: {key}");
+            }
+        }
+
+        Assert.True(missing.Count == 0, $"Undefined string keys: {string.Join(", ", missing.Distinct(StringComparer.Ordinal))}");
+    }
+
     private static HashSet<string> LocalizationKeys()
     {
         string path = Path.Combine(AppDirectory(), "Resources", "Localization", "Strings.en.xaml");

@@ -62,7 +62,12 @@ public sealed class AppStorageReport : IAppStorageReport
         {
             AppStorageKind.Scans => await ClearScansAsync(cancellationToken).ConfigureAwait(false),
             AppStorageKind.Logs => ClearLogs(),
-            _ => AppStorageClearResult.Nothing
+
+            // Unreachable while the check above holds, and deliberately loud rather than a quiet
+            // "nothing happened". An arm returning Nothing here would make that check dead code —
+            // which it was — and would let a future store marked clearable ship with no
+            // implementation, its button silently doing nothing.
+            _ => throw new NotSupportedException($"{kind} is marked clearable but has no implementation.")
         };
     }
 

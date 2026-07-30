@@ -1,5 +1,6 @@
 using System.IO;
 using System.Xml.Linq;
+using Storava.Application.Abstractions;
 
 namespace Storava.App.Tests;
 
@@ -67,5 +68,39 @@ public class LocalizationResourceTests
     {
         // The localization service identifies the active dictionary by this key.
         Assert.Contains("App.FontFamily", KeysOf(file));
+    }
+
+    /// <summary>
+    /// The storage rows build their keys from the enum name, so adding a store to the enum without a
+    /// string leaves a row reading "Str.Settings.Storage.Item.Whatever" in the window. Composed keys
+    /// cannot be found by searching the dictionaries, so they are checked here instead.
+    /// </summary>
+    [Theory]
+    [InlineData("Strings.en.xaml")]
+    [InlineData("Strings.fa.xaml")]
+    public void Dictionary_NamesEveryStorageStore(string file)
+    {
+        var keys = KeysOf(file).ToHashSet(StringComparer.Ordinal);
+        var missing = new List<string>();
+
+        foreach (var kind in Enum.GetNames<AppStorageKind>())
+        {
+            foreach (var suffix in new[] { "", ".Body" })
+            {
+                string key = $"Str.Settings.Storage.Item.{kind}{suffix}";
+                if (!keys.Contains(key))
+                    missing.Add(key);
+            }
+        }
+
+        // Only the stores this application refuses to empty carry a reason.
+        foreach (var kind in new[] { AppStorageKind.Secrets, AppStorageKind.Agent, AppStorageKind.AccountServer })
+        {
+            string key = $"Str.Settings.Storage.Item.{kind}.Kept";
+            if (!keys.Contains(key))
+                missing.Add(key);
+        }
+
+        Assert.True(missing.Count == 0, $"{file} is missing: {string.Join(", ", missing)}");
     }
 }

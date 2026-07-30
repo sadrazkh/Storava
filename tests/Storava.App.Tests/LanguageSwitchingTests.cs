@@ -150,6 +150,8 @@ public class LanguageSwitchingTests
             localization ?? new RecordingLocalization(),
             new NoSecrets(),
             new NoMaintenance(),
+            new NoAppStorage(),
+            new NoDialogs(),
             NullLogger<SettingsViewModel>.Instance);
 
     private sealed class InMemorySettings : ISettingsService
@@ -221,6 +223,24 @@ public class LanguageSwitchingTests
         public long SizeOnDisk() => 0;
 
         public Task<long> CompactAsync(CancellationToken cancellationToken = default) => Task.FromResult(0L);
+    }
+
+    /// <summary>Nothing on disk to describe; this suite is about the appearance controls.</summary>
+    private sealed class NoAppStorage : IAppStorageReport
+    {
+        public IReadOnlyList<AppStorageEntry> Describe() => [];
+
+        public Task<AppStorageClearResult> ClearAsync(
+            AppStorageKind kind, CancellationToken cancellationToken = default) =>
+            Task.FromResult(AppStorageClearResult.Nothing);
+    }
+
+    private sealed class NoDialogs : IDialogService
+    {
+        public Task ShowInfoAsync(string title, string message) => Task.CompletedTask;
+
+        public Task<bool> ConfirmAsync(string title, string message, string confirmText, string cancelText) =>
+            Task.FromResult(false);
     }
 
     private sealed class NoSecrets : ISecretStore

@@ -26,6 +26,8 @@ import {
   putAdvisorResult,
   queryItems,
 } from '@/services/scanDatabase';
+import type { WebStorageKind, WebStorageReport } from '@/services/webStorageReport';
+import { clearWebStorage, describeWebStorage } from '@/services/webStorageReport';
 import { exportArchive, importArchive } from '@/services/archiveService';
 import { downloadExport, importSession } from '@/services/exportImportService';
 import { ScannerService } from '@/services/scannerService';
@@ -196,6 +198,61 @@ const scanner = new ScannerService({
 /** Says what retention just did, so scans do not simply disappear from the list unannounced. */
 const retentionNotice = ref('');
 
+// What this edition is using in the browser. The desktop shows the same list; here the sizes cannot
+// be broken down per store, so each row carries a record count and the browser's own total sits
+// beneath them.
+const storageTitleKeys = {
+  scans: 'storageItemScans',
+  advice: 'storageItemAdvice',
+  settings: 'storageItemSettings',
+  apiKey: 'storageItemApiKey',
+} as const;
+
+const storageBodyKeys = {
+  scans: 'storageItemScansBody',
+  advice: 'storageItemAdviceBody',
+  settings: 'storageItemSettingsBody',
+  apiKey: 'storageItemApiKeyBody',
+} as const;
+
+const storageConfirmKeys = {
+  scans: 'confirmClearScans',
+  advice: 'confirmClearAdvice',
+  settings: 'confirmClearSettings',
+} as const;
+
+const storageReport = ref<WebStorageReport | null>(null);
+const storageBusy = ref(false);
+const storageNotice = ref('');
+
+const storageRows = computed(() =>
+  (storageReport.value?.entries ?? []).map((entry) => ({
+    kind: entry.kind,
+    title: t(storageTitleKeys[entry.kind]),
+    body: t(storageBodyKeys[entry.kind]),
+    count: fillText(t('storageRecords'), { count: formatCount(entry.records) }),
+    // Nothing there yet is not the same as a store this edition refuses to empty, and the row says
+    // which it is rather than showing a disabled control with no explanation.
+    canClear: entry.canClear && entry.records > 0,
+    whyNot: entry.canClear
+      ? (entry.records > 0 ? '' : t('storageEmpty'))
+      : t('storageItemApiKeyKept'),
+  })),
+);
+
+/** What the origin holds altogether, or that the browser declined to say. */
+const storageTotalText = computed(() => {
+  const used = storageReport.value?.usedBytes;
+  if (used === undefined) return t('storageUnknown');
+
+  const quota = storageReport.value?.quotaBytes;
+  const sentence = `${t('storageUsed')} ${formatBytes(used)}`;
+
+  return quota === undefined
+    ? sentence
+    : `${sentence} ${fillText(t('storageQuota'), { quota: formatBytes(quota) })}`;
+});
+
 function fillText(template: string, values: Record<string, string>): string {
   return Object.entries(values).reduce(
     (text, [name, value]) => text.replaceAll(`{${name}}`, value),
@@ -238,11 +295,52 @@ watch(filters, () => {
   filterTimer = window.setTimeout(() => void loadItems(), 180);
 }, { deep: true });
 
+// Counted when the panel is opened rather than on load. It is a count over every store, and the
+// first paint should not wait for it to answer a question nobody has asked yet.
+watch(activeView, (view) => {
+  if (view === 'history' && !storageReport.value) void refreshStorageReport();
+});
+
 watch(() => filters.value.recommendation, (recommendation) => {
   if (recommendation === 'ai-targeted' && filters.value.aiRuleIds.length === 0) {
     filters.value.aiRuleIds = advisorResult.value?.reviewTargets.map((target) => target.signal) ?? [];
   }
 });
+
+async function refreshStorageReport(): Promise<void> {
+  storageReport.value = await describeWebStorage();
+}
+
+async function clearStorage(kind: WebStorageKind): Promise<void> {
+  // Every store here is asked about. Unlike a log file, all of it is something the user asked this
+  // edition to keep, and re-obtaining any of it costs either a scan or a paid request.
+  const confirmKey = storageConfirmKeys[kind as keyof typeof storageConfirmKeys];
+  if (!confirmKey || !confirm(t(confirmKey))) return;
+
+  storageBusy.value = true;
+  storageNotice.value = '';
+
+  try {
+    const result = await clearWebStorage(kind);
+    storageNotice.value = fillText(t('storageCleared'), { count: formatCount(result.records) });
+
+    // Scans and advice are on screen as well as in storage; leaving them displayed after emptying
+    // the store they came from would be showing data that no longer exists.
+    if (kind === 'scans') {
+      session.value = null;
+      advisorResult.value = null;
+      sessions.value = [];
+      items.value = [];
+    } else if (kind === 'advice') {
+      advisorResult.value = null;
+    }
+  } catch {
+    storageNotice.value = t('storageClearFailed');
+  } finally {
+    storageBusy.value = false;
+    await refreshStorageReport();
+  }
+}
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes === 0) return '0 B';
@@ -574,6 +672,7 @@ async function absorbAgentArchive(file: File): Promise<void> {
 async function removeSession(id: string): Promise<void> {
   if (!confirm(t('confirmDelete'))) return;
   await deleteSession(id);
+  await refreshStorageReport();
   if (session.value?.id === id) {
     session.value = null;
     advisorResult.value = null;
@@ -589,6 +688,7 @@ async function clearData(): Promise<void> {
   advisorResult.value = null;
   sessions.value = [];
   items.value = [];
+  await refreshStorageReport();
 }
 
 function toggleCompare(id: string): void {
@@ -895,6 +995,41 @@ onBeforeUnmount(() => {
             </label>
             <p>{{ t('keepScansHint') }}</p>
             <p v-if="retentionNotice" class="retention-bar__notice" role="status">{{ retentionNotice }}</p>
+          </section>
+
+          <!-- What this edition occupies. The one program whose subject is storage should be able to
+               answer the question about itself, and in a browser there is no folder to go and look
+               in. -->
+          <section class="storage-panel">
+            <h2>{{ t('storageTitle') }}</h2>
+            <p class="storage-panel__hint">{{ t('storageHint') }}</p>
+
+            <ul class="storage-list">
+              <li v-for="row in storageRows" :key="row.kind" class="storage-row">
+                <div class="storage-row__text">
+                  <strong>{{ row.title }}</strong>
+                  <p>{{ row.body }}</p>
+                  <p v-if="row.whyNot" class="storage-row__why">{{ row.whyNot }}</p>
+                </div>
+                <span class="storage-row__count">{{ row.count }}</span>
+                <button
+                  v-if="row.canClear"
+                  class="button button--danger"
+                  type="button"
+                  :disabled="storageBusy"
+                  @click="clearStorage(row.kind)"
+                >
+                  {{ t('storageClear') }}
+                </button>
+              </li>
+            </ul>
+
+            <!-- One string rather than pieces around a <strong>: the compiler drops whitespace
+                 between elements that sits on its own line, which ran the number straight into the
+                 next word. A sentence assembled in script cannot lose its spaces. -->
+            <p class="storage-panel__total">{{ storageTotalText }}</p>
+
+            <p v-if="storageNotice" class="storage-panel__notice" role="status">{{ storageNotice }}</p>
           </section>
           <input ref="importInput" class="visually-hidden" type="file" accept=".storava,.storava-web,application/zip,application/x-ndjson" @change="importFile">
           <section class="history-grid">
@@ -1212,6 +1347,46 @@ onBeforeUnmount(() => {
 .retention-bar select { padding: .25rem .5rem; }
 .retention-bar p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
 .retention-bar__notice { color: var(--pine-bright); }
+
+/* What this edition occupies, beside the list it is mostly made of. */
+.storage-panel {
+  display: grid;
+  gap: .6rem;
+  margin-bottom: 1rem;
+  padding: .9rem 1.1rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.storage-panel h2 { margin: 0; color: var(--ink); font-size: .95rem; }
+.storage-panel p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.6; }
+.storage-panel__total { color: var(--ink); font-size: .82rem; }
+.storage-panel__notice { color: var(--pine-bright); }
+
+.storage-list { display: grid; gap: .75rem; margin: .2rem 0 0; padding: 0; list-style: none; }
+
+.storage-row {
+  display: grid;
+  /* Text takes the room; the count and the button keep their own width so the rows line up. */
+  grid-template-columns: 1fr auto auto;
+  gap: .75rem;
+  align-items: start;
+  padding-top: .75rem;
+  border-top: 1px solid var(--line);
+}
+
+.storage-list > .storage-row:first-child { padding-top: 0; border-top: 0; }
+
+.storage-row__text { display: grid; gap: .2rem; }
+.storage-row__text strong { color: var(--ink); font-size: .85rem; }
+.storage-row__why { font-style: italic; }
+.storage-row__count { color: var(--ink); font-size: .82rem; font-weight: 600; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  /* The button under the text rather than squeezed beside it. */
+  .storage-row { grid-template-columns: 1fr auto; }
+  .storage-row button { grid-column: 1 / -1; justify-self: start; }
+}
 
 /* Covers the page while it reads a scan back. Translucent, so what is already on screen stays
    visible underneath and the wait reads as a refresh rather than as the page being thrown away. */
