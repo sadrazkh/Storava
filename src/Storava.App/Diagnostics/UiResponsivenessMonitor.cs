@@ -61,6 +61,12 @@ public sealed class UiResponsivenessMonitor : IDisposable
 
         // Background priority, so this is served only once the thread has nothing real left to do.
         // That is the point: the round trip measures how long real work kept the interface busy.
+        //
+        // Posting from a timer thread while the window is closing is safe, and it was worth
+        // checking rather than assuming: a dispatcher that has finished shutting down returns an
+        // aborted operation from BeginInvoke instead of throwing. Only the blocking Invoke throws,
+        // and this deliberately does not block. An aborted probe simply never reports, which is the
+        // right outcome for a measurement nobody will read.
         _dispatcher.BeginInvoke(DispatcherPriority.Background, Completed);
     }
 
@@ -97,6 +103,12 @@ public sealed class UiResponsivenessMonitor : IDisposable
             _disposed = true;
         }
 
-        _timer.Dispose();
+        // Waits for a tick already in flight rather than only stopping future ones, so that no
+        // callback of this object is still running once Dispose has returned. Nothing dramatic
+        // happens without it — the post is safe either way — but an object that can still be
+        // executing after it has been disposed is a thing to have to reason about later.
+        using var drained = new ManualResetEvent(false);
+        if (_timer.Dispose(drained))
+            drained.WaitOne(TimeSpan.FromSeconds(2));
     }
 }
