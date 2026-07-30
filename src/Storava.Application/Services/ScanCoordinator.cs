@@ -235,15 +235,20 @@ public sealed class ScanCoordinator
     /// Discards the scans that fell outside the keep count, now that a newer one exists.
     /// <para>
     /// Started rather than awaited, on purpose. Measured on a database of realistic size, removing
-    /// one old scan takes about seven seconds and compacting the file about ten; a scan that had
-    /// to wait for that would report itself finished and then sit there, which is the behaviour
-    /// this release is trying to get rid of. Nothing the user is waiting for depends on it.
+    /// one old scan takes about seven seconds: a scan that had to wait for that would report itself
+    /// finished and then sit there, which is the behaviour this release is trying to get rid of.
+    /// Nothing the user is waiting for depends on it.
+    /// </para>
+    /// <para>
+    /// Deleting is all this does. Compacting the file — which takes an exclusive lock and holds up
+    /// every query for its whole duration — is a button on the Settings page, precisely so that it
+    /// never lands on somebody the instant a scan finishes.
     /// </para>
     /// <para>
     /// Uncancellable and unable to throw, for the same reason: the scan is already saved, and
     /// housekeeping afterwards must not be able to turn a finished scan into a failure. An
-    /// interrupted pass is safe to leave — each scan is removed in its own statement, and SQLite's
-    /// compaction is a transaction that either lands or does not.
+    /// interrupted pass is safe to leave — each scan is removed in its own statement, so stopping
+    /// part-way leaves fewer scans discarded and nothing half-discarded.
     /// </para>
     /// </summary>
     private void StartRetention(string justFinishedSessionId)

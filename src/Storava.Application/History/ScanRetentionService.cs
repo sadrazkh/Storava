@@ -52,7 +52,7 @@ public sealed class ScanRetentionService
     /// A scan that must survive whatever its age — the one being viewed or just finished. Deleting
     /// the session a page is reading would empty that page underneath the user.
     /// </param>
-    /// <returns>What was removed, and how much of the disk that gave back.</returns>
+    /// <returns>Which scans were discarded, so a caller can say so rather than guess.</returns>
     public async Task<RetentionResult> ApplyAsync(
         int keep,
         string? protectedSessionId = null,

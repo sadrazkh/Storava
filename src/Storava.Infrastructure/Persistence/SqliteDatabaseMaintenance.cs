@@ -16,7 +16,25 @@ public sealed class SqliteDatabaseMaintenance : IDatabaseMaintenance
         _logger = logger;
     }
 
-    public async Task<long> CompactAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Runs on a pool thread rather than the caller's.
+    /// <para>
+    /// Necessary and not decorative. This provider's asynchronous methods are synchronous
+    /// underneath — SQLite has no async file I/O, so awaiting them never yields — which means
+    /// awaiting this from a button handler would rewrite the whole database on the UI thread and
+    /// freeze the window for every second of it. That is the trap the repositories were moved behind
+    /// <see cref="DatabaseGateway"/> to avoid, and it caught this class too: harmless while only a
+    /// background pass called it, a hard freeze the moment it became something a person clicks.
+    /// </para>
+    /// <para>
+    /// It does not go through the gateway because VACUUM has to be the only thing holding the file:
+    /// the pools are cleared first, and then this opens the one connection that does the work.
+    /// </para>
+    /// </summary>
+    public Task<long> CompactAsync(CancellationToken cancellationToken = default) =>
+        Task.Run(() => CompactCoreAsync(cancellationToken), cancellationToken);
+
+    private async Task<long> CompactCoreAsync(CancellationToken cancellationToken)
     {
         var before = SizeOnDisk();
 

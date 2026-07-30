@@ -1,3 +1,4 @@
+using System.Threading;
 using Storava.Application.Abstractions;
 using Storava.Infrastructure.Persistence;
 
@@ -77,6 +78,46 @@ public class DatabaseGatewayTests : IDisposable
         thread.Join();
 
         Assert.DoesNotContain(callerThread, pool);
+    }
+
+    /// <summary>
+    /// Compacting has to leave the caller's thread too.
+    /// <para>
+    /// It does not go through the gateway — VACUUM has to be the only thing holding the file — which
+    /// means it has to remember on its own, and it did not. That was invisible while only a
+    /// background pass called it. The moment it became a button on the Settings page it became a
+    /// whole-file rewrite on the UI thread: a window frozen for as long as the rewrite takes, which
+    /// on a database of the size this exists for is around half a minute.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void CompactingLeavesTheCallingThread()
+    {
+        var maintenance = _host.Get<IDatabaseMaintenance>();
+
+        int callerThread = 0;
+        int workThread = 0;
+
+        // A dedicated thread, which is never a pool thread, so "it moved" is a real observation
+        // rather than a coincidence of which pool thread got picked.
+        var thread = new Thread(() =>
+        {
+            callerThread = Environment.CurrentManagedThreadId;
+
+            maintenance.CompactAsync()
+                .ContinueWith(
+                    _ => workThread = Environment.CurrentManagedThreadId,
+                    TaskContinuationOptions.ExecuteSynchronously)
+                .GetAwaiter()
+                .GetResult();
+        });
+
+        thread.Start();
+        thread.Join();
+
+        Assert.NotEqual(0, callerThread);
+        Assert.NotEqual(0, workThread);
+        Assert.NotEqual(callerThread, workThread);
     }
 
     /// <summary>The connection only exists inside the callback, which is what makes it unforgettable.</summary>

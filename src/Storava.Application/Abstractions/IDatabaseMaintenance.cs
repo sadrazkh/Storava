@@ -1,11 +1,13 @@
 namespace Storava.Application.Abstractions;
 
 /// <summary>
-/// Reclaims the disk space that deleted rows leave behind.
+/// Gives the disk space that deleted rows leave behind back to the operating system.
 /// <para>
-/// SQLite does not shrink its file when rows go: the pages are marked free and reused later. For
-/// most data that is exactly right. For scan items it is not — a discarded scan of a whole drive is
-/// gigabytes, and leaving the file that size would mean retention freed nothing the user can see.
+/// SQLite does not shrink its file when rows go: the pages are marked free and reused later. That
+/// means the file stops growing on its own, which is most of what matters — a discarded scan of a
+/// whole drive is gigabytes, and the next scan writes into the room it left rather than extending
+/// the file. Handing that room back is a separate, expensive thing, and the timing of it belongs to
+/// whoever is sitting in front of the application.
 /// </para>
 /// </summary>
 public interface IDatabaseMaintenance
