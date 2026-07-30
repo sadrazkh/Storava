@@ -66,6 +66,18 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
 
     // --- Export ------------------------------------------------------------------
 
+    // Deliberately not handed to a pool thread, and it took two measurements to be sure.
+    //
+    // The reason to move it looked obvious: SQLite's asynchronous methods are synchronous
+    // underneath, so a long method full of them ought to run on whoever called it — and the History
+    // page calls this straight from a button. Measured, running inline held the calling thread for
+    // three milliseconds of a hundred-and-twenty-millisecond export. The stream writes near the top
+    // yield, and everything heavy already happens after that.
+    //
+    // Wrapping it in Task.Run bought those three milliseconds and broke something real:
+    // Progress<T> delivers its callbacks asynchronously, so with the body on a pool thread the last
+    // stage reports were still queued when the returned task completed. A page would show the work
+    // finished and then receive an update saying it was still going.
     public async Task<Result<StoravaArchiveManifest>> ExportAsync(
         string sessionId,
         string filePath,
@@ -258,6 +270,7 @@ public sealed class WorkspaceArchiveService : IWorkspaceArchiveService
 
     // --- Import ------------------------------------------------------------------
 
+    /// <summary>Reads an archive back in. See <see cref="ExportAsync"/> on why this stays inline.</summary>
     public async Task<Result<ArchiveImportResult>> ImportAsync(
         string filePath,
         IProgress<ArchiveProgress>? progress = null,
