@@ -87,6 +87,78 @@
                                    Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap"
                                    Margin="0,8,0,0" Opacity="0.85" />
 
+                        <!-- What the application has put on this machine. A program whose whole
+                             subject is disk usage should be able to answer the question about
+                             itself, rather than making somebody go and find the folder. -->
+                        <Separator Margin="0,16,0,12" />
+
+                        <TextBlock Text="{DynamicResource Str.Settings.Storage.Breakdown}"
+                                   Style="{StaticResource Storava.Text.Body}" FontWeight="SemiBold" />
+                        <TextBlock Text="{DynamicResource Str.Settings.Storage.BreakdownHint}"
+                                   Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap"
+                                   Margin="0,4,0,10" Opacity="0.85" />
+
+                        <ItemsControl ItemsSource="{Binding AppStorage}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold"
+                                                       Style="{StaticResource Storava.Text.Body}" />
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"
+                                                       Style="{StaticResource Storava.Text.Caption}"
+                                                       Margin="0,2,0,0" Opacity="0.85" />
+                                            <!-- Where it is, so it can be checked without taking
+                                                 this page's word for it. -->
+                                            <TextBlock Text="{Binding Location}" Margin="0,2,0,0"
+                                                       Style="{StaticResource Storava.Text.Caption}"
+                                                       Opacity="0.6" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding Location}" />
+                                            <!-- A disabled button with nothing beside it reads as
+                                                 a broken button, so the reason travels with it. -->
+                                            <TextBlock Text="{Binding WhyNotClearable}" Margin="0,4,0,0"
+                                                       Style="{StaticResource Storava.Text.Caption}"
+                                                       TextWrapping="Wrap" FontStyle="Italic" Opacity="0.75"
+                                                       Visibility="{Binding HasWhyNot, Converter={StaticResource Conv.BoolVis}}" />
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="1" Text="{Binding SizeText}"
+                                                   Style="{StaticResource Storava.Text.Body}"
+                                                   FontWeight="SemiBold" VerticalAlignment="Top"
+                                                   Margin="14,0,0,0" />
+
+                                        <Button Grid.Column="2" VerticalAlignment="Top" Margin="14,0,0,0"
+                                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                Content="{DynamicResource Str.Settings.Storage.Clear}"
+                                                Command="{Binding DataContext.ClearStorageCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding CanClear, Converter={StaticResource Conv.BoolVis}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                         Value="0" IsIndeterminate="True" Width="14" Height="14"
+                                         Margin="0,0,8,0" VerticalAlignment="Center"
+                                         Visibility="{Binding IsClearingStorage, Converter={StaticResource Conv.BoolVis}}" />
+                            <TextBlock Style="{StaticResource Storava.Text.Body}" VerticalAlignment="Center">
+                                <Run Text="{DynamicResource Str.Settings.Storage.Total}" />
+                                <Run Text="{Binding TotalStorageText, Mode=OneWay}" FontWeight="SemiBold" />
+                            </TextBlock>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding ClearStorageResultText}" Margin="0,10,0,0"
+                                   Style="{StaticResource Storava.Text.Body}" TextWrapping="Wrap"
+                                   Visibility="{Binding ClearStorageResultText, Converter={StaticResource Conv.NullVis}}" />
+
                         <!-- Compaction is a button, not something automatic. It rewrites the whole
                              database under an exclusive lock, and doing that behind the user right
                              after a scan is the sort of unexplained wait this release removed. -->
@@ -99,13 +171,9 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <TextBlock Style="{StaticResource Storava.Text.Body}">
-                                    <Run Text="{DynamicResource Str.Settings.Storage.DatabaseSize}" />
-                                    <Run Text="{Binding DatabaseSizeText, Mode=OneWay}" FontWeight="SemiBold" />
-                                </TextBlock>
                                 <TextBlock Text="{DynamicResource Str.Settings.Storage.CompactHint}"
                                            Style="{StaticResource Storava.Text.Caption}" TextWrapping="Wrap"
-                                           Margin="0,4,0,0" Opacity="0.85" />
+                                           Opacity="0.85" />
                             </StackPanel>
 
                             <Button Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0"

@@ -79,10 +79,15 @@ public static class DependencyInjection
         // History reads back past scans and prunes its own tables; it cannot touch a user file either.
         services.AddSingleton<ScanHistoryService>();
 
-        // Retention discards scans past the most recent few and gives the disk space back. Also
-        // scan tables only: it removes measurements, never anything measured.
+        // Retention discards scans past the most recent few so the file stops growing. Scan tables
+        // only: it removes measurements, never anything measured. Handing the room back to the
+        // operating system is the maintenance service, and something the user asks for.
         services.AddSingleton<IDatabaseMaintenance, SqliteDatabaseMaintenance>();
         services.AddSingleton<ScanRetentionService>();
+
+        // What the application has put on this machine, so the one program whose subject is disk
+        // usage can answer the question about itself.
+        services.AddSingleton<IAppStorageReport, AppStorageReport>();
 
         // Portable .storava archives. Reads only the scan tables, so settings and the API key
         // are structurally excluded from every export.

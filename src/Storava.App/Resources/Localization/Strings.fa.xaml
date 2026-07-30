@@ -539,10 +539,35 @@
     <sys:String x:Key="Str.Common.Loading.Scan">در حال خواندن اسکن. اسکن یک درایو کامل میلیون‌ها رکورد دارد، پس ممکن است کمی طول بکشد.</sys:String>
     <sys:String x:Key="Str.Common.Loading.History">در حال خواندن اسکن‌های قبلی…</sys:String>
     <sys:String x:Key="Str.Common.Loading.Report">در حال ساخت گزارش…</sys:String>
-    <sys:String x:Key="Str.Settings.Storage.DatabaseSize">پایگاه دادهٔ اسکن‌ها:</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Compact">فشرده‌سازی</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactHint">اسکن‌های حذف‌شده فضایی داخل همین فایل آزاد می‌کنند که استوراوا دوباره از آن استفاده می‌کند. فشرده‌سازی آن فضا را به ویندوز برمی‌گرداند. کل فایل بازنویسی می‌شود، حین کار به همان اندازه فضای خالی نیاز دارد و ممکن است چند دقیقه طول بکشد — در این مدت بقیهٔ برنامه منتظر می‌ماند.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Compacted">فشرده شد. {0} به دیسک برگشت.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactedNothing">چیزی برای برگرداندن نبود — فایل همین حالا به اندازهٔ محتوایش است.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactFailed">فشرده‌سازی انجام نشد. محتمل‌ترین دلیل، کمبود فضای خالی برای نوشتن نسخهٔ بازنویسی‌شده است.</sys:String>
+    <!-- فضایی که خود استوراوا گرفته. هر بخش نام خودش را دارد؛ گفتن «کش» به پایگاه پویش‌ها
+         درست نبود: این اندازه‌گیری‌هایی است که کاربر خواسته، نه چیزی که برنامه دوباره بسازد. -->
+    <sys:String x:Key="Str.Settings.Storage.Breakdown">استوراوا چقدر از این دستگاه را گرفته</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.BreakdownHint">استوراوا داده‌های خودش را در پوشهٔ کاربری شما نگه می‌دارد. هیچ‌کدام از این‌ها فایل شما نیست؛ خالی کردن هر بخش فقط چیزی را می‌برد که خود استوراوا ثبت کرده است.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Total">جمع:</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Clear">خالی کردن</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Cleared">انجام شد. {0} مورد پاک شد و {1} آزاد شد.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearedNeedsCompacting">{0} پویش پاک شد. فضا درون پایگاه داده آزاد شده ولی هنوز به ویندوز باز نگشته است؛ برای این کار از «فشرده‌سازی» پایین استفاده کنید.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearFailed">این بخش خالی نشد. احتمالاً چیزی هنوز یکی از فایل‌های آن را باز نگه داشته است.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearScans.Title">همهٔ پویش‌ها دور ریخته شود؟</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearScans.Message">همهٔ پویش‌ها به همراه توصیه‌ها و برنامه‌هایی که روی آن‌ها ساخته شده پاک می‌شود. فایل‌های شما دست نمی‌خورد و سابقهٔ تغییراتی که استوراوا تا امروز انجام داده نگه داشته می‌شود. پویش دوبارهٔ هر درایو چند دقیقه وقت می‌برد.</sys:String>
+
+    <sys:String x:Key="Str.Settings.Storage.Item.Empty">هنوز چیزی ذخیره نشده است.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Scans">پویش‌ها</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Scans.Body">همهٔ فایل‌ها و پوشه‌هایی که پویش‌های اخیر اندازه گرفته‌اند، به همراه توصیه‌ها و برنامه‌ها. تقریباً همیشه بزرگ‌ترین بخش این فهرست است.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Logs">گزارش‌های فنی</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Logs.Body">دفترچهٔ کارهای برنامه؛ فقط وقتی مشکلی پیش آمده باشد به کار می‌آید. فایل امروز باقی می‌ماند.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets">کلید API ذخیره‌شده</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets.Body">کلید هوش مصنوعی شما، رمزگذاری‌شده طوری که فقط حساب ویندوز خودتان می‌تواند بخواندش.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets.Kept">از بخش هوش مصنوعی همین صفحه حذف می‌شود، جایی که عاقبتش توضیح داده شده.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent">ایجنت</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent.Body">پویش‌ها و گزارش‌های خود ایجنت پس‌زمینه، اگر نصبش کرده باشید.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent.Kept">دادهٔ برنامهٔ دیگری است و ممکن است همین الان در حال اجرا باشد. از خود ایجنت خالیش کنید.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer">حساب‌های نسخهٔ وب</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Body">اطلاعات ورود نسخهٔ وب، اگر این دستگاه روزی آن را سرو کرده باشد.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Kept">خالی کردنش دسترسی کاربران نسخهٔ وب را قطع می‌کند، پس اینجا دست نمی‌خورد.</sys:String>
 </ResourceDictionary>

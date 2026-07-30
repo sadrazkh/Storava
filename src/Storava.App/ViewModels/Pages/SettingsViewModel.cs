@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Storava.Application.Abstractions;
+using System.Collections.ObjectModel;
+using Storava.App.Models;
 using Storava.Application.Common;
 using Storava.Domain.ValueObjects;
 
@@ -14,6 +16,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly ILocalizationService _localization;
     private readonly ISecretStore _secrets;
     private readonly IDatabaseMaintenance _maintenance;
+    private readonly IAppStorageReport _storage;
+    private readonly IDialogService _dialogs;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty] private AppLanguage _selectedLanguage;
@@ -21,14 +25,23 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _accentColor = "#0FB5AE";
     [ObservableProperty] private int _keepRecentScans;
 
-    /// <summary>How much room the scan database takes, so the button below has a number beside it.</summary>
-    [ObservableProperty] private string _databaseSizeText = "—";
-
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CompactDatabaseCommand))]
     private bool _isCompacting;
 
     [ObservableProperty] private string? _compactResultText;
+
+    /// <summary>What Storava has put on this machine, largest first.</summary>
+    public ObservableCollection<AppStorageItemModel> AppStorage { get; } = [];
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearStorageCommand))]
+    private bool _isClearingStorage;
+
+    [ObservableProperty] private string? _clearStorageResultText;
+
+    /// <summary>Everything above, added up — the number somebody actually came here to find.</summary>
+    [ObservableProperty] private string _totalStorageText = "—";
     [ObservableProperty] private bool _aiEnabled;
     [ObservableProperty] private string _aiModel = "openrouter/free";
     [ObservableProperty] private string _aiBaseUrl = "https://openrouter.ai/api/v1";
@@ -47,6 +60,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         ILocalizationService localization,
         ISecretStore secrets,
         IDatabaseMaintenance maintenance,
+        IAppStorageReport storage,
+        IDialogService dialogs,
         ILogger<SettingsViewModel> logger)
     {
         _settings = settings;
@@ -54,6 +69,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _localization = localization;
         _secrets = secrets;
         _maintenance = maintenance;
+        _storage = storage;
+        _dialogs = dialogs;
         _logger = logger;
 
         var current = settings.Current;
@@ -77,7 +94,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _aiAllowReportGeneration = current.Ai.AllowReportGeneration;
 
         _hasApiKey = _secrets.Has(SecretNames.OpenRouterApiKey);
-        RefreshDatabaseSize();
+        RefreshAppStorage();
     }
 
     public IReadOnlyList<AppLanguage> Languages { get; } = [AppLanguage.Persian, AppLanguage.English];
@@ -202,14 +219,86 @@ public sealed partial class SettingsViewModel : ViewModelBase
         finally
         {
             IsCompacting = false;
-            RefreshDatabaseSize();
+            RefreshAppStorage();
         }
     }
 
     private bool CanCompactDatabase() => !IsCompacting;
 
-    private void RefreshDatabaseSize() =>
-        DatabaseSizeText = new ByteSize(_maintenance.SizeOnDisk()).Humanize(_localization.CurrentCulture);
+    /// <summary>
+    /// Empties one of Storava's own stores.
+    /// <para>
+    /// Discarding every scan is asked about first. They can all be taken again, so this is not the
+    /// same as losing a file — but it is minutes of walking a drive, and a button that throws that
+    /// away on one click would be a trap.
+    /// </para>
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanClearStorage))]
+    private async Task ClearStorageAsync(AppStorageItemModel? item)
+    {
+        if (item is null || !item.CanClear)
+            return;
+
+        if (item.Kind == AppStorageKind.Scans)
+        {
+            bool confirmed = await _dialogs.ConfirmAsync(
+                _localization["Str.Settings.Storage.ClearScans.Title"],
+                _localization["Str.Settings.Storage.ClearScans.Message"],
+                _localization["Str.Common.Delete"],
+                _localization["Str.Common.Cancel"]).ConfigureAwait(true);
+
+            if (!confirmed)
+                return;
+        }
+
+        IsClearingStorage = true;
+        ClearStorageResultText = null;
+
+        try
+        {
+            var result = await _storage.ClearAsync(item.Kind).ConfigureAwait(true);
+
+            ClearStorageResultText = result.NeedsCompacting
+                ? string.Format(
+                    _localization.CurrentCulture,
+                    _localization["Str.Settings.Storage.ClearedNeedsCompacting"],
+                    result.Removed)
+                : string.Format(
+                    _localization.CurrentCulture,
+                    _localization["Str.Settings.Storage.Cleared"],
+                    result.Removed,
+                    new ByteSize(result.BytesFreed).Humanize(_localization.CurrentCulture));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Clearing {Kind} failed.", item.Kind);
+            ClearStorageResultText = _localization["Str.Settings.Storage.ClearFailed"];
+        }
+        finally
+        {
+            IsClearingStorage = false;
+            RefreshAppStorage();
+        }
+    }
+
+    private bool CanClearStorage(AppStorageItemModel? item) =>
+        item is { CanClear: true } && !IsClearingStorage;
+
+    /// <summary>
+    /// Re-reads the sizes from disk. Synchronous on purpose: it is four small directories and three
+    /// file handles, measured at well under a millisecond, and the constructor cannot await.
+    /// </summary>
+    private void RefreshAppStorage()
+    {
+        AppStorage.Clear();
+
+        var entries = _storage.Describe();
+        foreach (var entry in entries)
+            AppStorage.Add(new AppStorageItemModel(entry, _localization.CurrentCulture, _localization));
+
+        TotalStorageText = new ByteSize(entries.Sum(entry => entry.Bytes))
+            .Humanize(_localization.CurrentCulture);
+    }
 
     partial void OnAiEnabledChanged(bool value) => IsSaved = false;
     partial void OnAiModelChanged(string value) => IsSaved = false;

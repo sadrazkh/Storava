@@ -539,10 +539,36 @@
     <sys:String x:Key="Str.Common.Loading.Scan">Reading the scan. A scan of a whole drive is millions of records, so this can take a moment.</sys:String>
     <sys:String x:Key="Str.Common.Loading.History">Reading your earlier scans…</sys:String>
     <sys:String x:Key="Str.Common.Loading.Report">Building the report…</sys:String>
-    <sys:String x:Key="Str.Settings.Storage.DatabaseSize">Scan database:</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Compact">Compact now</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactHint">Discarded scans free room inside this file, which Storava reuses. Compacting hands that room back to Windows. It rewrites the whole file, needs about as much free disk again while it works, and can take several minutes — during which the rest of the app waits.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Compacted">Compacted. {0} returned to the disk.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactedNothing">Nothing to give back — the file is already as small as its contents.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.CompactFailed">The database could not be compacted. The most likely reason is not enough free disk to write the rewritten copy.</sys:String>
+    <!-- What Storava itself occupies. Named per store, because "cache" would be a lie: the scan
+         database is measurements the user asked for, not something the application can quietly
+         rebuild. -->
+    <sys:String x:Key="Str.Settings.Storage.Breakdown">What Storava is using on this machine</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.BreakdownHint">Storava keeps its own data under your user folder. Nothing here is one of your files — emptying a store loses only what Storava recorded.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Total">Total:</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Clear">Empty</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Cleared">Done. {0} item(s) removed, {1} freed.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearedNeedsCompacting">{0} scan(s) removed. The room is free inside the database but not yet handed back to Windows — use Compact now below for that.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearFailed">That store could not be emptied. Something may still have a file in it open.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearScans.Title">Discard every scan?</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.ClearScans.Message">This removes all scans, along with the advice and plans built from them. Your files are not touched, and the record of changes Storava has already made to them is kept. Scanning again takes several minutes per drive.</sys:String>
+
+    <sys:String x:Key="Str.Settings.Storage.Item.Empty">Nothing stored yet.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Scans">Scans</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Scans.Body">Every file and folder the last scans measured, plus the advice and plans built from them. Almost always the largest thing here.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Logs">Logs</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Logs.Body">A diary of what the application did, useful only when something has gone wrong. Today's file stays.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets">Stored API key</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets.Body">Your AI key, encrypted so that only your Windows account can read it.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Secrets.Kept">Removed from the AI section above, where what you lose is spelled out.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent">Agent</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent.Body">The background agent's own scans and logs, if you have installed it.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.Agent.Kept">Another program's data, and it may be running right now. Empty it from the agent itself.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer">Browser edition accounts</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Body">Sign-in details for the browser edition, if this machine has ever served it.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Kept">Emptying this would lock people out of the browser edition, so it is left alone here.</sys:String>
 </ResourceDictionary>
