@@ -81,12 +81,22 @@ public sealed class ScanSessionRepository : IScanSessionRepository
 
             // Recommendations are derived from the items, so they have to go with them; leaving them
             // behind would let a deleted scan keep feeding advice into pages that read by session id.
-            // The execution log is *not* touched here: it records real changes to the user's files and
-            // outlives the scan that suggested them.
+            //
+            // The plan goes too, and it used not to. A plan is a document about one scan and is
+            // reachable only through it, so one left behind is unreachable by definition — it simply
+            // sits there. That was a slow leak while deleting was something a person did by hand,
+            // and an unbounded one once retention started discarding scans by itself: every scan
+            // ever taken would leave its plan and every entry in it, forever, which is the growth
+            // retention exists to stop.
+            //
+            // The execution log is *not* touched here: it records real changes to the user's files
+            // and outlives the scan that suggested them.
             command.CommandText = """
-                DELETE FROM ScanItems       WHERE SessionId = $Id;
-                DELETE FROM Recommendations WHERE SessionId = $Id;
-                DELETE FROM ScanSessions    WHERE Id = $Id;
+                DELETE FROM StoragePlanEntries WHERE PlanId IN (SELECT Id FROM StoragePlans WHERE SessionId = $Id);
+                DELETE FROM StoragePlans       WHERE SessionId = $Id;
+                DELETE FROM ScanItems          WHERE SessionId = $Id;
+                DELETE FROM Recommendations    WHERE SessionId = $Id;
+                DELETE FROM ScanSessions       WHERE Id = $Id;
                 """;
             command.Parameters.AddWithValue("$Id", sessionId);
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);

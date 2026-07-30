@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Storava.Application.Abstractions;
 using Storava.Application.History;
 using Storava.Application.Scanning;
 using Storava.Application.Services;
+using Storava.Infrastructure.Persistence;
 using Storava.Domain.Entities;
 using Storava.Domain.Enums;
 
@@ -126,6 +128,94 @@ public class ScanRetentionTests : IDisposable
         Assert.Single(await Sessions().GetRecentAsync(50));
     }
 
+    /// <summary>
+    /// A discarded scan takes its plan with it.
+    /// <para>
+    /// A plan is a document about one scan and is reachable only through it, so one left behind is
+    /// unreachable by definition. That was a slow leak while deleting was something a person did by
+    /// hand; once retention began discarding scans on its own it became unbounded — every scan ever
+    /// taken leaving its plan and every entry in it, which is the growth retention exists to stop.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task ThePlanOfADiscardedScanGoesWithIt()
+    {
+        await GivenScans(4);
+        await GivenPlan("scan-0");
+        await GivenPlan("scan-3");
+
+        await Retention().ApplyAsync(keep: 1);
+
+        var plans = _host.Get<IStoragePlanRepository>();
+        Assert.Null(await plans.GetForSessionAsync("scan-0"));
+        Assert.NotNull(await plans.GetForSessionAsync("scan-3"));
+    }
+
+    /// <summary>
+    /// And its entries, not only the plan row. Rows keyed by plan id rather than session id are the
+    /// ones a delete written per table is most likely to miss.
+    /// </summary>
+    [Fact]
+    public async Task ThePlanEntriesGoWithTheScanToo()
+    {
+        await GivenScans(2);
+        await GivenPlan("scan-0");
+
+        await Sessions().DeleteAsync("scan-0");
+
+        var orphaned = await _host.Get<DatabaseGateway>().RunAsync(async (connection, token) =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM StoragePlanEntries;";
+            return Convert.ToInt64(await command.ExecuteScalarAsync(token));
+        });
+
+        Assert.Equal(0, orphaned);
+    }
+
+    /// <summary>
+    /// Retention deletes; it does not rewrite the file.
+    /// <para>
+    /// Compacting takes an exclusive lock for its whole duration, and measuring it showed a query
+    /// issued meanwhile waiting for the entire rewrite — around half a minute on a database of the
+    /// size this exists to deal with, arriving the instant a scan finishes and somebody goes to
+    /// read the results. Giving the room back to the operating system is a button on the Settings
+    /// page instead, because it is a wait somebody should be choosing.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task DiscardingScansDoesNotRewriteTheWholeFile()
+    {
+        var maintenance = new CountingMaintenance();
+
+        // Built against this class's own host, not a fresh one: GivenScans writes to that database,
+        // and a second host would be a second database with nothing in it.
+        var retention = new ScanRetentionService(
+            _host.Get<IScanSessionRepository>(),
+            _host.Get<IPlanExecutionRepository>(),
+            NullLogger<ScanRetentionService>.Instance);
+
+        await GivenScans(6);
+        var removed = await retention.ApplyAsync(keep: 3);
+
+        Assert.Equal(0, maintenance.Compactions);
+        Assert.True(removed.RemovedAnything, "the deletes themselves still have to happen");
+    }
+
+    /// <summary>Counts compactions, because the point is that none happen unasked.</summary>
+    private sealed class CountingMaintenance : IDatabaseMaintenance
+    {
+        public int Compactions { get; private set; }
+
+        public long SizeOnDisk() => 0;
+
+        public Task<long> CompactAsync(CancellationToken cancellationToken = default)
+        {
+            Compactions++;
+            return Task.FromResult(0L);
+        }
+    }
+
     /// <summary>The scan items go with the session, which is where nearly all of the size was.</summary>
     [Fact]
     public async Task TheItemsOfADiscardedScanGoWithIt()
@@ -199,6 +289,35 @@ public class ScanRetentionTests : IDisposable
                 CompletedAt = new DateTimeOffset(2026, 1, 1, 1, 0, 0, TimeSpan.Zero).AddDays(i)
             });
         }
+    }
+
+    /// <summary>A saved plan with one entry, which is what a discarded scan must not leave behind.</summary>
+    private async Task GivenPlan(string sessionId)
+    {
+        var plan = new StoragePlan
+        {
+            Id = $"plan-{sessionId}",
+            SessionId = sessionId
+        };
+
+        plan.TryAdd(
+            new PlanCandidate
+            {
+                SessionId = sessionId,
+                ScanItemId = $"item-{sessionId}",
+                RecommendationId = $"rec-{sessionId}",
+                Path = $@"C:\{sessionId}
+ode_modules",
+                Title = "node_modules",
+                EstimatedSpace = 1024,
+                RiskLevel = RiskLevel.Low,
+                IsIdentified = true,
+                CanDelete = true
+            },
+            SuggestedAction.Delete,
+            $"entry-{sessionId}");
+
+        await _host.Get<IStoragePlanRepository>().SaveAsync(plan);
     }
 
     private async Task GivenRun(string sessionId, ExecutionStatus status)

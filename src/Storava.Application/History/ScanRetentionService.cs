@@ -23,24 +23,29 @@ public sealed class ScanRetentionService
 
     private readonly IScanSessionRepository _sessions;
     private readonly IPlanExecutionRepository _executions;
-    private readonly IDatabaseMaintenance _maintenance;
     private readonly ILogger<ScanRetentionService> _logger;
 
     public ScanRetentionService(
         IScanSessionRepository sessions,
         IPlanExecutionRepository executions,
-        IDatabaseMaintenance maintenance,
         ILogger<ScanRetentionService> logger)
     {
         _sessions = sessions;
         _executions = executions;
-        _maintenance = maintenance;
         _logger = logger;
     }
 
     /// <summary>
-    /// Removes scans beyond the most recent <paramref name="keep"/>, then reclaims the disk space
-    /// they were using.
+    /// Removes scans beyond the most recent <paramref name="keep"/>.
+    /// <para>
+    /// Deleting is all this does. It does not compact the file afterwards, though it used to: SQLite
+    /// rewrites the whole database under an exclusive lock to do that, and measuring it showed every
+    /// page load issued meanwhile waiting for the entire rewrite — around half a minute on a
+    /// database of the size this was written to deal with, arriving the moment a scan finishes and
+    /// somebody goes to look at the results. The pages the deletes free are reused, so the file
+    /// stops growing either way; giving them back to the operating system is
+    /// <see cref="IDatabaseMaintenance.CompactAsync"/>, which is something a person asks for.
+    /// </para>
     /// </summary>
     /// <param name="keep">How many to keep. Below one is treated as one: never delete everything.</param>
     /// <param name="protectedSessionId">
@@ -79,11 +84,7 @@ public sealed class ScanRetentionService
         _logger.LogInformation(
             "Removed {Count} old scan(s), keeping the most recent {Keep}.", removed.Count, keep);
 
-        // Only worth doing when something actually went: a rewrite of the whole database is
-        // expensive, and with nothing deleted there would be nothing for it to reclaim.
-        var reclaimed = await _maintenance.CompactAsync(cancellationToken).ConfigureAwait(false);
-
-        return new RetentionResult(removed, reclaimed);
+        return new RetentionResult(removed);
     }
 
     /// <summary>
@@ -111,10 +112,9 @@ public sealed class ScanRetentionService
 
 /// <summary>What retention did, so a caller can tell the user rather than guess.</summary>
 /// <param name="RemovedSessionIds">The scans that were discarded, oldest last.</param>
-/// <param name="BytesReclaimed">How much smaller the database file became. Zero if it could not be compacted.</param>
-public sealed record RetentionResult(IReadOnlyList<string> RemovedSessionIds, long BytesReclaimed)
+public sealed record RetentionResult(IReadOnlyList<string> RemovedSessionIds)
 {
-    public static readonly RetentionResult Empty = new([], 0);
+    public static readonly RetentionResult Empty = new([]);
 
     public int RemovedCount => RemovedSessionIds.Count;
 

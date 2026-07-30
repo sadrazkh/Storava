@@ -75,7 +75,7 @@
     <sys:String x:Key="Str.Settings.Accent">Accent color</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Section">Storage</sys:String>
     <sys:String x:Key="Str.Settings.Storage.KeepScans">Scans to keep</sys:String>
-    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">A scan of a whole drive holds millions of records. Once a new scan finishes, anything older than this is removed and the space is given back. Files on your disk are never touched, and the record of changes Storava has made is always kept.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">A scan of a whole drive holds millions of records. Once a new scan finishes, anything older than this is removed and the room inside this file is reused. Files on your disk are never touched, and the record of changes Storava has made is always kept.</sys:String>
 
     <sys:String x:Key="Str.Settings.Ai.Section">AI (OpenRouter)</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Enable">Enable AI advisor</sys:String>
@@ -539,4 +539,10 @@
     <sys:String x:Key="Str.Common.Loading.Scan">Reading the scan. A scan of a whole drive is millions of records, so this can take a moment.</sys:String>
     <sys:String x:Key="Str.Common.Loading.History">Reading your earlier scans…</sys:String>
     <sys:String x:Key="Str.Common.Loading.Report">Building the report…</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.DatabaseSize">Scan database:</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Compact">Compact now</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactHint">Discarded scans free room inside this file, which Storava reuses. Compacting hands that room back to Windows. It rewrites the whole file, needs about as much free disk again while it works, and can take several minutes — during which the rest of the app waits.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Compacted">Compacted. {0} returned to the disk.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactedNothing">Nothing to give back — the file is already as small as its contents.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactFailed">The database could not be compacted. The most likely reason is not enough free disk to write the rewritten copy.</sys:String>
 </ResourceDictionary>

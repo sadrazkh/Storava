@@ -75,7 +75,7 @@
     <sys:String x:Key="Str.Settings.Accent">رنگ تأکید</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Section">فضای ذخیره‌سازی</sys:String>
     <sys:String x:Key="Str.Settings.Storage.KeepScans">تعداد اسکن‌هایی که نگه داشته می‌شود</sys:String>
-    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">اسکن یک درایو کامل میلیون‌ها رکورد دارد. بعد از پایان هر اسکن تازه، اسکن‌های قدیمی‌تر از این تعداد حذف می‌شوند و فضایشان آزاد می‌شود. به فایل‌های روی دیسک شما دست زده نمی‌شود و سابقهٔ تغییرهایی که استوراوا انجام داده همیشه نگه داشته می‌شود.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.KeepScansHint">اسکن یک درایو کامل میلیون‌ها رکورد دارد. بعد از پایان هر اسکن تازه، اسکن‌های قدیمی‌تر از این تعداد حذف می‌شوند و فضای داخل همین فایل دوباره استفاده می‌شود. به فایل‌های روی دیسک شما دست زده نمی‌شود و سابقهٔ تغییرهایی که استوراوا انجام داده همیشه نگه داشته می‌شود.</sys:String>
 
     <sys:String x:Key="Str.Settings.Ai.Section">هوش مصنوعی (OpenRouter)</sys:String>
     <sys:String x:Key="Str.Settings.Ai.Enable">فعال‌سازی مشاور هوش مصنوعی</sys:String>
@@ -539,4 +539,10 @@
     <sys:String x:Key="Str.Common.Loading.Scan">در حال خواندن اسکن. اسکن یک درایو کامل میلیون‌ها رکورد دارد، پس ممکن است کمی طول بکشد.</sys:String>
     <sys:String x:Key="Str.Common.Loading.History">در حال خواندن اسکن‌های قبلی…</sys:String>
     <sys:String x:Key="Str.Common.Loading.Report">در حال ساخت گزارش…</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.DatabaseSize">پایگاه دادهٔ اسکن‌ها:</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Compact">فشرده‌سازی</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactHint">اسکن‌های حذف‌شده فضایی داخل همین فایل آزاد می‌کنند که استوراوا دوباره از آن استفاده می‌کند. فشرده‌سازی آن فضا را به ویندوز برمی‌گرداند. کل فایل بازنویسی می‌شود، حین کار به همان اندازه فضای خالی نیاز دارد و ممکن است چند دقیقه طول بکشد — در این مدت بقیهٔ برنامه منتظر می‌ماند.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.Compacted">فشرده شد. {0} به دیسک برگشت.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactedNothing">چیزی برای برگرداندن نبود — فایل همین حالا به اندازهٔ محتوایش است.</sys:String>
+    <sys:String x:Key="Str.Settings.Storage.CompactFailed">فشرده‌سازی انجام نشد. محتمل‌ترین دلیل، کمبود فضای خالی برای نوشتن نسخهٔ بازنویسی‌شده است.</sys:String>
 </ResourceDictionary>

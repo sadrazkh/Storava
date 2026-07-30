@@ -51,7 +51,7 @@ public sealed class SqliteDatabaseMaintenance : IDatabaseMaintenance
         return reclaimed;
     }
 
-    private long SizeOnDisk()
+    public long SizeOnDisk()
     {
         long total = 0;
 

@@ -149,6 +149,7 @@ public class LanguageSwitchingTests
             new RecordingTheme(),
             localization ?? new RecordingLocalization(),
             new NoSecrets(),
+            new NoMaintenance(),
             NullLogger<SettingsViewModel>.Instance);
 
     private sealed class InMemorySettings : ISettingsService
@@ -212,6 +213,14 @@ public class LanguageSwitchingTests
         }
 
         public void ApplyAccent(string hex) => AccentColor = hex;
+    }
+
+    /// <summary>Nothing here touches the database; the page only reads a size to display.</summary>
+    private sealed class NoMaintenance : IDatabaseMaintenance
+    {
+        public long SizeOnDisk() => 0;
+
+        public Task<long> CompactAsync(CancellationToken cancellationToken = default) => Task.FromResult(0L);
     }
 
     private sealed class NoSecrets : ISecretStore

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Storava.Application.Abstractions;
 using Storava.Application.Common;
+using Storava.Domain.ValueObjects;
 
 namespace Storava.App.ViewModels.Pages;
 
@@ -12,12 +13,22 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private readonly IThemeService _theme;
     private readonly ILocalizationService _localization;
     private readonly ISecretStore _secrets;
+    private readonly IDatabaseMaintenance _maintenance;
     private readonly ILogger<SettingsViewModel> _logger;
 
     [ObservableProperty] private AppLanguage _selectedLanguage;
     [ObservableProperty] private AppTheme _selectedTheme;
     [ObservableProperty] private string _accentColor = "#0FB5AE";
     [ObservableProperty] private int _keepRecentScans;
+
+    /// <summary>How much room the scan database takes, so the button below has a number beside it.</summary>
+    [ObservableProperty] private string _databaseSizeText = "—";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CompactDatabaseCommand))]
+    private bool _isCompacting;
+
+    [ObservableProperty] private string? _compactResultText;
     [ObservableProperty] private bool _aiEnabled;
     [ObservableProperty] private string _aiModel = "openrouter/free";
     [ObservableProperty] private string _aiBaseUrl = "https://openrouter.ai/api/v1";
@@ -35,12 +46,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
         IThemeService theme,
         ILocalizationService localization,
         ISecretStore secrets,
+        IDatabaseMaintenance maintenance,
         ILogger<SettingsViewModel> logger)
     {
         _settings = settings;
         _theme = theme;
         _localization = localization;
         _secrets = secrets;
+        _maintenance = maintenance;
         _logger = logger;
 
         var current = settings.Current;
@@ -64,6 +77,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _aiAllowReportGeneration = current.Ai.AllowReportGeneration;
 
         _hasApiKey = _secrets.Has(SecretNames.OpenRouterApiKey);
+        RefreshDatabaseSize();
     }
 
     public IReadOnlyList<AppLanguage> Languages { get; } = [AppLanguage.Persian, AppLanguage.English];
@@ -150,6 +164,52 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// </para>
     /// </summary>
     internal Task AppearanceWrite { get; private set; } = Task.CompletedTask;
+
+    /// <summary>
+    /// Gives the room freed by discarded scans back to the operating system.
+    /// <para>
+    /// A button rather than something automatic. SQLite rewrites the whole file under an exclusive
+    /// lock, and measuring it showed every query issued meanwhile waiting for the entire rewrite —
+    /// around half a minute on a database of the size this exists to deal with. Doing that behind
+    /// somebody's back, right after a scan when they are about to read the results, is the kind of
+    /// unexplained wait this release spent its time removing.
+    /// </para>
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanCompactDatabase))]
+    private async Task CompactDatabaseAsync()
+    {
+        IsCompacting = true;
+        CompactResultText = null;
+
+        try
+        {
+            long reclaimed = await _maintenance.CompactAsync().ConfigureAwait(true);
+
+            CompactResultText = reclaimed > 0
+                ? string.Format(
+                    _localization.CurrentCulture,
+                    _localization["Str.Settings.Storage.Compacted"],
+                    new ByteSize(reclaimed).Humanize(_localization.CurrentCulture))
+                : _localization["Str.Settings.Storage.CompactedNothing"];
+        }
+        catch (Exception ex)
+        {
+            // Most often there is not enough free disk to write the rewritten copy, which is a real
+            // possibility for someone using this application at all.
+            _logger.LogWarning(ex, "Compacting the database failed.");
+            CompactResultText = _localization["Str.Settings.Storage.CompactFailed"];
+        }
+        finally
+        {
+            IsCompacting = false;
+            RefreshDatabaseSize();
+        }
+    }
+
+    private bool CanCompactDatabase() => !IsCompacting;
+
+    private void RefreshDatabaseSize() =>
+        DatabaseSizeText = new ByteSize(_maintenance.SizeOnDisk()).Humanize(_localization.CurrentCulture);
 
     partial void OnAiEnabledChanged(bool value) => IsSaved = false;
     partial void OnAiModelChanged(string value) => IsSaved = false;
