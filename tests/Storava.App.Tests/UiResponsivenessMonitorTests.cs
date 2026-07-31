@@ -28,6 +28,15 @@ public class UiResponsivenessMonitorTests
     /// <summary>
     /// The whole point: work that holds the UI thread is seen, and reported as roughly its real
     /// length. Without this the monitor could report nothing at all and every other test would pass.
+    /// <para>
+    /// The block is held open until the monitor's own timer has posted a probe, rather than for a
+    /// fixed stretch that the timer is assumed to fire inside. That assumption is what failed in CI:
+    /// a machine running ten test assemblies at once can leave a thread-pool timer callback waiting
+    /// longer than the block lasted, so no probe was ever outstanding while the thread was stuck and
+    /// a real stall went unmeasured. Waiting for the condition instead of for a duration means load
+    /// makes this slower and never wrong — and because it waits for the real timer rather than
+    /// reaching past it, a monitor that never armed one still fails here.
+    /// </para>
     /// </summary>
     [Fact]
     public void WorkThatHoldsTheInterfaceIsNoticed()
@@ -37,14 +46,29 @@ public class UiResponsivenessMonitorTests
             using var monitor = new UiResponsivenessMonitor(
                 dispatcher, NullLogger<UiResponsivenessMonitor>.Instance);
 
-            // Comfortably past the 200 ms the monitor treats as perceptible.
-            dispatcher.Invoke(() => Thread.Sleep(700), DispatcherPriority.Send);
+            using var blocking = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
 
-            var deadline = DateTime.UtcNow.AddSeconds(5);
+            // Queued, not invoked: this thread has to stay free to release it again.
+            dispatcher.BeginInvoke(DispatcherPriority.Send, () =>
+            {
+                blocking.Set();
+                release.Wait(TimeSpan.FromSeconds(20));
+            });
+
+            Assert.True(blocking.Wait(TimeSpan.FromSeconds(10)), "the interface never became busy");
+            Assert.True(WaitForOutstandingProbe(monitor), "the monitor never probed a busy interface");
+
+            // Held past the 200 ms the monitor treats as perceptible. Measured from when the probe
+            // above started, so this is a floor on the stall, never a ceiling.
+            Thread.Sleep(500);
+            release.Set();
+
+            var deadline = DateTime.UtcNow.AddSeconds(10);
             while (monitor.StallCount == 0 && DateTime.UtcNow < deadline)
                 Thread.Sleep(20);
 
-            Assert.True(monitor.StallCount > 0, "a three-quarter-second block went unreported");
+            Assert.True(monitor.StallCount > 0, "a half-second block went unreported");
             Assert.True(
                 monitor.WorstStall > TimeSpan.FromMilliseconds(300),
                 $"the stall was reported as only {monitor.WorstStall.TotalMilliseconds:F0} ms");
@@ -53,7 +77,16 @@ public class UiResponsivenessMonitorTests
         Assert.Null(error);
     }
 
-    /// <summary>An interface that is free is not accused of stalling.</summary>
+    /// <summary>
+    /// An interface that is free is not accused of stalling.
+    /// <para>
+    /// Driven through the probe directly rather than by idling for a while and hoping nothing is
+    /// reported. Idling asserts something about the machine as much as about the monitor: a build
+    /// agent under load can leave even a do-nothing dispatcher thread unscheduled past the
+    /// threshold, at which point the interface really was unresponsive and reporting it is correct.
+    /// The claim worth pinning is that a probe answered promptly is not counted.
+    /// </para>
+    /// </summary>
     [Fact]
     public void AnIdleInterfaceReportsNothing()
     {
@@ -62,9 +95,16 @@ public class UiResponsivenessMonitorTests
             using var monitor = new UiResponsivenessMonitor(
                 dispatcher, NullLogger<UiResponsivenessMonitor>.Instance);
 
-            Thread.Sleep(700);
+            for (int round = 0; round < 3; round++)
+            {
+                Probe(monitor);
+
+                // Nothing is holding the thread, so the probe comes back on the next idle turn.
+                dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+            }
 
             Assert.Equal(0, monitor.StallCount);
+            Assert.Equal(TimeSpan.Zero, monitor.WorstStall);
         });
 
         Assert.Null(error);
@@ -126,6 +166,31 @@ public class UiResponsivenessMonitorTests
             Thread.Sleep(10);
 
         Assert.True(dispatcher.HasShutdownFinished, "the dispatcher never finished shutting down");
+    }
+
+    /// <summary>
+    /// Waits until the monitor has a probe in flight, which only its own timer can arrange.
+    /// <para>
+    /// Reads the field the probe sets rather than sleeping for however long the timer's interval
+    /// happens to be: the interval is an implementation detail, and a test that encodes it starts
+    /// failing when somebody tunes it for good reasons.
+    /// </para>
+    /// </summary>
+    private static bool WaitForOutstandingProbe(UiResponsivenessMonitor monitor)
+    {
+        var field = typeof(UiResponsivenessMonitor)
+            .GetField("_outstanding", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (field.GetValue(monitor) is not null)
+                return true;
+
+            Thread.Sleep(10);
+        }
+
+        return false;
     }
 
     /// <summary>
