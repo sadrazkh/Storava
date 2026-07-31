@@ -30,7 +30,12 @@ RUN dotnet publish src/Storava.Web/Storava.Web.csproj \
     -p:BuildClientAssets=false \
     -p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-bookworm-slim AS runtime
+# Plain 10.0, matching the SDK stage above. There is no 10.0-bookworm-slim to ask for: .NET 10
+# moved its Debian images to trixie and never published a bookworm variant, so this tag could not
+# be pulled and the build failed at the FROM before running anything. The floating tag is what the
+# SDK stage already uses; naming a distribution here only invites the same fault next time one
+# changes underneath.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
