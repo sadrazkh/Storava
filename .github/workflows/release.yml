@@ -111,43 +111,39 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "agent status exited $LASTEXITCODE`n$output" }
           $output
 
+      # One step each, so a failure names the package that caused it. Together in one block, only
+      # the last command's exit code decides whether the step passed, and a first installer that
+      # failed to build would be reported as success — leaving the next step to fail on a file that
+      # was never made.
+      #
       # --no-incremental because the version reaches the package through a compile-time constant.
       # A build that decides its output is already up to date keeps the version it was built with,
       # which locally produced an MSI stamped 1.0.0 from a run that asked for 2.4.7.
-      - name: Build the installers
+      - name: Build the agent installer
+        shell: pwsh
         run: |
           dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj -p:Version=$env:VERSION --no-incremental
+          if ($LASTEXITCODE -ne 0) { throw "The agent installer did not build." }
+
+      - name: Build the desktop installer
+        shell: pwsh
+        run: |
           dotnet build src/Storava.App.Installer/Storava.App.Installer.wixproj -p:Version=$env:VERSION --no-incremental
+          if ($LASTEXITCODE -ne 0) { throw "The desktop installer did not build." }
 
-      # The tag is what the release claims to be, so the packages are read back and made to agree.
-      - name: Verify the packages carry the tagged version
+      # Both checks in one place now. Scope="perUser" alone did not put ALLUSERS and
+      # MSIINSTALLPERUSER in the Property table, and getting that wrong registers the product
+      # machine-wide while its files sit in one profile; and the tag is what the release claims to
+      # be, so the version is read back rather than trusted.
+      #
+      # This used to be two steps, the second of which kept its own copy of the same COM reads. That
+      # copy is what failed a release the script beside it would have passed, so there is one
+      # implementation now, and it reports what it found rather than only that it disagreed.
+      - name: Verify both installers
         shell: pwsh
         run: |
-          $installer = New-Object -ComObject WindowsInstaller.Installer
-          foreach ($msi in @('artifacts/installers/StoravaAgent.msi', 'artifacts/installers/Storava.msi')) {
-            $database = $installer.GetType().InvokeMember(
-              'OpenDatabase', 'InvokeMethod', $null, $installer, @((Resolve-Path $msi).Path, 0))
-            $view = $database.GetType().InvokeMember(
-              'OpenView', 'InvokeMethod', $null, $database,
-              @("SELECT Value FROM Property WHERE Property = 'ProductVersion'"))
-            $view.GetType().InvokeMember('Execute', 'InvokeMethod', $null, $view, $null) | Out-Null
-            $record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
-            $found = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(1))
-
-            if ($found -ne "$env:VERSION.0") {
-              throw "$msi is version $found but the tag says $env:VERSION"
-            }
-            "$msi: $found"
-          }
-
-      # Scope="perUser" alone did not put ALLUSERS and MSIINSTALLPERUSER in the Property table, and
-      # getting that wrong registers the product machine-wide while its files sit in one profile.
-      # Both packages are read back rather than trusted.
-      - name: Verify both installers are per-user
-        shell: pwsh
-        run: |
-          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi
-          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/Storava.msi
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/StoravaAgent.msi -ExpectedVersion $env:VERSION
+          ./scripts/verify-installer.ps1 -MsiPath artifacts/installers/Storava.msi -ExpectedVersion $env:VERSION
 
       # The portable form is the same executable with nothing to install. Zipped rather than posted
       # bare so the browser download does not get flagged, and named with the version so two

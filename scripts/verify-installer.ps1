@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Checks that a built MSI still installs per-user.
+    Checks that a built MSI still installs per-user, and carries the version it was asked for.
 
 .DESCRIPTION
     WiX's Scope="perUser" did not, on its own, put ALLUSERS and MSIINSTALLPERUSER into the Property
@@ -13,51 +13,96 @@
     Per-user is not a preference. The Agent's identity and channel secret are DPAPI-encrypted for
     one Windows account; an Agent installed machine-wide and started as anyone else could not
     decrypt them.
+
+    The version check lives here too, rather than in a second copy of this COM code inside the
+    release workflow. Two implementations of the same awkward thing is one more than can be kept
+    right, and the workflow's copy is the one that failed a release while this script sat beside it
+    doing the same reads correctly.
+
+.PARAMETER MsiPath
+    The package to inspect.
+
+.PARAMETER ExpectedVersion
+    Three-part version the build was asked for, without the MSI's trailing field — pass 0.1.0 to
+    require a ProductVersion of 0.1.0.0. Omitted, the version is reported but not enforced.
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string] $MsiPath
+    [string] $MsiPath,
+
+    [string] $ExpectedVersion
 )
 
 $ErrorActionPreference = 'Stop'
 
+# Surfaced as a GitHub annotation as well as thrown, so a failed release says what went wrong on
+# the run's summary page rather than only inside a log somebody has to go and open.
+function Fail([string] $message) {
+    if ($env:GITHUB_ACTIONS -eq 'true') {
+        Write-Host "::error title=Installer check::$message"
+    }
+
+    throw $message
+}
+
 if (-not (Test-Path $MsiPath)) {
-    throw "No MSI at $MsiPath"
+    # Named separately from a version mismatch: a missing package means an earlier step did not
+    # produce what it claimed to, which is a different fault from one that produced the wrong thing.
+    Fail "No MSI at $MsiPath. The build step before this one did not produce it."
 }
 
 function Get-MsiProperties([string] $path) {
     $installer = New-Object -ComObject WindowsInstaller.Installer
-    $database = $installer.GetType().InvokeMember(
-        'OpenDatabase', 'InvokeMethod', $null, $installer, @((Resolve-Path $path).Path, 0))
-    $view = $database.GetType().InvokeMember(
-        'OpenView', 'InvokeMethod', $null, $database, @('SELECT Property, Value FROM Property'))
-    $view.GetType().InvokeMember('Execute', 'InvokeMethod', $null, $view, $null) | Out-Null
+
+    # Called directly rather than through Type.InvokeMember. Both work in Windows PowerShell, and
+    # the reflection form is the sort of thing that behaves differently once a PSObject wrapper is
+    # in the middle of it — which is the only difference between the shell this was written against
+    # and the pwsh the build agent runs.
+    $database = $installer.OpenDatabase((Resolve-Path $path).Path, 0)
+    $view = $database.OpenView('SELECT Property, Value FROM Property')
+
+    # Discarded, not just ignored: Execute puts a null on the output stream, and a function that
+    # leaks one returns an array with the hashtable as its second element instead of the hashtable.
+    $null = $view.Execute()
 
     $properties = @{}
     while ($true) {
-        $record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
+        $record = $view.Fetch()
         if ($null -eq $record) { break }
 
-        $name = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(1))
-        $value = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(2))
-        $properties[$name] = $value
+        $properties[$record.StringData(1)] = $record.StringData(2)
     }
 
     return $properties
 }
 
-$properties = Get-MsiProperties $MsiPath
+try {
+    $properties = Get-MsiProperties $MsiPath
+}
+catch {
+    Fail "Could not read $MsiPath : $($_.Exception.Message)"
+}
 
 # ALLUSERS must be absent. Present and set to 2 it means "per-machine if this user is allowed",
 # which on an administrator's machine silently becomes a machine-wide install.
 if ($properties.ContainsKey('ALLUSERS')) {
-    throw "$MsiPath sets ALLUSERS='$($properties['ALLUSERS'])'; it must be absent for a per-user install."
+    Fail "$MsiPath sets ALLUSERS='$($properties['ALLUSERS'])'; it must be absent for a per-user install."
 }
 
 if ($properties['MSIINSTALLPERUSER'] -ne '1') {
-    throw "$MsiPath does not declare MSIINSTALLPERUSER=1."
+    Fail "$MsiPath does not declare MSIINSTALLPERUSER=1."
+}
+
+$found = $properties['ProductVersion']
+
+if ($ExpectedVersion) {
+    # MSI keeps four fields; only the first three decide upgrades, and the build appends the fourth.
+    $want = "$ExpectedVersion.0"
+    if ($found -ne $want) {
+        Fail "$MsiPath is version '$found' but the tag asks for '$want'."
+    }
 }
 
 $size = [math]::Round((Get-Item $MsiPath).Length / 1MB)
-"$([System.IO.Path]::GetFileName($MsiPath)): per-user, $($properties['ProductName']) $($properties['ProductVersion']), $size MB"
+"$([System.IO.Path]::GetFileName($MsiPath)): per-user, $($properties['ProductName']) $found, $size MB"

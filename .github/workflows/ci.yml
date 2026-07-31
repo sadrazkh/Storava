@@ -45,14 +45,25 @@ jobs:
       - name: Install client dependencies
         working-directory: src/Storava.Web
         run: npm ci
-      - name: Verify client
+      # One step each. Run together in a single block, only the last command's exit code decides
+      # whether the step passed — a failing lint, typecheck or unit test would have been reported
+      # as success because `npm run build` after it succeeded. Separate steps also say which check
+      # failed without anybody opening the log.
+      - name: Audit client dependencies
         working-directory: src/Storava.Web
-        run: |
-          npm audit --audit-level=high
-          npm run lint
-          npm run typecheck
-          npm run test
-          npm run build
+        run: npm audit --audit-level=high
+      - name: Lint client
+        working-directory: src/Storava.Web
+        run: npm run lint
+      - name: Typecheck client
+        working-directory: src/Storava.Web
+        run: npm run typecheck
+      - name: Client unit tests
+        working-directory: src/Storava.Web
+        run: npm run test
+      - name: Build client
+        working-directory: src/Storava.Web
+        run: npm run build
       - name: Build .NET
         run: dotnet build Storava.slnx --configuration Release --no-restore
       - name: Test .NET
@@ -115,10 +126,19 @@ jobs:
       # Both installers, on every run. The release workflow builds them too, but only from a tag —
       # and an installer that stops building is something to hear about from the commit that broke
       # it rather than from the release nobody can cut.
-      - name: Build the installers
+      # One step each, for the same reason as in the release workflow: run together, a failure in
+      # the first is hidden by the second succeeding.
+      - name: Build the agent installer
+        shell: pwsh
         run: |
           dotnet build src/Storava.Agent.Installer/Storava.Agent.Installer.wixproj
+          if ($LASTEXITCODE -ne 0) { throw "The agent installer did not build." }
+
+      - name: Build the desktop installer
+        shell: pwsh
+        run: |
           dotnet build src/Storava.App.Installer/Storava.App.Installer.wixproj
+          if ($LASTEXITCODE -ne 0) { throw "The desktop installer did not build." }
 
       # ALLUSERS=2 reads like the careful choice and silently produces a machine-wide install on
       # an administrator's machine. The marker is only visible by reading the built package.
