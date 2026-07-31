@@ -12,8 +12,15 @@ RUN npm run typecheck && npm run build
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 COPY Directory.Build.props Directory.Packages.props nuget.config ./
+# Storava.Web references Storava.Contracts, so both have to be here. Restore does not need it —
+# it completes quite happily with the reference dangling, which is why this was missed — and the
+# publish below is where it turns into "the namespace Contracts does not exist". The image has
+# not built since that reference was added, and CI never said so because the job ahead of this
+# one kept failing first.
+COPY src/Storava.Contracts/Storava.Contracts.csproj src/Storava.Contracts/
 COPY src/Storava.Web/Storava.Web.csproj src/Storava.Web/
 RUN dotnet restore src/Storava.Web/Storava.Web.csproj
+COPY src/Storava.Contracts ./src/Storava.Contracts
 COPY src/Storava.Web ./src/Storava.Web
 COPY --from=client /source/src/Storava.Web/wwwroot/dist ./src/Storava.Web/wwwroot/dist
 RUN dotnet publish src/Storava.Web/Storava.Web.csproj \
