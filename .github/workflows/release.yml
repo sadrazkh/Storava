@@ -174,13 +174,26 @@ jobs:
       - name: Write checksums
         shell: pwsh
         run: |
-          # Excluded explicitly rather than relying on the file not existing yet: a re-run over a
-          # populated directory would otherwise list the checksum file's own former contents.
-          Get-ChildItem artifacts/release -File -Exclude SHA256SUMS.txt |
+          # Where-Object rather than -Exclude, and counted afterwards.
+          #
+          # -Exclude on a path with no trailing wildcard matched nothing here, so the pipeline was
+          # empty — and an empty pipeline into Set-Content writes no file at all rather than an
+          # empty one. Every step downstream still succeeded: four files were uploaded and attached,
+          # and the only sign was the release notes promising a SHA256SUMS.txt that was not there.
+          # The count check is what turns that back into a failed build.
+          $files = Get-ChildItem artifacts/release -File | Where-Object Name -ne 'SHA256SUMS.txt'
+          if ($files.Count -eq 0) { throw 'Nothing to checksum in artifacts/release.' }
+
+          $files |
             ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash, $_.Name } |
             Set-Content artifacts/release/SHA256SUMS.txt -Encoding ascii
 
-          Get-Content artifacts/release/SHA256SUMS.txt
+          $written = @(Get-Content artifacts/release/SHA256SUMS.txt)
+          if ($written.Count -ne $files.Count) {
+            throw "Checksummed $($written.Count) of $($files.Count) file(s)."
+          }
+
+          $written
 
       - uses: actions/upload-artifact@v4
         with:

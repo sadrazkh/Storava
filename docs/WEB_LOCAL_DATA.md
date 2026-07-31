@@ -3,10 +3,17 @@
 ## Browser storage
 
 Storava Web stores scan sessions and individual metadata items in the versioned
-`storava-web` IndexedDB database. Schema version 2 stores sessions, item records, native
-directory handles, and validated advisor results in separate object stores. Item records
-are written in batches and indexed by session, size, relative path, and modification time.
-A scan is never serialized into one oversized record.
+`storava-web` IndexedDB database. Schema version 3 stores sessions, item records, native
+directory handles, validated advisor results, and recommendations carried in an imported
+archive, in separate object stores. Item records are written in batches and indexed by
+session, size, relative path, and modification time. A scan is never serialized into one
+oversized record.
+
+The Scan History view reports what this edition holds and offers to empty it per store:
+scans, advisor results, and preferences. IndexedDB exposes no per-store byte size, so each
+row carries a record count and the origin total comes from `navigator.storage.estimate()`.
+The stored API key is listed but removed only from the AI panel, where the consequence of
+losing it is stated.
 
 Stored metadata includes the selected root label, root-relative item path, kind, byte size,
 last-modified timestamp, extension, local category, rule identifiers, and risk level. It

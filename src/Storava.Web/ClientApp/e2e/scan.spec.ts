@@ -37,7 +37,9 @@ test('scans real browser File objects, persists results, and exports/imports the
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: /Export|خروجی/ }).click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/\.storava-web$/);
+  // .storava, not .storava-web: this button writes the one archive format all three editions
+  // read. The browser-only .storava-web export it used to produce is no longer what it makes.
+  expect(download.suggestedFilename()).toMatch(/\.storava$/);
   const exportedPath = await download.path();
   expect(exportedPath).toBeTruthy();
 
@@ -129,6 +131,11 @@ test('shows the exact sanitized AI payload and sends only after explicit consent
                 rationale: 'Review archive-class items locally before deciding whether to retain them.',
                 confidence: 0.86,
               }],
+              // Required, and empty is the correct value here: no inventory is sent in this test,
+              // and the advisor must return an empty list rather than name anything. Omitting it
+              // altogether is what a stale model would do, and the response parser rejects that —
+              // which is why this mock stopped producing a result at all.
+              itemTargets: [],
               cautions: ['Metadata cannot determine whether a file is useful.'],
               disclaimer: 'A person must review evidence before any file action.',
               privacyNote: 'Only aggregate metadata was analyzed.',
