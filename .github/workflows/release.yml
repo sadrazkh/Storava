@@ -226,12 +226,46 @@ jobs:
           ``SHA256SUMS.txt`` lists the checksum of every file above.
           "@
 
-          $arguments = @(
-            'release', 'create', $env:GITHUB_REF_NAME,
-            '--title', "Storava $env:VERSION",
-            '--notes', $notes
-          )
-          if ($env:PRERELEASE -eq 'true') { $arguments += '--prerelease' }
-          $arguments += (Get-ChildItem artifacts/release -File | ForEach-Object { $_.FullName })
+          $files = @(Get-ChildItem artifacts/release -File | ForEach-Object { $_.FullName })
 
-          & gh @arguments
+          # A tag gets moved and pushed again — usually after fixing whatever stopped the release —
+          # and this step used to fail flatly the second time because a release for that tag already
+          # existed. The intent is the same either way: this tag should have these files under these
+          # notes. So it creates when there is nothing and updates when there is.
+          #
+          # The probe is wrapped because a missing release is a non-zero exit from gh, and whether
+          # that surfaces as an exit code or a thrown error depends on the pwsh version the agent
+          # happens to have. Catching both is cheaper than depending on which.
+          $exists = $false
+          try {
+            gh release view $env:GITHUB_REF_NAME --json tagName | Out-Null
+            $exists = $LASTEXITCODE -eq 0
+          }
+          catch {
+            $exists = $false
+          }
+
+          if ($exists) {
+            & gh release edit $env:GITHUB_REF_NAME --title "Storava $env:VERSION" --notes $notes
+            if ($LASTEXITCODE -ne 0) { throw "Could not update the existing release." }
+
+            # --clobber so a rebuilt package replaces the one beside it rather than being refused.
+            & gh release upload $env:GITHUB_REF_NAME @files --clobber
+            if ($LASTEXITCODE -ne 0) { throw "Could not upload the packages to the existing release." }
+
+            "Updated the existing release for $env:GITHUB_REF_NAME with $($files.Count) file(s)."
+          }
+          else {
+            $arguments = @(
+              'release', 'create', $env:GITHUB_REF_NAME,
+              '--title', "Storava $env:VERSION",
+              '--notes', $notes
+            )
+            if ($env:PRERELEASE -eq 'true') { $arguments += '--prerelease' }
+            $arguments += $files
+
+            & gh @arguments
+            if ($LASTEXITCODE -ne 0) { throw "Could not create the release." }
+
+            "Created the release for $env:GITHUB_REF_NAME with $($files.Count) file(s)."
+          }
