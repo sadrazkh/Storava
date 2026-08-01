@@ -5,6 +5,8 @@ using Storava.Agent.Channel;
 using Storava.Agent.Identity;
 using Storava.Contracts.Agent;
 
+using Storava.Migrations;
+
 namespace Storava.Agent.Tests;
 
 /// <summary>
@@ -170,7 +172,7 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
         });
 
     [Fact]
-    public async Task A_delete_sends_the_folder_to_the_recycle_bin_after_the_name_is_typed()
+    public async Task A_delete_sends_the_folder_to_the_recycle_bin_after_it_is_approved()
     {
         var (scanId, items) = await ScanAsync();
         var cache = Find(items, "node_modules");
@@ -180,11 +182,12 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
         previewed.EnsureSuccessStatusCode();
         var preview = (await previewed.Content.ReadFromJsonAsync<AgentActionPreview>())!;
 
-        // Measured now rather than taken from the scan, and the phrase is the folder's own name.
-        Assert.Equal("node_modules", preview.ConfirmationPhrase);
+        // Measured now rather than taken from the scan, and the phrase is the approval word the
+        // guard will demand back — the browser has to be told what to ask for.
+        Assert.Equal(ExecutionGuard.ApprovalWord, preview.ConfirmationPhrase);
         Assert.True(preview.MeasuredBytes > 0);
 
-        using var executed = await ExecuteAsync(preview.StepId, preview.Fingerprint, "node_modules");
+        using var executed = await ExecuteAsync(preview.StepId, preview.Fingerprint, ExecutionGuard.ApprovalWord);
         executed.EnsureSuccessStatusCode();
         var outcome = (await executed.Content.ReadFromJsonAsync<AgentActionOutcome>())!;
 
@@ -198,7 +201,7 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Nothing_happens_without_the_folders_own_name()
+    public async Task Nothing_happens_without_the_approval_word()
     {
         var (scanId, items) = await ScanAsync();
         var cache = Find(items, "node_modules");
@@ -206,7 +209,7 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
         using var previewed = await PreviewAsync(scanId, cache.Id, "delete");
         var preview = (await previewed.Content.ReadFromJsonAsync<AgentActionPreview>())!;
 
-        foreach (string typed in new[] { "", "yes", "NODE_MODULE", "node_modules " + "x" })
+        foreach (string typed in new[] { "", "yes", "APPROV", "APPROVE x", "node_modules" })
         {
             using var attempt = await ExecuteAsync(preview.StepId, preview.Fingerprint, typed);
             var outcome = await attempt.Content.ReadFromJsonAsync<AgentActionOutcome>();
@@ -245,10 +248,10 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
         using var previewed = await PreviewAsync(scanId, cache.Id, "delete");
         var preview = (await previewed.Content.ReadFromJsonAsync<AgentActionPreview>())!;
 
-        using var first = await ExecuteAsync(preview.StepId, preview.Fingerprint, "node_modules");
+        using var first = await ExecuteAsync(preview.StepId, preview.Fingerprint, ExecutionGuard.ApprovalWord);
         first.EnsureSuccessStatusCode();
 
-        using var again = await ExecuteAsync(preview.StepId, preview.Fingerprint, "node_modules");
+        using var again = await ExecuteAsync(preview.StepId, preview.Fingerprint, ExecutionGuard.ApprovalWord);
 
         Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
     }
@@ -371,7 +374,7 @@ public sealed class AgentActionEndpointTests : IAsyncLifetime
         // Between reading and confirming, the world moved on.
         Directory.Delete(cache.Path, recursive: true);
 
-        using var executed = await ExecuteAsync(preview.StepId, preview.Fingerprint, "node_modules");
+        using var executed = await ExecuteAsync(preview.StepId, preview.Fingerprint, ExecutionGuard.ApprovalWord);
         var outcome = await executed.Content.ReadFromJsonAsync<AgentActionOutcome>();
 
         Assert.False(outcome!.Succeeded);

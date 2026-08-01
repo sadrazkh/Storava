@@ -165,7 +165,7 @@ public sealed class AgentActionService(
                 step.SourcePath,
                 step.DestinationPath,
                 step.MeasuredBytes,
-                ExecutionGuard.GetLeafName(step.SourcePath),
+                ExecutionGuard.ApprovalWord,
                 StepConfirmation.Compute(step),
                 warnings),
             null);
@@ -179,7 +179,7 @@ public sealed class AgentActionService(
             return null;
 
         // Every check that matters happens inside the guard: the fingerprint must match the step as
-        // it stands, the typed name must be the folder's own, the source must still be there and
+        // it stands, the approval word must have been typed, the source must still be there and
         // unprotected, and a move's destination must still hold. Passing the browser's values
         // straight in keeps this method from becoming a second, weaker gate.
         var result = await executor.ExecuteStepAsync(

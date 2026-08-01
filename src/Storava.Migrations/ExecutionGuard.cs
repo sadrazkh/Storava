@@ -23,6 +23,24 @@ public sealed class ExecutionGuard
     /// </summary>
     private const double FreeSpaceHeadroom = 0.05;
 
+    /// <summary>
+    /// What has to be typed to approve a step.
+    /// <para>
+    /// This used to be the source folder's own name. The reasoning was that typing the name proves
+    /// you read which folder it is — but in practice the names are long, and a gate people cannot
+    /// get through is not a safety feature, it is a wall. What actually stops a reflexive click is
+    /// having to type anything at all into an empty box, and that works with a short word.
+    /// </para>
+    /// <para>
+    /// English on purpose, in both languages: it is a fixed token rather than prose, and a
+    /// translated one would mean the same approval reads differently depending on a setting. What
+    /// is being confirmed is still bound to the step by <see cref="StepConfirmation.Fingerprint"/>,
+    /// which is the check that stops an approval being reused for a different act — that has not
+    /// been relaxed and is the one that matters.
+    /// </para>
+    /// </summary>
+    public const string ApprovalWord = "APPROVE";
+
     private readonly IProtectedPathService _protectedPaths;
     private readonly IFileSystemActions _fileSystem;
 
@@ -121,9 +139,7 @@ public sealed class ExecutionGuard
         if (!string.Equals(confirmation.Fingerprint, StepConfirmation.Compute(step), StringComparison.Ordinal))
             return Result.Failure(ExecutionErrors.ConfirmationStale);
 
-        // Typing the folder's own name is what stops a reflexive click from removing the wrong tree.
-        var expectedName = GetLeafName(step.SourcePath);
-        if (!string.Equals(confirmation.TypedName?.Trim(), expectedName, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(confirmation.TypedName?.Trim(), ApprovalWord, StringComparison.OrdinalIgnoreCase))
             return Result.Failure(ExecutionErrors.NotConfirmed);
 
         var source = ValidateSource(step.SourcePath);

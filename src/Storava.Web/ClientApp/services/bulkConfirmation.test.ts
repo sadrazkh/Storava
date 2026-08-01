@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approves, codeFor, fingerprintOf } from '@/services/bulkConfirmation';
+import { APPROVAL_WORD, approves, codeFor, fingerprintOf, stillApplies } from '@/services/bulkConfirmation';
 
 /**
  * One approval covering several items has to be bound to exactly those items.
@@ -33,11 +33,24 @@ describe('approving a whole selection', () => {
     expect(codeFor(['a', 'b'])).not.toBe(codeFor(['a', 'c']));
   });
 
-  it('approves its own set and nothing else', () => {
+  it('takes the approval word and nothing else', () => {
     const mine = ['a', 'b'];
 
-    expect(approves(mine, codeFor(mine))).toBe(true);
-    expect(approves(mine, codeFor(['a', 'c']))).toBe(false);
+    expect(approves(mine, APPROVAL_WORD)).toBe(true);
+    expect(approves(mine, 'a')).toBe(false);
+    expect(approves(mine, codeFor(mine))).toBe(false);
+  });
+
+  /**
+   * The word is the same for every selection, so it is this that stops an approval being spent on
+   * a set the user never read. It was carried by the typed code before; now it is checked directly.
+   */
+  it('stops an approval carrying over to a different selection', () => {
+    const approved = fingerprintOf(['a', 'b']);
+
+    expect(stillApplies(approved, ['b', 'a'])).toBe(true);
+    expect(stillApplies(approved, ['a', 'c'])).toBe(false);
+    expect(stillApplies('', ['a', 'b'])).toBe(false);
   });
 
   /** Read off a screen and retyped, so a shift key or a stray space is not a refusal. */
@@ -48,15 +61,11 @@ describe('approving a whole selection', () => {
   ])('forgives case and surrounding space', (mangle) => {
     const keys = ['a', 'b'];
 
-    expect(approves(keys, mangle(codeFor(keys)))).toBe(true);
+    expect(approves(keys, mangle(APPROVAL_WORD))).toBe(true);
   });
 
-  it.each(['', '   ', 'ABCDEF', 'not-the-code'])('refuses %s', (typed) => {
+  it.each(['', '   ', 'APPROV', 'APPROVE!', 'not-the-word'])('refuses %s', (typed) => {
     const keys = ['a', 'b'];
-
-    // The literal case could in principle be the real code; if it ever is, this fails rather than
-    // passing by luck.
-    if (typed.trim().toUpperCase() === codeFor(keys)) return;
 
     expect(approves(keys, typed)).toBe(false);
   });

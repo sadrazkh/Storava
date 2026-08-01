@@ -29,12 +29,14 @@ public sealed partial class ShellViewModel : ViewModelBase
         NavigationService navigation,
         ILocalizationService localization,
         IThemeService theme,
-        ISettingsService settings)
+        ISettingsService settings,
+        PathActions paths)
     {
         _navigation = navigation;
         _localization = localization;
         _theme = theme;
         _settings = settings;
+        Paths = paths;
 
         NavItems = BuildNavItems();
         NavItemsView = CollectionViewSource.GetDefaultView(NavItems);
@@ -45,6 +47,15 @@ public sealed partial class ShellViewModel : ViewModelBase
         _navigation.CurrentChanged += OnCurrentChanged;
         _localization.LanguageChanged += OnLanguageChanged;
     }
+
+    /// <summary>
+    /// Copying a path and opening it in Explorer, for every page at once.
+    /// <para>
+    /// Here rather than on each page because it is the same two commands everywhere and the shell
+    /// is the one ancestor every page has. A row binds through the window and gets them.
+    /// </para>
+    /// </summary>
+    public PathActions Paths { get; }
 
     public ObservableCollection<NavigationItem> NavItems { get; }
 

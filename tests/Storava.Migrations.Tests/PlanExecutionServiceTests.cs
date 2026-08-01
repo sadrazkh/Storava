@@ -310,7 +310,7 @@ public class PlanExecutionServiceTests
     {
         StepId = step.Id,
         Fingerprint = StepConfirmation.Compute(step),
-        TypedName = ExecutionGuard.GetLeafName(step.SourcePath)
+        TypedName = ExecutionGuard.ApprovalWord
     };
 
     private static StoragePlan PlanWith(params StoragePlanEntry[] entries)

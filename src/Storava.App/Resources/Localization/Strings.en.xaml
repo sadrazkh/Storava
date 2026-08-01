@@ -319,8 +319,8 @@
     <sys:String x:Key="Str.Migration.Destination">Where should it go?</sys:String>
     <sys:String x:Key="Str.Migration.Destination.Hint">Destination</sys:String>
     <sys:String x:Key="Str.Migration.Destination.Note">Pick the folder to move it into; it keeps its own name there. The destination must be on a different drive, or nothing would be freed.</sys:String>
-    <sys:String x:Key="Str.Migration.ConfirmPrompt">To confirm, type the folder's name:</sys:String>
-    <sys:String x:Key="Str.Migration.ConfirmHint">Folder name</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmPrompt">To approve this step, type APPROVE:</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmHint">APPROVE</sys:String>
     <sys:String x:Key="Str.Migration.Log">What happened</sys:String>
     <sys:String x:Key="Str.Migration.Finished">Every step has been dealt with.</sys:String>
     <sys:String x:Key="Str.Migration.InRecycleBin">The original is in the Recycle Bin — restore it from Explorer if you need it back.</sys:String>
@@ -371,7 +371,7 @@
     <sys:String x:Key="Str.Migration.Error.RecycleInUse">Another program is still using a file inside this folder, so the original could not be removed. Everything was put back as it was. Close whatever is using it — an editor, a build, a running app — and try again.</sys:String>
     <sys:String x:Key="Str.Migration.Error.RecycleAccessDenied">Windows would not allow the original folder to be removed, so everything was put back as it was. This one will not resolve by trying again.</sys:String>
     <sys:String x:Key="Str.Migration.Error.LinkFailed">The folder was moved and the space was freed, but the link back to the old location could not be created — point the tool at the new path yourself.</sys:String>
-    <sys:String x:Key="Str.Migration.Error.NotConfirmed">Type the folder's name exactly to confirm this step.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotConfirmed">Type APPROVE to approve this step.</sys:String>
     <sys:String x:Key="Str.Migration.Error.Stale">Something changed after you confirmed. Confirm again.</sys:String>
     <sys:String x:Key="Str.Migration.Error.AnotherRunning">Another step is still running.</sys:String>
     <sys:String x:Key="Str.Migration.Error.NotPending">This step has already been dealt with.</sys:String>
@@ -571,4 +571,10 @@
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer">Browser edition accounts</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Body">Sign-in details for the browser edition, if this machine has ever served it.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Kept">Emptying this would lock people out of the browser edition, so it is left alone here.</sys:String>
+    <sys:String x:Key="Str.Common.Path.Copy">Copy path</sys:String>
+    <sys:String x:Key="Str.Common.Path.Reveal">Show in Explorer</sys:String>
+    <sys:String x:Key="Str.Common.Path.Copied">Path copied.</sys:String>
+    <sys:String x:Key="Str.Common.Path.CopyFailed">The clipboard would not take it. Another program may be holding it.</sys:String>
+    <sys:String x:Key="Str.Common.Path.Gone">That path is not there any more. A scan describes the disk as it was.</sys:String>
+    <sys:String x:Key="Str.Common.Path.RevealFailed">Explorer would not open.</sys:String>
 </ResourceDictionary>

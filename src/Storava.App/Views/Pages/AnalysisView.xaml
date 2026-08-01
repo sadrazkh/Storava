@@ -145,18 +145,25 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <materialDesign:PackIcon Grid.Column="0" Kind="FolderOutline" VerticalAlignment="Center"
                                                                      Margin="0,0,8,0" Foreground="{DynamicResource PrimaryHueMidBrush}" />
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Storava.Text.Body}"
                                                            TextTrimming="CharacterEllipsis" />
+                                                <!-- The full path, which the tooltip alone could only show, never hand over. -->
+                                                <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
+                                                           Opacity="0.6" TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding DetectedTechnology}" Style="{StaticResource Storava.Text.Caption}"
                                                            Visibility="{Binding DetectedTechnology, Converter={StaticResource Conv.NullVis}}" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" Text="{Binding Size, Converter={StaticResource Conv.Bytes}}"
                                                        VerticalAlignment="Center" FontWeight="SemiBold"
                                                        Style="{StaticResource Storava.Text.Body}" Margin="8,0,0,0" />
+                                            <ContentControl Grid.Column="3" Content="{Binding Path}"
+                                                            ContentTemplate="{StaticResource Storava.PathActions}"
+                                                            VerticalAlignment="Center" Margin="4,0,0,0" />
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

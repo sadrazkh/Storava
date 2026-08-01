@@ -193,21 +193,41 @@ public class AppStorageReportTests : IDisposable
     }
 
     /// <summary>
-    /// SQLite keeps the freed pages for reuse, so the file is the same size afterwards. Saying so is
-    /// the difference between an honest report and a user staring at an unchanged number.
+    /// Deleting the rows only frees pages inside the file, so the room is handed back in the same
+    /// act. Without this the file stays exactly as large as it was and Empty looks like it did
+    /// nothing — which is what was reported.
     /// </summary>
     [Fact]
-    public async Task ClearingScansAsksForCompactingBecauseTheFileDoesNotShrink()
+    public async Task ClearingScansHandsTheRoomBack()
     {
-        var maintenance = new FakeMaintenance(4096, 4096);
+        var maintenance = new FakeMaintenance(4096, 1024);
 
         var result = await Build(new FakeSessions("only"), maintenance).ClearAsync(AppStorageKind.Scans);
 
+        Assert.Equal(1, maintenance.Compactions);
+        Assert.False(result.NeedsCompacting);
+        Assert.Equal(3072, result.BytesFreed);
+    }
+
+    /// <summary>
+    /// A compaction that cannot run — most often for want of free disk to write the copy — does not
+    /// undo the clear. The scans are gone either way; what is left is to say the room has not come
+    /// back, so an unchanged number is explained rather than mysterious.
+    /// </summary>
+    [Fact]
+    public async Task ScansStillGoWhenTheRoomCannotBeHandedBack()
+    {
+        var maintenance = new FakeMaintenance(4096, 4096) { CompactThrows = true };
+        var sessions = new FakeSessions("only");
+
+        var result = await Build(sessions, maintenance).ClearAsync(AppStorageKind.Scans);
+
+        Assert.Equal(["only"], sessions.Deleted);
         Assert.True(result.NeedsCompacting);
         Assert.Equal(0, result.BytesFreed);
     }
 
-    /// <summary>A shrink that does happen is reported, and never as a negative number.</summary>
+    /// <summary>The shrink is reported, and never as a negative number.</summary>
     [Theory]
     [InlineData(4096, 1024, 3072)]
     [InlineData(1024, 4096, 0)]
@@ -254,9 +274,20 @@ public class AppStorageReportTests : IDisposable
 
         public FakeMaintenance(params long[] sizes) => _sizes = new Queue<long>(sizes);
 
+        public int Compactions { get; private set; }
+
+        /// <summary>Set to make compacting fail the way a full disk makes it fail.</summary>
+        public bool CompactThrows { get; init; }
+
         public long SizeOnDisk() => _sizes.Count > 0 ? _sizes.Dequeue() : 0;
 
-        public Task<long> CompactAsync(CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+        public Task<long> CompactAsync(CancellationToken cancellationToken = default)
+        {
+            if (CompactThrows)
+                throw new IOException("not enough room to write the rewritten copy");
+
+            Compactions++;
+            return Task.FromResult(0L);
+        }
     }
 }

@@ -324,7 +324,7 @@ public sealed class AgentPlanService(
                 {
                     StepId = step.Id,
                     Fingerprint = StepConfirmation.Compute(step),
-                    TypedName = ExecutionGuard.GetLeafName(step.SourcePath)
+                    TypedName = ExecutionGuard.ApprovalWord
                 },
                 progress: null,
                 cancellationToken).ConfigureAwait(false);

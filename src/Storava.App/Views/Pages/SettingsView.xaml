@@ -115,11 +115,18 @@
                                                        Style="{StaticResource Storava.Text.Caption}"
                                                        Margin="0,2,0,0" Opacity="0.85" />
                                             <!-- Where it is, so it can be checked without taking
-                                                 this page's word for it. -->
-                                            <TextBlock Text="{Binding Location}" Margin="0,2,0,0"
-                                                       Style="{StaticResource Storava.Text.Caption}"
-                                                       Opacity="0.6" TextTrimming="CharacterEllipsis"
-                                                       ToolTip="{Binding Location}" />
+                                                 this page's word for it — and reachable, rather
+                                                 than something to read off the screen and retype. -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <TextBlock Text="{Binding Location}"
+                                                           Style="{StaticResource Storava.Text.Caption}"
+                                                           Opacity="0.6" TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"
+                                                           ToolTip="{Binding Location}" />
+                                                <ContentControl Content="{Binding Location}"
+                                                                ContentTemplate="{StaticResource Storava.PathActions}"
+                                                                Margin="4,0,0,0" />
+                                            </StackPanel>
                                             <!-- A disabled button with nothing beside it reads as
                                                  a broken button, so the reason travels with it. -->
                                             <TextBlock Text="{Binding WhyNotClearable}" Margin="0,4,0,0"

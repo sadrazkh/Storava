@@ -1,17 +1,23 @@
 /**
  * Binds one approval to a whole set of items.
  *
- * Deleting one item is approved by typing its own name, which works because there is one name and
- * it is on screen. For a set that gate does nothing — typing one name out of twelve says nothing
- * about the other eleven — so the set is approved by a short code derived from every item in it.
- * Change the selection and the code changes, so an approval cannot be spent on a different set
- * than the one that was read.
+ * What has to be typed is a fixed word. It used to be a six-character code derived from the
+ * selection, and before that an item's own name — both on the theory that reproducing something
+ * specific proves you read it. In practice a long or fiddly thing to copy is a wall rather than a
+ * gate: it stops the person who meant to do this as surely as the one who did not, and the
+ * complaint that arrived was that deleting was effectively impossible.
  *
- * What this is not: a security boundary. The code is computed and checked in the same page, so it
- * stops a reflexive click rather than a determined caller — which is the same thing typing a folder
- * name ever did. The agent's version of this is checked by the agent, across a process boundary,
- * and that one is load-bearing.
+ * The binding survives the change. The selection's fingerprint is still computed and still checked
+ * on submit, so an approval given for one set cannot be spent on another — that was always the part
+ * doing the work, and typing the code was only how it was surfaced.
+ *
+ * What this is not: a security boundary. It is computed and checked in the same page, so it stops a
+ * reflexive click rather than a determined caller. The agent's version is checked by the agent,
+ * across a process boundary, and that one is load-bearing.
  */
+
+/** Typed to approve. English in both languages: a fixed token, not prose to be translated. */
+export const APPROVAL_WORD = 'APPROVE';
 
 /**
  * Six characters, from an alphabet with no pairs that look alike in a sans-serif font.
@@ -66,5 +72,16 @@ export function codeFor(keys: readonly string[]): string {
  * it over a shift key would teach nobody anything.
  */
 export function approves(keys: readonly string[], typed: string): boolean {
-  return keys.length > 0 && typed.trim().toUpperCase() === codeFor(keys);
+  return keys.length > 0 && typed.trim().toUpperCase() === APPROVAL_WORD;
+}
+
+/**
+ * Whether an approval given against one selection still stands for what is selected now.
+ *
+ * This is the check the typed code used to perform implicitly. Made explicit, it keeps working
+ * while the thing the user types stays short: hold the fingerprint from when they approved, and
+ * compare it when they act.
+ */
+export function stillApplies(approvedFingerprint: string, keys: readonly string[]): boolean {
+  return approvedFingerprint.length > 0 && approvedFingerprint === fingerprintOf(keys);
 }

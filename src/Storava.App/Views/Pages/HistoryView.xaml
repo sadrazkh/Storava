@@ -231,8 +231,13 @@
                                                 </WrapPanel>
 
                                                 <TextBlock Text="{Binding Name}" Style="{StaticResource Storava.Text.Body}" />
-                                                <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
-                                                           TextTrimming="CharacterEllipsis" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Path}" Style="{StaticResource Storava.Text.Caption}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    <ContentControl Content="{Binding Path}"
+                                                                    ContentTemplate="{StaticResource Storava.PathActions}"
+                                                                    Margin="4,0,0,0" />
+                                                </StackPanel>
                                             </StackPanel>
 
                                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" MinWidth="120">

@@ -88,13 +88,36 @@ public sealed class AppStorageReport : IAppStorageReport
         foreach (var session in sessions)
             await _sessions.DeleteAsync(session.Id, cancellationToken).ConfigureAwait(false);
 
-        long after = _maintenance.SizeOnDisk();
-
         _logger.LogInformation("Removed {Count} scan(s) at the user's request.", sessions.Count);
 
-        // The rows are gone but SQLite keeps the pages for reuse, so the file is very likely the same
-        // size. Reporting the difference and saying compacting is still needed is the honest answer.
-        return new AppStorageClearResult(Math.Max(0, before - after), sessions.Count, NeedsCompacting: true);
+        // Then hand the room back, in the same act.
+        //
+        // Deleting the rows only frees pages inside the file; SQLite keeps them for reuse and the
+        // file on disk does not shrink by a byte. This was left as a second button with a message
+        // explaining why the number had not moved, and that was a mistake: pressing Empty and
+        // watching 6.4 GB stay at 6.4 GB is indistinguishable from a button that does nothing,
+        // whatever the message underneath it says. Measured on the machine this was written for,
+        // every page but thirty-two of 1,686,768 was free and waiting for exactly this.
+        //
+        // The wait is the price of the number actually changing, and it is a wait the user asked
+        // for by pressing a button called Empty.
+        try
+        {
+            await _maintenance.CompactAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Most often there is not enough free disk to write the rewritten copy. The scans are
+            // still gone, so this is not a failure of the clear — but the room has not come back,
+            // and saying so is what stops the unchanged number from looking like a broken button.
+            _logger.LogWarning(ex, "The scans were removed but the database could not be compacted.");
+
+            return new AppStorageClearResult(
+                Math.Max(0, before - _maintenance.SizeOnDisk()), sessions.Count, NeedsCompacting: true);
+        }
+
+        return new AppStorageClearResult(
+            Math.Max(0, before - _maintenance.SizeOnDisk()), sessions.Count, NeedsCompacting: false);
     }
 
     /// <summary>

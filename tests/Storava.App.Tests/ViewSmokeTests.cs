@@ -18,9 +18,8 @@ public class ViewSmokeTests
         {
             // The Application has to exist before the dictionaries are built: constructing it is
             // what registers the "pack" scheme, and a pack URI made before that fails to resolve.
-            var application = System.Windows.Application.Current ?? new System.Windows.Application();
-            var resources = BuildApplicationResources(isDark: true);
-            application.Resources = resources;
+            var application = ApplicationResourcesForTests.EnsureApplication(isDark: true);
+            var resources = application.Resources;
 
             Assert.All(BuildEveryPage(), Assert.NotNull);
 
@@ -54,7 +53,7 @@ public class ViewSmokeTests
         {
             // One Application per AppDomain, and the sibling test in this class may already have
             // made it. Same class, so xUnit runs them in sequence and there is nothing to race.
-            _ = System.Windows.Application.Current ?? new System.Windows.Application();
+            _ = ApplicationResourcesForTests.EnsureApplication();
 
             var dark = new ResourceDictionary { Source = PaletteUri(isDark: true) };
             var light = new ResourceDictionary { Source = PaletteUri(isDark: false) };
@@ -99,42 +98,7 @@ public class ViewSmokeTests
         dictionaries[dictionaries.IndexOf(current)] = replacement;
     }
 
-    private static Uri PaletteUri(bool isDark) => new(
-        isDark
-            ? "pack://application:,,,/Storava;component/Resources/Theme/Palette.Dark.xaml"
-            : "pack://application:,,,/Storava;component/Resources/Theme/Palette.Light.xaml",
-        UriKind.Absolute);
-
-    /// <summary>
-    /// Mirrors the merge order in App.xaml; tokens must come before their consumers.
-    /// </summary>
-    /// <param name="isDark">Which semantic palette to start on.</param>
-    private static ResourceDictionary BuildApplicationResources(bool isDark)
-    {
-        var resources = new ResourceDictionary();
-        resources.MergedDictionaries.Add(new MaterialDesignThemes.Wpf.BundledTheme
-        {
-            BaseTheme = MaterialDesignThemes.Wpf.BaseTheme.Dark,
-            PrimaryColor = MaterialDesignColors.PrimaryColor.Teal,
-            SecondaryColor = MaterialDesignColors.SecondaryColor.Cyan
-        });
-
-        foreach (string source in (string[])
-        [
-            "pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign2.Defaults.xaml",
-            PaletteUri(isDark).OriginalString,
-            "pack://application:,,,/Storava;component/Resources/Theme/Spacing.xaml",
-            "pack://application:,,,/Storava;component/Resources/Theme/Typography.xaml",
-            "pack://application:,,,/Storava;component/Resources/Theme/Controls.xaml",
-            "pack://application:,,,/Storava;component/Resources/Localization/Strings.fa.xaml",
-            "pack://application:,,,/Storava;component/Resources/ViewMappings.xaml"
-        ])
-        {
-            resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(source, UriKind.Absolute) });
-        }
-
-        return resources;
-    }
+    private static Uri PaletteUri(bool isDark) => ApplicationResourcesForTests.PaletteUri(isDark);
 
     private static Exception? RunOnStaThread(Action action)
     {

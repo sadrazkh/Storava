@@ -113,7 +113,7 @@ public class ExecutionGuardTests
     }
 
     [Fact]
-    public void ValidateForExecution_RefusesTheWrongTypedName()
+    public void ValidateForExecution_RefusesAnythingButTheApprovalWord()
     {
         var step = DeleteStep();
         var confirmation = new StepConfirmation
@@ -127,14 +127,14 @@ public class ExecutionGuardTests
     }
 
     [Fact]
-    public void ValidateForExecution_AcceptsTheTypedNameRegardlessOfCase()
+    public void ValidateForExecution_AcceptsTheApprovalWordRegardlessOfCase()
     {
         var step = DeleteStep();
         var confirmation = new StepConfirmation
         {
             StepId = step.Id,
             Fingerprint = StepConfirmation.Compute(step),
-            TypedName = "NODE_MODULES"
+            TypedName = "approve"
         };
 
         Assert.True(_guard.ValidateForExecution(step, confirmation, 1_000).IsSuccess);
@@ -148,7 +148,7 @@ public class ExecutionGuardTests
         {
             StepId = step.Id,
             Fingerprint = StepConfirmation.Compute(step),
-            TypedName = "node_modules"
+            TypedName = ExecutionGuard.ApprovalWord
         };
 
         // The user approved one destination and then the step was pointed somewhere else.
@@ -167,7 +167,7 @@ public class ExecutionGuardTests
         {
             StepId = other.Id,
             Fingerprint = StepConfirmation.Compute(other),
-            TypedName = "node_modules"
+            TypedName = ExecutionGuard.ApprovalWord
         };
 
         Assert.Equal(ExecutionErrors.NotConfirmed, _guard.ValidateForExecution(step, confirmation, 1_000).Error);

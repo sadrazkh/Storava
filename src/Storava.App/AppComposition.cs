@@ -49,6 +49,11 @@ public static class AppComposition
         services.AddSingleton<ILocalizationService, LocalizationService>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IDialogService, DialogService>();
+
+        // Copying a path and opening it where it lives. Every page names files; none of them could
+        // hand one over until now.
+        services.AddSingleton<IPathPresenter, PathPresenter>();
+        services.AddSingleton<PathActions>();
         services.AddSingleton<NavigationService>();
         services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
         services.AddSingleton<ScanController>();

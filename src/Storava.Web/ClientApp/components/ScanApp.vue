@@ -12,11 +12,12 @@ import { getExplorerMessages } from '@/localization/explorerMessages';
 import type { AdvisorItemTarget, AdvisorResult, AdvisorReviewTarget } from '@/models/advisor';
 import type { ScanFilters, ScanItem, ScanSession } from '@/models/scan';
 import { detectCapabilities } from '@/services/capabilityService';
-import { approves, codeFor } from '@/services/bulkConfirmation';
+import { APPROVAL_WORD, approves, fingerprintOf, stillApplies } from '@/services/bulkConfirmation';
 import type { BulkRemovalResult } from '@/services/fileActionService';
 import { deleteLocalItem, deleteLocalItems, readLocalFile } from '@/services/fileActionService';
 import { FolderSelectionCancelledError, selectFolder } from '@/services/folderPermissionService';
 import { buildBrowserRelativeAddress } from '@/services/itemAddressService';
+import { copyText } from '@/services/clipboardService';
 import {
   clearAllLocalData,
   deleteSession,
@@ -84,13 +85,29 @@ const removalBytes = computed(() =>
 /** Bound to the paths, not the ids: what is being approved is a set of things on disk. */
 const removalKeys = computed(() => removalItems.value.map((item) => item.relativePath));
 
-const removalExpectedCode = computed(() => codeFor(removalKeys.value));
+const removalExpectedCode = computed(() => APPROVAL_WORD);
 
 const removalApproved = computed(() => approves(removalKeys.value, removalCode.value));
 
+watch(removalApproved, (approved) => {
+  approvedSelection.value = approved ? fingerprintOf(removalKeys.value) : '';
+});
+
+/** One item is approved the same way a set is, so there is one thing to learn rather than two. */
+function approvesOne(typed: string): boolean {
+  return typed.trim().toUpperCase() === APPROVAL_WORD;
+}
+
+/**
+ * The selection as it stood when the word was typed. Kept so an approval cannot survive the
+ * selection changing underneath it — the guarantee the typed code used to carry.
+ */
+const approvedSelection = ref('');
+
 function toggleForRemoval(item: ScanItem): void {
-  // Any change to the selection invalidates the code shown beside it.
+  // Any change to the selection invalidates the approval given for the old one.
   removalCode.value = '';
+  approvedSelection.value = '';
   removalReport.value = null;
 
   removalIds.value = removalIds.value.includes(item.id)
@@ -106,6 +123,15 @@ function clearRemoval(): void {
 
 async function runRemoval(): Promise<void> {
   if (!session.value || !removalApproved.value || removalProgress.value) return;
+
+  // The word is short, so it is this that stops an approval being spent on a set the user never
+  // read. Recomputed here rather than trusted from when it was typed.
+  if (!stillApplies(approvedSelection.value, removalKeys.value)) {
+    notice.value = explorerCopy.value.actionFailed;
+    removalCode.value = '';
+    approvedSelection.value = '';
+    return;
+  }
 
   const chosen = removalItems.value;
   removalProgress.value = [0, chosen.length];
@@ -527,12 +553,16 @@ async function openAdvisorTarget(target: AdvisorReviewTarget): Promise<void> {
 }
 
 async function copyItemAddress(item: ScanItem): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(itemAddress(item));
-    notice.value = explorerCopy.value.copiedAddress;
-  } catch {
-    notice.value = explorerCopy.value.actionFailed;
-  }
+  notice.value = await copyText(itemAddress(item))
+    ? explorerCopy.value.copiedAddress
+    : explorerCopy.value.actionFailed;
+}
+
+/** The scan's own root, for the history list where there is no item to select. */
+async function copyRootName(stored: ScanSession): Promise<void> {
+  notice.value = await copyText(stored.rootName)
+    ? explorerCopy.value.copiedAddress
+    : explorerCopy.value.actionFailed;
 }
 
 async function openSelectedFile(): Promise<void> {
@@ -570,7 +600,7 @@ async function confirmDelete(): Promise<void> {
   if (
     !session.value
     || !target
-    || deleteConfirmation.value !== target.name
+    || !approvesOne(deleteConfirmation.value)
     || isDeleting.value
   ) return;
   isDeleting.value = true;
@@ -954,6 +984,20 @@ onBeforeUnmount(() => {
                     :style="{ transform: `translateY(${(visibleStart + index) * rowHeight}px)` }"
                     @change="toggleForRemoval(item)"
                   >
+                  <!-- Copy sits in the same gutter as the tick, and for the same reason: the row
+                       is a button, and a button cannot contain one. -->
+                  <button
+                    v-for="(item, index) in visibleItems"
+                    :key="`copy-${item.id}`"
+                    type="button"
+                    class="virtual-row__copy"
+                    :title="explorerCopy.copyAddress"
+                    :aria-label="`${explorerCopy.copyAddress}: ${item.relativePath}`"
+                    :style="{ transform: `translateY(${(visibleStart + index) * rowHeight}px)` }"
+                    @click="copyItemAddress(item)"
+                  >
+                    ⧉
+                  </button>
                   <button
                     v-for="(item, index) in visibleItems"
                     :key="item.id"
@@ -1036,7 +1080,18 @@ onBeforeUnmount(() => {
             <article v-for="stored in sessions" :key="stored.id" class="history-card">
               <label><input type="checkbox" :checked="compareIds.includes(stored.id)" @change="toggleCompare(stored.id)"><span>{{ t('compare') }}</span></label>
               <span class="status-dot" :data-status="stored.status" />
-              <h2>{{ stored.rootName }}</h2><p>{{ formatDate(stored.createdAt) }}</p>
+              <h2>
+                {{ stored.rootName }}
+                <button
+                  type="button"
+                  class="history-card__copy"
+                  :title="explorerCopy.copyAddress"
+                  :aria-label="`${explorerCopy.copyAddress}: ${stored.rootName}`"
+                  @click="copyRootName(stored)"
+                >
+                  ⧉
+                </button>
+              </h2><p>{{ formatDate(stored.createdAt) }}</p>
               <div><strong>{{ formatBytes(stored.metrics.bytes) }}</strong><span>{{ formatCount(stored.metrics.files) }} {{ t('fileCount') }}</span></div>
               <footer><button type="button" @click="openHistorySession(stored.id)">{{ t('openScan') }}</button><button type="button" @click="exportCurrent(stored)">{{ t('exportScan') }}</button><button type="button" @click="removeSession(stored.id)">{{ t('deleteScan') }}</button></footer>
             </article>
@@ -1125,7 +1180,7 @@ onBeforeUnmount(() => {
         <p>{{ explorerCopy.deleteWarning }}</p>
         <code>{{ itemAddress(pendingDelete) }}</code>
         <label>
-          <span>{{ explorerCopy.deletePrompt }}: <strong>{{ pendingDelete.name }}</strong></span>
+          <span>{{ explorerCopy.deletePrompt }} <strong>{{ pendingDelete.name }}</strong></span>
           <input
             ref="deleteInput"
             v-model="deleteConfirmation"
@@ -1138,7 +1193,7 @@ onBeforeUnmount(() => {
         </label>
         <footer>
           <button class="button button--quiet" type="button" :disabled="isDeleting" @click="pendingDelete = null">{{ explorerCopy.deleteCancel }}</button>
-          <button class="button button--danger" type="button" :disabled="deleteConfirmation !== pendingDelete.name || isDeleting" @click="confirmDelete">
+          <button class="button button--danger" type="button" :disabled="!approvesOne(deleteConfirmation) || isDeleting" @click="confirmDelete">
             {{ isDeleting ? explorerCopy.deleting : explorerCopy.deleteConfirm }}
           </button>
         </footer>
@@ -1288,6 +1343,50 @@ onBeforeUnmount(() => {
   cursor: pointer;
   z-index: 2;
 }
+
+/* At the far end of the row rather than beside the tick: it belongs to the row's content, and the
+   leading gutter is already spoken for by selection. */
+.virtual-row__copy {
+  position: absolute;
+  inset-inline-end: .4rem;
+  top: 0;
+  height: 54px;
+  width: 2rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+
+  /* Present but quiet. Not hidden-until-hover: the rows and their copy buttons are two separate
+     absolutely-positioned lists, so no button is a sibling of the row it belongs to and CSS has no
+     way to tell that one is being pointed at. Faint and always there beats clever and wrong, and
+     it stays reachable from the keyboard. */
+  opacity: .45;
+  transition: opacity .12s ease;
+}
+
+.virtual-row__copy:hover,
+.virtual-row__copy:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+}
+
+.history-card__copy {
+  margin-inline-start: .4rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .55;
+}
+
+.history-card__copy:hover,
+.history-card__copy:focus-visible { opacity: 1; color: var(--ink); }
 
 .bulk-remove {
   display: grid;

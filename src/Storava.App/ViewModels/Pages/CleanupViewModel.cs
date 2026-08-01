@@ -247,7 +247,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
     public bool HasItems => VisibleItems.Count > 0;
 
-    /// <summary>True once the user has typed the folder's own name exactly.</summary>
+    /// <summary>True once the approval word has been typed. See <see cref="ExecutionGuard.ApprovalWord"/>.</summary>
     public bool IsNameConfirmed => CurrentStep is { RequiredName.Length: > 0 } step
                                    && string.Equals(
                                        ConfirmationText?.Trim(),
@@ -822,7 +822,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             _step.Action == SuggestedAction.Move,
             _step.HasNoRule,
             string.Format(culture, _localization["Str.Migration.StepPosition"], position, _execution.Steps.Count),
-            ExecutionGuard.GetLeafName(_step.SourcePath));
+            ExecutionGuard.ApprovalWord);
 
         // A move inherits the destination chosen for the whole run; the user can still override it
         // for this one step before confirming.

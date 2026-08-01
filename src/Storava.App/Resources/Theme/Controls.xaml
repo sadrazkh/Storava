@@ -357,4 +357,34 @@
         <Setter Property="TextElement.Foreground" Value="{DynamicResource Storava.Brush.Info.Text}" />
     </Style>
 
+    <!-- Copy this path, or open it where it lives.
+
+         One template so the pair looks and behaves the same everywhere, and so a page that shows a
+         path cannot end up with only half of it. Both commands come off the shell through the
+         window, which every page is inside; the path itself comes from whatever the row is bound
+         to, passed in as the Tag.
+
+         Icon-only, with tooltips: these sit at the end of rows that are already carrying a name, a
+         size and a reason, and two more words of button text on each would crowd out the content
+         they are pointing at. -->
+    <DataTemplate x:Key="Storava.PathActions">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Style="{StaticResource MaterialDesignIconButton}"
+                    Width="30" Height="30" Padding="0"
+                    ToolTip="{DynamicResource Str.Common.Path.Copy}"
+                    Command="{Binding DataContext.Paths.CopyCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="ContentCopy" Width="16" Height="16" />
+            </Button>
+
+            <Button Style="{StaticResource MaterialDesignIconButton}"
+                    Width="30" Height="30" Padding="0"
+                    ToolTip="{DynamicResource Str.Common.Path.Reveal}"
+                    Command="{Binding DataContext.Paths.RevealCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}">
+                <materialDesign:PackIcon Kind="FolderOpen" Width="16" Height="16" />
+            </Button>
+        </StackPanel>
+    </DataTemplate>
+
 </ResourceDictionary>

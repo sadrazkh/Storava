@@ -319,8 +319,8 @@
     <sys:String x:Key="Str.Migration.Destination">کجا منتقل شود؟</sys:String>
     <sys:String x:Key="Str.Migration.Destination.Hint">مقصد</sys:String>
     <sys:String x:Key="Str.Migration.Destination.Note">پوشه‌ای را انتخاب کنید که این پوشه داخل آن برود؛ نامش همان می‌ماند. مقصد باید روی درایو دیگری باشد، وگرنه فضایی آزاد نمی‌شود.</sys:String>
-    <sys:String x:Key="Str.Migration.ConfirmPrompt">برای تأیید، نام پوشه را تایپ کنید:</sys:String>
-    <sys:String x:Key="Str.Migration.ConfirmHint">نام پوشه</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmPrompt">برای تأیید این مرحله، عبارت APPROVE را تایپ کنید:</sys:String>
+    <sys:String x:Key="Str.Migration.ConfirmHint">APPROVE</sys:String>
     <sys:String x:Key="Str.Migration.Log">چه اتفاقی افتاد</sys:String>
     <sys:String x:Key="Str.Migration.Finished">تکلیف همه‌ی گام‌ها روشن شد.</sys:String>
     <sys:String x:Key="Str.Migration.InRecycleBin">نسخه‌ی اصلی در سطل بازیافت است — اگر لازم شد از File Explorer برگردانید.</sys:String>
@@ -371,7 +371,7 @@
     <sys:String x:Key="Str.Migration.Error.RecycleInUse">برنامهٔ دیگری هنوز فایلی داخل این پوشه را باز نگه داشته، برای همین پوشهٔ اصلی حذف نشد و همه‌چیز به حالت اول برگشت. هر چیزی که از آن استفاده می‌کند — ویرایشگر، یک بیلد، یا برنامه‌ای که در حال اجراست — ببندید و دوباره امتحان کنید.</sys:String>
     <sys:String x:Key="Str.Migration.Error.RecycleAccessDenied">ویندوز اجازهٔ حذف پوشهٔ اصلی را نداد، پس همه‌چیز به حالت اول برگشت. این مورد با تکرار کردن حل نمی‌شود.</sys:String>
     <sys:String x:Key="Str.Migration.Error.LinkFailed">پوشه جابه‌جا شد و فضا آزاد شد، اما لینک به مسیر قبلی ساخته نشد — خودتان ابزار را به مسیر جدید معرفی کنید.</sys:String>
-    <sys:String x:Key="Str.Migration.Error.NotConfirmed">برای تأیید این گام، نام پوشه را دقیقاً تایپ کنید.</sys:String>
+    <sys:String x:Key="Str.Migration.Error.NotConfirmed">برای تأیید این مرحله عبارت APPROVE را تایپ کنید.</sys:String>
     <sys:String x:Key="Str.Migration.Error.Stale">بعد از تأیید شما چیزی تغییر کرد. دوباره تأیید کنید.</sys:String>
     <sys:String x:Key="Str.Migration.Error.AnotherRunning">گام دیگری هنوز در حال اجراست.</sys:String>
     <sys:String x:Key="Str.Migration.Error.NotPending">تکلیف این گام از قبل روشن شده است.</sys:String>
@@ -570,4 +570,10 @@
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer">حساب‌های نسخهٔ وب</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Body">اطلاعات ورود نسخهٔ وب، اگر این دستگاه روزی آن را سرو کرده باشد.</sys:String>
     <sys:String x:Key="Str.Settings.Storage.Item.AccountServer.Kept">خالی کردنش دسترسی کاربران نسخهٔ وب را قطع می‌کند، پس اینجا دست نمی‌خورد.</sys:String>
+    <sys:String x:Key="Str.Common.Path.Copy">کپی مسیر</sys:String>
+    <sys:String x:Key="Str.Common.Path.Reveal">نمایش در اکسپلورر</sys:String>
+    <sys:String x:Key="Str.Common.Path.Copied">مسیر کپی شد.</sys:String>
+    <sys:String x:Key="Str.Common.Path.CopyFailed">کلیپ‌بورد قبولش نکرد؛ ممکن است برنامهٔ دیگری آن را گرفته باشد.</sys:String>
+    <sys:String x:Key="Str.Common.Path.Gone">این مسیر دیگر وجود ندارد. پویش دیسک را همان‌گونه که بود توصیف می‌کند.</sys:String>
+    <sys:String x:Key="Str.Common.Path.RevealFailed">اکسپلورر باز نشد.</sys:String>
 </ResourceDictionary>
