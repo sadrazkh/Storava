@@ -212,8 +212,15 @@ public sealed class AgentActionService(
             step.RecycledPath,
             step.LinkPath,
             result.IsFailure ? result.Error.Code : step.ErrorCode,
-            result.IsFailure ? result.Error.Message : step.ErrorMessage);
+            // The specifics travel with the message rather than being dropped at the boundary: the
+            // browser turns the code into its own sentence, and without this it would have nothing
+            // concrete to add to it — which is the same "blocked, and that is all I can tell you"
+            // the desktop had.
+            result.IsFailure ? Describe(result.Error) : step.ErrorMessage);
     }
+
+    private static string Describe(Error error) =>
+        string.IsNullOrWhiteSpace(error.Detail) ? error.Message : $"{error.Message} {error.Detail}";
 
     private static bool TryParseAction(string? value, out SuggestedAction action)
     {

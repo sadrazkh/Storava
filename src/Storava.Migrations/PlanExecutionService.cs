@@ -295,7 +295,7 @@ public sealed class PlanExecutionService
         {
             await DiscardCopyAsync(destination).ConfigureAwait(false);
 
-            var reason = copied.Error == ExecutionErrors.Cancelled || cancellationToken.IsCancellationRequested
+            var reason = copied.Error.Code == ExecutionErrors.Cancelled.Code || cancellationToken.IsCancellationRequested
                 ? ExecutionErrors.Cancelled
                 : ExecutionErrors.CopyFailed;
 

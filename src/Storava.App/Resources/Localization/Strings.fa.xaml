@@ -576,4 +576,7 @@
     <sys:String x:Key="Str.Common.Path.CopyFailed">کلیپ‌بورد قبولش نکرد؛ ممکن است برنامهٔ دیگری آن را گرفته باشد.</sys:String>
     <sys:String x:Key="Str.Common.Path.Gone">این مسیر دیگر وجود ندارد. پویش دیسک را همان‌گونه که بود توصیف می‌کند.</sys:String>
     <sys:String x:Key="Str.Common.Path.RevealFailed">اکسپلورر باز نشد.</sys:String>
+    <sys:String x:Key="Str.Cleanup.SelectedOnly">فقط انتخاب‌شده‌ها</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Item">{0}: {1}</sys:String>
+    <sys:String x:Key="Str.Plan.Error.ProtectedUnder">این زیرمجموعهٔ {0} است؛ ویندوز به آن نیاز دارد و استوراوا هرگز به آن دست نمی‌زند.</sys:String>
 </ResourceDictionary>

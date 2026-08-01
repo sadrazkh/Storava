@@ -48,7 +48,7 @@ public class PlanExecutionServiceTests
         var report = await _service.PreflightAsync(plan);
 
         Assert.False(report.Steps[0].CanRun);
-        Assert.Equal(ExecutionErrors.SourceMissing, report.Steps[0].Blocker);
+        Assert.Equal(ExecutionErrors.SourceMissing.Code, report.Steps[0].Blocker?.Code);
         Assert.False(report.HasAnythingToDo);
     }
 
@@ -135,7 +135,7 @@ public class PlanExecutionServiceTests
         var result = await _service.ExecuteStepAsync(execution, step, Confirm(step));
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ExecutionErrors.VerificationFailed, result.Error);
+        Assert.Equal(ExecutionErrors.VerificationFailed.Code, result.Error.Code);
         Assert.Equal(ExecutionStatus.RolledBack, step.Status);
         Assert.True(_fs.DirectoryExists(@"D:\dev\node_modules"));
         Assert.Contains(@"E:\moved\node_modules", _fs.Recycled);
@@ -199,7 +199,7 @@ public class PlanExecutionServiceTests
 
         // A cancelled copy leaves half a tree behind; leaving it there would waste the space the
         // user was trying to reclaim, and it must never be mistaken for a completed move.
-        Assert.Equal(ExecutionErrors.Cancelled, result.Error);
+        Assert.Equal(ExecutionErrors.Cancelled.Code, result.Error.Code);
         Assert.Equal(ExecutionStatus.RolledBack, step.Status);
         Assert.Contains(@"E:\moved\node_modules", _fs.Recycled);
         Assert.True(_fs.DirectoryExists(@"D:\dev\node_modules"));
@@ -247,7 +247,7 @@ public class PlanExecutionServiceTests
         Assert.True(execution.Begin(first).IsSuccess);
 
         var second = execution.Steps[1];
-        Assert.Equal(ExecutionErrors.AnotherStepRunning, execution.Begin(second).Error);
+        Assert.Equal(ExecutionErrors.AnotherStepRunning.Code, execution.Begin(second).Error.Code);
     }
 
     [Fact]

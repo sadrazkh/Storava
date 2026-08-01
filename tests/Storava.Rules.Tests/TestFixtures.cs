@@ -58,8 +58,10 @@ internal sealed class FakeProtectedPaths : IProtectedPathService
     public IReadOnlyList<string> ProtectedRoots { get; } =
         [@"C:\Windows", @"C:\Program Files", @"C:\Program Files (x86)"];
 
-    public bool IsProtected(string path) =>
-        ProtectedRoots.Any(root =>
+    public bool IsProtected(string path) => MatchingRoot(path) is not null;
+
+    public string? MatchingRoot(string path) =>
+        ProtectedRoots.FirstOrDefault(root =>
             path.Equals(root, StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase));
 }

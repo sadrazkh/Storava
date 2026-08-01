@@ -140,12 +140,14 @@ internal sealed class FakeProtectedPaths : IProtectedPathService
 
     public IReadOnlyList<string> ProtectedRoots => Roots.ToList();
 
-    public bool IsProtected(string path)
+    public bool IsProtected(string path) => MatchingRoot(path) is not null;
+
+    public string? MatchingRoot(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
-            return true;
+            return string.Empty;
 
-        return Roots.Any(root =>
+        return Roots.FirstOrDefault(root =>
             path.Equals(root, StringComparison.OrdinalIgnoreCase) ||
             path.StartsWith(root + '\\', StringComparison.OrdinalIgnoreCase));
     }

@@ -15,6 +15,12 @@ namespace Storava.App.Services;
 public static class CleanupFilter
 {
     /// <param name="suggestedOnly">Limit to what the rule catalog proposed.</param>
+    /// <param name="selectedOnly">
+    /// Limit to what is ticked. A selection can be spread over thousands of rows and several
+    /// filters, and until now the only way to see what was actually in it was to remember. That
+    /// matters most when one item is refusing to run: finding it again in the full list, to take it
+    /// out, meant hunting for it.
+    /// </param>
     /// <param name="search">Matched against the name and the path, case-insensitively.</param>
     /// <param name="risks">
     /// Which risk levels to keep. An empty set means no opinion and keeps everything — a filter
@@ -24,7 +30,8 @@ public static class CleanupFilter
         IEnumerable<CleanupItemModel> items,
         bool suggestedOnly,
         string? search,
-        IReadOnlySet<RiskLevel> risks)
+        IReadOnlySet<RiskLevel> risks,
+        bool selectedOnly = false)
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(risks);
@@ -33,6 +40,9 @@ public static class CleanupFilter
 
         foreach (var item in items)
         {
+            if (selectedOnly && !item.IsSelected)
+                continue;
+
             if (suggestedOnly && !item.IsSuggested)
                 continue;
 

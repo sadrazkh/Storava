@@ -160,8 +160,10 @@ public class StoragePlanServiceTests
 
         public IReadOnlyList<string> ProtectedRoots => [.. Roots];
 
-        public bool IsProtected(string path) =>
-            Roots.Any(root => path.StartsWith(root, StringComparison.OrdinalIgnoreCase));
+        public bool IsProtected(string path) => MatchingRoot(path) is not null;
+
+        public string? MatchingRoot(string path) =>
+            Roots.FirstOrDefault(root => path.StartsWith(root, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Neither repository is reached: nothing here loads or saves, it only decides.</summary>

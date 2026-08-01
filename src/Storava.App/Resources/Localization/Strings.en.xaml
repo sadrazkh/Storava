@@ -577,4 +577,7 @@
     <sys:String x:Key="Str.Common.Path.CopyFailed">The clipboard would not take it. Another program may be holding it.</sys:String>
     <sys:String x:Key="Str.Common.Path.Gone">That path is not there any more. A scan describes the disk as it was.</sys:String>
     <sys:String x:Key="Str.Common.Path.RevealFailed">Explorer would not open.</sys:String>
+    <sys:String x:Key="Str.Cleanup.SelectedOnly">Picked only</sys:String>
+    <sys:String x:Key="Str.Cleanup.Error.Item">{0}: {1}</sys:String>
+    <sys:String x:Key="Str.Plan.Error.ProtectedUnder">This sits under {0}, which Windows needs and Storava will never act on.</sys:String>
 </ResourceDictionary>

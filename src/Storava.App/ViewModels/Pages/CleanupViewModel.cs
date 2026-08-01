@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Storava.App.Models;
 using Storava.App.Services;
 using Storava.Application.Abstractions;
+using Storava.Domain.Common;
 using Storava.Application.Migration;
 using Storava.Application.Planning;
 using Storava.Application.Scanning;
@@ -48,6 +49,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
     private readonly ScanController _controller;
     private readonly IFolderPicker _folderPicker;
     private readonly ILocalizationService _localization;
+    private readonly IProtectedPathService _protectedPaths;
     private readonly ILogger<CleanupViewModel> _logger;
 
     private string? _sessionId;
@@ -158,6 +160,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         ScanController controller,
         IFolderPicker folderPicker,
         ILocalizationService localization,
+        IProtectedPathService protectedPaths,
         ILogger<CleanupViewModel> logger)
     {
         _planning = planning;
@@ -168,6 +171,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         _controller = controller;
         _folderPicker = folderPicker;
         _localization = localization;
+        _protectedPaths = protectedPaths;
         _logger = logger;
 
         _localization.LanguageChanged += OnLanguageChanged;
@@ -228,6 +232,15 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
     /// The risk levels present in this scan, as filters. Only levels that actually occur are
     /// offered — a filter that can only ever return nothing is not worth the room.
     /// </summary>
+    /// <summary>
+    /// Show only what is ticked.
+    /// <para>
+    /// The selection is the thing being acted on, and it was the one thing the list could not be
+    /// narrowed to. When a run stops on one item, this is how you find it among the rest.
+    /// </para>
+    /// </summary>
+    [ObservableProperty] private bool _selectedOnly;
+
     public ObservableCollection<CleanupTagFilter> RiskFilters { get; } = [];
 
     /// <summary>Every scan of this machine that is still on record.</summary>
@@ -496,6 +509,8 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             filter.IsSelected = false;
     }
 
+    partial void OnSelectedOnlyChanged(bool value) => ApplyFilter();
+
     partial void OnSuggestedOnlyChanged(bool value) => ApplyFilter();
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -510,7 +525,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             .ToHashSet();
 
         VisibleItems.Clear();
-        foreach (var item in CleanupFilter.Apply(AllItems, SuggestedOnly, SearchText, risks))
+        foreach (var item in CleanupFilter.Apply(AllItems, SuggestedOnly, SearchText, risks, SelectedOnly))
             VisibleItems.Add(item);
 
         OnPropertyChanged(nameof(HasItems));
@@ -551,7 +566,7 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
 
             if (result.IsFailure)
             {
-                ErrorMessage = DescribePlanError(result.Error.Code);
+                ErrorMessage = DescribePlanError(result.Error.Code, model);
                 _logger.LogWarning("A cleanup step was refused: {Code}.", result.Error.Code);
 
                 // The domain said no, so the tick must not stay.
@@ -939,12 +954,12 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
             if (result.IsFailure && !step.IsFinished)
             {
                 // Refused before anything ran: the step stays pending so it can be corrected.
-                ErrorMessage = Describe(result.Error.Code);
+                ErrorMessage = Describe(result.Error);
                 return;
             }
 
             if (result.IsFailure)
-                ErrorMessage = Describe(result.Error.Code);
+                ErrorMessage = Describe(result.Error);
 
             AppendLog(step);
             Advance();
@@ -1058,7 +1073,31 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
         await LoadAsync().ConfigureAwait(true);
     }
 
-    private string DescribePlanError(string code) => _localization[code switch
+    /// <summary>
+    /// Why this item was refused, naming the item and — where the reason is a rule about a
+    /// location — the location that rule covers.
+    /// <para>
+    /// "This is a protected system location" is true and useless: it does not say which item was
+    /// refused, and with several ticked at once that is the first thing anybody needs to know. It
+    /// does not say how far the protection reaches either, so there is nothing to agree or disagree
+    /// with. Both are known here and both are now said.
+    /// </para>
+    /// </summary>
+    private string DescribePlanError(string code, CleanupItemModel model)
+    {
+        string reason = DescribeErrorCode(code);
+
+        if (code == "plan.protected_path" && _protectedPaths.MatchingRoot(model.Path) is { Length: > 0 } root)
+        {
+            reason = string.Format(
+                _localization.CurrentCulture, _localization["Str.Plan.Error.ProtectedUnder"], root);
+        }
+
+        return string.Format(
+            _localization.CurrentCulture, _localization["Str.Cleanup.Error.Item"], model.Title, reason);
+    }
+
+    private string DescribeErrorCode(string code) => _localization[code switch
     {
         "plan.protected_path" => "Str.Plan.Error.Protected",
         "plan.delete_not_permitted" => "Str.Plan.Error.DeleteNotPermitted",
@@ -1074,6 +1113,24 @@ public sealed partial class CleanupViewModel : ViewModelBase, IDisposable
     /// Maps a stable execution code to the user's language. Codes are never shown raw: the user is
     /// told what happened, not which constant fired.
     /// </summary>
+    /// <summary>
+    /// The general sentence for this kind of failure, followed by what was concrete about this one.
+    /// <para>
+    /// The sentence alone answers nothing actionable: "there is not enough free space" is true of
+    /// every such refusal and does not say whether a gigabyte or a hundred is wanted. The detail
+    /// carries the numbers and the paths, and is only appended when there is one — a trailing
+    /// separator with nothing after it reads worse than the plain sentence.
+    /// </para>
+    /// </summary>
+    private string Describe(Error error)
+    {
+        string sentence = Describe(error.Code);
+
+        return string.IsNullOrWhiteSpace(error.Detail)
+            ? sentence
+            : $"{sentence} {error.Detail}";
+    }
+
     private string Describe(string code) => _localization[code switch
     {
         "exec.protected_path" => "Str.Migration.Error.Protected",

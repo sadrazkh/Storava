@@ -30,7 +30,7 @@ public class ExecutionGuardTests
         var result = _guard.ValidateSource(@"C:\Windows\System32");
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ExecutionErrors.ProtectedPath, result.Error);
+        Assert.Equal(ExecutionErrors.ProtectedPath.Code, result.Error.Code);
     }
 
     [Theory]
@@ -40,12 +40,59 @@ public class ExecutionGuardTests
     {
         // A drive root has no name to type back, and nothing about it is ever safe to act on.
         _fs.AddDirectory(path, bytes: 1);
-        Assert.Equal(ExecutionErrors.ProtectedPath, _guard.ValidateSource(path).Error);
+        Assert.Equal(ExecutionErrors.ProtectedPath.Code, _guard.ValidateSource(path).Error.Code);
+    }
+
+    /// <summary>
+    /// A refusal has to say what was concrete about it.
+    /// <para>
+    /// "This is a protected system location" is true of every such refusal and answers nothing: it
+    /// does not say which item, nor how far the protection reaches. The complaint that arrived was
+    /// exactly this — that a block did not say why — so the specifics are pinned here rather than
+    /// left to drift back into the general sentence.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void ValidateSource_NamesTheProtectedRootItMatched()
+    {
+        var error = _guard.ValidateSource(@"C:\Windows\System32\drivers").Error;
+
+        Assert.Contains(@"C:\Windows", error.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(@"System32", error.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateSource_NamesThePathThatIsGone()
+    {
+        Assert.Contains(@"D:\gone", _guard.ValidateSource(@"D:\gone").Error.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The two numbers are the point: how much is wanted, and how much there is.</summary>
+    [Fact]
+    public void ValidateDestination_SaysHowMuchRoomIsShort()
+    {
+        _fs.FreeSpaceByRoot[@"E:\"] = 1_000_000;
+
+        var error = _guard.ValidateDestination(@"D:\dev\node_modules", @"E:\moved", 900_000_000).Error;
+
+        Assert.Equal(ExecutionErrors.NotEnoughSpace.Code, error.Code);
+        Assert.False(string.IsNullOrWhiteSpace(error.Detail));
+        Assert.Contains("needed", error.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("free", error.Detail, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The detail is part of the error, so it must be visible in its own string form.</summary>
+    [Fact]
+    public void AnErrorPrintsItsDetail()
+    {
+        var error = ExecutionErrors.NotEnoughSpace.With("12 MB needed, 3 MB free.");
+
+        Assert.Contains("12 MB needed", error.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
     public void ValidateSource_RefusesAMissingFolder() =>
-        Assert.Equal(ExecutionErrors.SourceMissing, _guard.ValidateSource(@"D:\gone").Error);
+        Assert.Equal(ExecutionErrors.SourceMissing.Code, _guard.ValidateSource(@"D:\gone").Error.Code);
 
     [Fact]
     public void ValidateSource_RefusesAJunction()
@@ -54,7 +101,7 @@ public class ExecutionGuardTests
         _fs.AddDirectory(@"D:\link", bytes: 5);
         _fs.ReparsePoints.Add(@"D:\link");
 
-        Assert.Equal(ExecutionErrors.SourceIsLink, _guard.ValidateSource(@"D:\link").Error);
+        Assert.Equal(ExecutionErrors.SourceIsLink.Code, _guard.ValidateSource(@"D:\link").Error.Code);
     }
 
     [Fact]
@@ -68,14 +115,14 @@ public class ExecutionGuardTests
     public void ValidateDestination_RefusesADestinationOnTheSameDrive()
     {
         var result = _guard.ValidateDestination(@"D:\dev\node_modules", @"D:\elsewhere\node_modules", 1_000);
-        Assert.Equal(ExecutionErrors.DestinationSameVolume, result.Error);
+        Assert.Equal(ExecutionErrors.DestinationSameVolume.Code, result.Error.Code);
     }
 
     [Fact]
     public void ValidateDestination_RefusesADestinationInsideTheSource()
     {
         var result = _guard.ValidateDestination(@"D:\dev", @"D:\dev\inner", 1_000);
-        Assert.Equal(ExecutionErrors.DestinationInsideSource, result.Error);
+        Assert.Equal(ExecutionErrors.DestinationInsideSource.Code, result.Error.Code);
     }
 
     [Fact]
@@ -92,7 +139,7 @@ public class ExecutionGuardTests
         _fs.AddDirectory(@"E:\moved\node_modules", bytes: 10, files: 3);
 
         var result = _guard.ValidateDestination(@"D:\dev\node_modules", @"E:\moved\node_modules", 1_000);
-        Assert.Equal(ExecutionErrors.DestinationNotEmpty, result.Error);
+        Assert.Equal(ExecutionErrors.DestinationNotEmpty.Code, result.Error.Code);
     }
 
     [Fact]
@@ -102,14 +149,14 @@ public class ExecutionGuardTests
         _fs.FreeSpaceByRoot[@"E:\"] = 1_000_000;
 
         var result = _guard.ValidateDestination(@"D:\dev\node_modules", @"E:\moved", 1_000_000);
-        Assert.Equal(ExecutionErrors.NotEnoughSpace, result.Error);
+        Assert.Equal(ExecutionErrors.NotEnoughSpace.Code, result.Error.Code);
     }
 
     [Fact]
     public void ValidateForExecution_RefusesWithoutAConfirmation()
     {
         var step = DeleteStep();
-        Assert.Equal(ExecutionErrors.NotConfirmed, _guard.ValidateForExecution(step, null, 1_000).Error);
+        Assert.Equal(ExecutionErrors.NotConfirmed.Code, _guard.ValidateForExecution(step, null, 1_000).Error.Code);
     }
 
     [Fact]
@@ -123,7 +170,7 @@ public class ExecutionGuardTests
             TypedName = "something else"
         };
 
-        Assert.Equal(ExecutionErrors.NotConfirmed, _guard.ValidateForExecution(step, confirmation, 1_000).Error);
+        Assert.Equal(ExecutionErrors.NotConfirmed.Code, _guard.ValidateForExecution(step, confirmation, 1_000).Error.Code);
     }
 
     [Fact]
@@ -154,7 +201,7 @@ public class ExecutionGuardTests
         // The user approved one destination and then the step was pointed somewhere else.
         step.DestinationPath = @"F:\elsewhere\node_modules";
 
-        Assert.Equal(ExecutionErrors.ConfirmationStale, _guard.ValidateForExecution(step, confirmation, 1_000).Error);
+        Assert.Equal(ExecutionErrors.ConfirmationStale.Code, _guard.ValidateForExecution(step, confirmation, 1_000).Error.Code);
     }
 
     [Fact]
@@ -170,7 +217,7 @@ public class ExecutionGuardTests
             TypedName = ExecutionGuard.ApprovalWord
         };
 
-        Assert.Equal(ExecutionErrors.NotConfirmed, _guard.ValidateForExecution(step, confirmation, 1_000).Error);
+        Assert.Equal(ExecutionErrors.NotConfirmed.Code, _guard.ValidateForExecution(step, confirmation, 1_000).Error.Code);
     }
 
     [Theory]

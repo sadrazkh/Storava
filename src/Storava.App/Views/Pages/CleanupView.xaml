@@ -105,6 +105,14 @@
                     <TextBlock Text="{DynamicResource Str.Cleanup.SuggestedOnly}" VerticalAlignment="Center"
                                Style="{StaticResource Storava.Text.Body}" Margin="0,0,16,0" />
 
+                    <!-- The selection is what gets acted on, and it was the one thing this list
+                         could not be narrowed to. It matters most when a run stops on one item:
+                         this is how that item is found again among thousands. -->
+                    <ToggleButton IsChecked="{Binding SelectedOnly}" Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                  VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="{DynamicResource Str.Cleanup.SelectedOnly}" VerticalAlignment="Center"
+                               Style="{StaticResource Storava.Text.Body}" Margin="0,0,16,0" />
+
                     <Button Command="{Binding SelectSuggestedCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
                             Height="38" Padding="14,0" Margin="0,0,8,0"
                             Content="{DynamicResource Str.Cleanup.SelectSuggested}" />

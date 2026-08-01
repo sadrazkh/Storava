@@ -116,6 +116,7 @@ function toggleForRemoval(item: ScanItem): void {
 }
 
 function clearRemoval(): void {
+  pickedOnly.value = false;
   removalIds.value = [];
   removalCode.value = '';
   removalProgress.value = null;
@@ -292,7 +293,20 @@ const canManageSelectedItem = computed(() =>
   && Boolean(selectedItem.value?.relativePath)
   && !isActive.value);
 const visibleStart = computed(() => Math.max(0, Math.floor(scrollTop.value / rowHeight) - 5));
-const visibleItems = computed(() => items.value.slice(visibleStart.value, visibleStart.value + Math.ceil(viewportHeight / rowHeight) + 10));
+/**
+ * Show only what is ticked.
+ *
+ * The selection is what the page acts on, and it was the one thing this list could not be narrowed
+ * to. It matters most when a removal refuses one item: this is how that item is found again among
+ * the rest in order to be taken back out.
+ */
+const pickedOnly = ref(false);
+
+const listItems = computed(() => (pickedOnly.value
+  ? items.value.filter((item) => removalIds.value.includes(item.id))
+  : items.value));
+
+const visibleItems = computed(() => listItems.value.slice(visibleStart.value, visibleStart.value + Math.ceil(viewportHeight / rowHeight) + 10));
 const comparison = computed(() => {
   const selected = compareIds.value.map((id) => sessions.value.find((item) => item.id === id)).filter(Boolean) as ScanSession[];
   if (selected.length !== 2) return null;
@@ -870,6 +884,10 @@ onBeforeUnmount(() => {
               <option value="local-signals">{{ explorerCopy.localSignals }}</option>
               <option value="ai-targeted" :disabled="!advisorResult?.reviewTargets.length">{{ explorerCopy.aiTargeted }}</option>
             </select>
+            <label class="picked-only" :title="explorerCopy.pickedOnlyHint">
+              <input v-model="pickedOnly" type="checkbox" :disabled="!removalIds.length">
+              <span>{{ explorerCopy.pickedOnly }} ({{ formatCount(removalIds.length) }})</span>
+            </label>
             <select v-model="filters.sort" :aria-label="t('sortLargest')">
               <option value="size-desc">{{ t('sortLargest') }}</option><option value="size-asc">{{ t('sortSmallest') }}</option><option value="name">{{ t('sortName') }}</option><option value="modified">{{ t('sortModified') }}</option>
             </select>
@@ -970,7 +988,7 @@ onBeforeUnmount(() => {
             <section class="virtual-table" :class="{ 'is-selecting': canRemoveFromThisScan }">
               <header><span>{{ t('name') }}</span><span>{{ t('category') }}</span><span>{{ t('size') }}</span><span>{{ t('modified') }}</span><span>{{ t('signals') }}</span></header>
               <div class="virtual-table__viewport" @scroll="scrollTop = ($event.target as HTMLElement).scrollTop">
-                <div :style="{ height: `${items.length * rowHeight}px`, position: 'relative' }">
+                <div :style="{ height: `${listItems.length * rowHeight}px`, position: 'relative' }">
                   <!-- The tick sits in a gutter beside the row rather than inside it: the row is a
                        button, a checkbox cannot live in one, and pressing anywhere on a row to open
                        its details is worth keeping. -->
@@ -1387,6 +1405,12 @@ onBeforeUnmount(() => {
 
 .history-card__copy:hover,
 .history-card__copy:focus-visible { opacity: 1; color: var(--ink); }
+
+.picked-only { display: flex; gap: .45rem; align-items: center; white-space: nowrap; }
+.picked-only span { color: var(--ink); font-size: .82rem; }
+.picked-only input { accent-color: var(--pine-bright); }
+/* Nothing ticked means nothing to narrow to, and a switch that empties the page is a trap. */
+.picked-only:has(input:disabled) { opacity: .5; }
 
 .bulk-remove {
   display: grid;

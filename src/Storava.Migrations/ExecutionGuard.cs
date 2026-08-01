@@ -60,17 +60,23 @@ public sealed class ExecutionGuard
             return Result.Failure(ExecutionErrors.SourceMissing);
 
         // A volume root has no name to type back and nothing above it; treat it as protected.
-        if (IsVolumeRoot(sourcePath) || _protectedPaths.IsProtected(sourcePath))
-            return Result.Failure(ExecutionErrors.ProtectedPath);
+        if (IsVolumeRoot(sourcePath))
+            return Result.Failure(ExecutionErrors.ProtectedPath.With($"{sourcePath} is the root of a drive."));
+
+        if (_protectedPaths.MatchingRoot(sourcePath) is { } root)
+        {
+            return Result.Failure(ExecutionErrors.ProtectedPath.With(
+                root.Length > 0 ? $"{sourcePath} sits under {root}." : sourcePath));
+        }
 
         // Either kind: what the user picked out of a scan can be a single large file just as
         // easily as a folder, and refusing files here is what made half a disk unactionable.
         if (!_fileSystem.Exists(sourcePath))
-            return Result.Failure(ExecutionErrors.SourceMissing);
+            return Result.Failure(ExecutionErrors.SourceMissing.With(sourcePath));
 
         // Acting on a link would either free nothing (delete) or copy someone else's data (move).
         if (_fileSystem.IsReparsePoint(sourcePath))
-            return Result.Failure(ExecutionErrors.SourceIsLink);
+            return Result.Failure(ExecutionErrors.SourceIsLink.With(sourcePath));
 
         return Result.Success();
     }
@@ -84,8 +90,13 @@ public sealed class ExecutionGuard
         if (string.IsNullOrWhiteSpace(destinationPath))
             return Result.Failure(ExecutionErrors.DestinationRequired);
 
-        if (_protectedPaths.IsProtected(destinationPath))
-            return Result.Failure(ExecutionErrors.ProtectedPath);
+        if (_protectedPaths.MatchingRoot(destinationPath) is { } destinationRoot)
+        {
+            return Result.Failure(ExecutionErrors.ProtectedPath.With(
+                destinationRoot.Length > 0
+                    ? $"The destination {destinationPath} sits under {destinationRoot}."
+                    : destinationPath));
+        }
 
         // Writing the copy into the folder being copied would recurse forever.
         if (IsSameOrUnder(destinationPath, sourcePath))
@@ -99,13 +110,16 @@ public sealed class ExecutionGuard
 
         // The whole point of a move is to free space on the source drive.
         if (string.Equals(sourceVolume.Value, destinationVolume.Value, StringComparison.OrdinalIgnoreCase))
-            return Result.Failure(ExecutionErrors.DestinationSameVolume);
+        {
+            return Result.Failure(ExecutionErrors.DestinationSameVolume.With(
+                $"Both are on {sourceVolume.Value}."));
+        }
 
         // Merging into a folder that already holds data would mix two trees together and make the
         // "copy matches the original" check meaningless. A destination that is already a file is
         // refused for the same reason: writing over it would destroy something.
         if (_fileSystem.DirectoryExists(destinationPath) && !_fileSystem.IsEmptyDirectory(destinationPath))
-            return Result.Failure(ExecutionErrors.DestinationNotEmpty);
+            return Result.Failure(ExecutionErrors.DestinationNotEmpty.With(destinationPath));
 
         if (!_fileSystem.DirectoryExists(destinationPath) && _fileSystem.Exists(destinationPath))
             return Result.Failure(ExecutionErrors.DestinationNotEmpty);
@@ -116,7 +130,12 @@ public sealed class ExecutionGuard
 
         long required = measuredBytes + (long)(measuredBytes * FreeSpaceHeadroom);
         if (freeSpace.Value < required)
-            return Result.Failure(ExecutionErrors.NotEnoughSpace);
+        {
+            // The two numbers are the whole point: "not enough space" is true of every such refusal
+            // and tells nobody whether they need to free a gigabyte or a hundred.
+            return Result.Failure(ExecutionErrors.NotEnoughSpace.With(
+                $"{Megabytes(required)} needed, {Megabytes(freeSpace.Value)} free at {destinationPath}."));
+        }
 
         return Result.Success();
     }
@@ -157,6 +176,9 @@ public sealed class ExecutionGuard
     }
 
     /// <summary>The exact text the user has to type to confirm a step.</summary>
+    private static string Megabytes(long bytes) =>
+        $"{bytes / 1024d / 1024d:N0} MB";
+
     public static string GetLeafName(string path)
     {
         if (string.IsNullOrWhiteSpace(path))

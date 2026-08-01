@@ -44,23 +44,27 @@ public sealed class ProtectedPathService : IProtectedPathService
 
     public IReadOnlyList<string> ProtectedRoots => _roots;
 
-    public bool IsProtected(string path)
+    public bool IsProtected(string path) => MatchingRoot(path) is not null;
+
+    public string? MatchingRoot(string path)
     {
+        // Fail safe: an unknown or empty path is treated as protected. It has no root to name, so
+        // it reports the empty string rather than null — refused, with nothing to point at.
         if (string.IsNullOrWhiteSpace(path))
-            return true; // Fail safe: treat unknown/empty as protected.
+            return string.Empty;
 
         string normalized = Normalize(path);
 
         foreach (var root in _roots)
         {
             if (normalized.Equals(root, StringComparison.OrdinalIgnoreCase))
-                return true;
+                return root;
 
             if (normalized.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                return true;
+                return root;
         }
 
-        return false;
+        return null;
     }
 
     private static string Normalize(string path)

@@ -62,6 +62,64 @@ public class CleanupFilterTests
 
     private static IReadOnlySet<RiskLevel> Risks(params RiskLevel[] levels) => levels.ToHashSet();
 
+    /// <summary>
+    /// Narrowing to what is ticked.
+    /// <para>
+    /// The selection is what the page acts on and it was the one thing the list could not be
+    /// narrowed to. It matters most when a run refuses one item: this is how it is found again
+    /// among thousands in order to be taken back out.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void SelectedOnly_KeepsWhatIsTicked()
+    {
+        var items = Sample();
+        items[1].IsSelected = true;
+        items[3].IsSelected = true;
+
+        var kept = CleanupFilter.Apply(items, suggestedOnly: false, search: null, Risks(), selectedOnly: true)
+            .Select(item => item.Title)
+            .ToList();
+
+        Assert.Equal(["docker", "Windows.old"], kept);
+    }
+
+    /// <summary>Off, it must not narrow anything — a filter nobody set never empties a page.</summary>
+    [Fact]
+    public void SelectedOnly_Off_KeepsEverything()
+    {
+        var items = Sample();
+        items[0].IsSelected = true;
+
+        var kept = CleanupFilter.Apply(items, suggestedOnly: false, search: null, Risks(), selectedOnly: false);
+
+        Assert.Equal(items.Length, kept.Count());
+    }
+
+    /// <summary>It narrows alongside the others rather than replacing them.</summary>
+    [Fact]
+    public void SelectedOnly_CombinesWithTheOtherFilters()
+    {
+        var items = Sample();
+        foreach (var item in items)
+            item.IsSelected = true;
+
+        var kept = CleanupFilter.Apply(items, suggestedOnly: true, search: "docker", Risks(), selectedOnly: true)
+            .Select(item => item.Title)
+            .ToList();
+
+        Assert.Equal(["docker"], kept);
+    }
+
+    /// <summary>Nothing ticked and the switch on shows nothing, which is the honest answer.</summary>
+    [Fact]
+    public void SelectedOnly_WithNothingTicked_ShowsNothing()
+    {
+        var kept = CleanupFilter.Apply(Sample(), suggestedOnly: false, search: null, Risks(), selectedOnly: true);
+
+        Assert.Empty(kept);
+    }
+
     /// <summary>The case nobody sets on purpose, and the one that would empty the page.</summary>
     [Fact]
     public void NoRiskChosen_KeepsEverything()
